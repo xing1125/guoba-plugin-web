@@ -50,28 +50,28 @@
             </div>
             <div v-if="nsTop.length" class="ns-bars">
               <div v-for="(b, i) in nsTop" :key="b.ns" class="ns-bar">
-                <span class="ns-bar__no" :class="`is-${['gold', 'silver', 'bronze'][i] ?? 'plain'}`">{{ i + 1 }}</span>
-                <div class="ns-bar__info">
+                <div class="ns-bar__top">
+                  <span class="ns-bar__no" :class="`is-${['gold', 'silver', 'bronze'][i] ?? 'plain'}`">{{ i + 1 }}</span>
                   <div class="ns-bar__name">
                     <b :title="`${b.label}（${b.owner}）`">{{ b.label }}</b>
                     <span class="g-mono">{{ b.ns }}</span>
                   </div>
-                  <div class="ns-bar__track">
-                    <i :style="{ width: nsPct(b.keys) }" />
+                  <div class="ns-bar__val">
+                    <b>{{ thousands(b.keys) }}</b>
+                    <span>{{ b.ratio }}%</span>
                   </div>
                 </div>
-                <div class="ns-bar__val">
-                  <b>{{ thousands(b.keys) }}</b>
-                  <span>{{ b.ratio }}%</span>
+                <div class="ns-bar__track">
+                  <i :style="{ width: nsPct(b.keys) }" />
                 </div>
               </div>
               <div v-if="restCount > 0" class="ns-bar ns-bar--rest">
-                <span class="ns-bar__no">…</span>
-                <div class="ns-bar__info">
+                <div class="ns-bar__top">
+                  <span class="ns-bar__no">…</span>
                   <div class="ns-bar__name"><b>其他 {{ restN }} 个命名空间</b></div>
-                  <div class="ns-bar__track"><i style="width: 100%; opacity: 0.25" /></div>
+                  <div class="ns-bar__val"><b>{{ thousands(restCount) }}</b></div>
                 </div>
-                <div class="ns-bar__val"><b>{{ thousands(restCount) }}</b></div>
+                <div class="ns-bar__track"><i style="width: 100%; opacity: 0.28" /></div>
               </div>
             </div>
             <GEmpty v-else-if="!loading" title="暂无命名空间数据" desc="执行一次扫描后即可看到占比" />
@@ -337,22 +337,16 @@
     width: 200px;
   }
 
-  /* 命名空间 TOP 榜 */
+  /* 命名空间 TOP 榜：信息行 + 通栏进度条 */
   .ns-bars {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 7px;
-    height: 340px;
-    padding-top: 4px;
+    gap: 5px;
+    padding-top: 2px;
   }
 
   .ns-bar {
-    display: grid;
-    grid-template-columns: 26px minmax(0, 1fr) 96px;
-    gap: 12px;
-    align-items: center;
-    padding: 4px 8px;
+    padding: 7px 10px 9px;
     border-radius: 10px;
     transition: background 0.18s;
   }
@@ -361,13 +355,25 @@
     background: var(--g-hover);
   }
 
+  .ns-bar--rest {
+    opacity: 0.72;
+  }
+
+  .ns-bar__top {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 7px;
+  }
+
   .ns-bar__no {
     display: inline-flex;
+    flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
-    font-size: 11.5px;
+    width: 21px;
+    height: 21px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--g-text-mute);
     background: var(--g-chip-bg);
@@ -377,6 +383,7 @@
   .ns-bar__no.is-gold {
     color: #6b4d00;
     background: linear-gradient(135deg, #f5dd9a, #dcae4e);
+    box-shadow: 0 3px 8px -3px rgb(220 174 78 / 55%);
   }
 
   .ns-bar__no.is-silver {
@@ -389,20 +396,17 @@
     background: linear-gradient(135deg, #eec9a8, #c98a58);
   }
 
-  .ns-bar__info {
-    min-width: 0;
-  }
-
   .ns-bar__name {
     display: flex;
+    flex: 1 1 auto;
     gap: 8px;
     align-items: baseline;
     min-width: 0;
-    margin-bottom: 5px;
   }
 
   .ns-bar__name b {
     overflow: hidden;
+    flex-shrink: 0;
     font-size: 12.5px;
     font-weight: 600;
     color: var(--g-text);
@@ -418,11 +422,32 @@
     white-space: nowrap;
   }
 
+  .ns-bar__val {
+    display: flex;
+    flex-shrink: 0;
+    gap: 6px;
+    align-items: baseline;
+  }
+
+  .ns-bar__val b {
+    font-size: 13.5px;
+    font-weight: 650;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ns-bar__val span {
+    font-size: 11px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
   .ns-bar__track {
-    height: 6px;
+    height: 9px;
     overflow: hidden;
     background: var(--g-track);
-    border-radius: 4px;
+    border: 1px solid var(--g-card-border);
+    border-radius: 5px;
   }
 
   .ns-bar__track i {
@@ -433,33 +458,22 @@
     transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
+  /* 前三名条身用徽标同色系，尾端一点亮 */
   .ns-bar:nth-child(1) .ns-bar__track i {
     background: linear-gradient(90deg, #dcae4e, #f0d491);
+    box-shadow: 0 0 10px -2px rgb(220 174 78 / 60%);
   }
 
   .ns-bar:nth-child(2) .ns-bar__track i {
-    background: linear-gradient(90deg, #94a9bb, #c6d3de);
+    background: linear-gradient(90deg, #8fa3b5, #c6d3de);
   }
 
   .ns-bar:nth-child(3) .ns-bar__track i {
     background: linear-gradient(90deg, #c98a58, #e3b48b);
   }
 
-  .ns-bar__val {
-    text-align: right;
-  }
-
-  .ns-bar__val b {
-    display: block;
-    font-size: 13px;
-    font-weight: 650;
-    color: var(--g-text);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .ns-bar__val span {
-    font-size: 11px;
-    color: var(--g-text-mute);
+  .ns-bar:nth-child(n + 5) .ns-bar__track i {
+    opacity: 0.82;
   }
 
   /* 游戏分布条 */
