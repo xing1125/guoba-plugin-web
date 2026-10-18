@@ -226,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, defineComponent, h, nextTick, onMounted, ref, unref, watch } from 'vue';
+  import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, ref, unref, watch } from 'vue';
   import { useRouter } from 'vue-router';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
@@ -702,9 +702,17 @@
 
   watch(isDark, () => nextTick(renderAll));
 
+  // 立绘每 60 秒自动轮换一张
+  let artTimer: ReturnType<typeof setInterval> | null = null;
+
   onMounted(() => {
     loadData();
     loadArt();
+    artTimer = setInterval(loadArt, 60_000);
+  });
+
+  onBeforeUnmount(() => {
+    if (artTimer) clearInterval(artTimer);
   });
 </script>
 
