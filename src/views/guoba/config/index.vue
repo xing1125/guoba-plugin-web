@@ -7,15 +7,10 @@
         <div class="db-hero__title">配置管理</div>
         <div class="db-hero__desc">机器人基础设置、消息策略与各插件配置项，改完即时写入配置文件</div>
       </div>
+      <div class="db-hero__side">
+        <span class="db-hero__time">{{ configTabs.length }} 个分组 · {{ totalFieldCount }} 项配置</span>
+      </div>
     </section>
-
-    <div class="db-config">
-      <Tabs v-model:activeKey="activeKey" class="db-config__tabs">
-        <template v-for="tab in configTabs" :key="tab.key">
-          <TabPane :tab="tab.title" />
-        </template>
-      </Tabs>
-    </div>
 
     <div v-if="!loading && !configTabs.length" class="g-card db-tip" style="margin-top: 14px">
       <div>
@@ -24,25 +19,56 @@
       </div>
     </div>
 
-    <a-row :class="[prefixCls]" justify="center">
-      <a-col :xxl="16" :xl="18" :lg="20" :md="22" :sm="24" :xs="24">
-        <template v-for="tab of configTabs" :key="tab.key">
-          <transition name="scroll-x-transition" mode="out-in">
-            <keep-alive>
-              <ConfigForm v-if="activeKey === tab.key" :cards="tab.cards" />
-            </keep-alive>
-          </transition>
-        </template>
-      </a-col>
-    </a-row>
+    <div v-else-if="activeTab" class="db-cfg">
+      <!-- 左侧：配置分组导航 -->
+      <aside class="db-cfg__nav">
+        <div class="db-cfg__nav-head">
+          <span>配置分组</span>
+          <span>{{ pad(configTabs.length) }}</span>
+        </div>
+        <div
+          v-for="(tab, idx) of configTabs"
+          :key="tab.key"
+          class="db-cfg__nav-item"
+          :class="{ 'is-active': activeKey === tab.key }"
+          @click="activeKey = tab.key"
+        >
+          <span class="db-cfg__nav-idx">{{ pad(idx + 1) }}</span>
+          <span class="db-cfg__nav-name" :title="tab.title">{{ tab.title }}</span>
+          <span class="db-cfg__nav-cnt">{{ tab.cards.length }}</span>
+        </div>
+        <div class="db-cfg__nav-foot">选择左侧分组切换配置集，改动保存后立即写入配置文件。</div>
+      </aside>
+
+      <!-- 右侧：配置工作区 -->
+      <div class="db-cfg__body">
+        <div class="db-cfg__bar">
+          <div class="db-cfg__bar-main">
+            <span class="db-cfg__bar-title">{{ activeTab.title }}</span>
+            <span class="db-cfg__bar-sub">{{ activeTab.cards.length }} 个配置块 · {{ activeFieldCount }} 项</span>
+          </div>
+          <div class="db-cfg__bar-ops">
+            <a-button size="small" @click="toggleAll">{{ allFolded ? '展开全部' : '收起全部' }}</a-button>
+            <a-tooltip title="重新读取配置">
+              <span class="db-cfg__icon-btn" @click="reloadConfig">
+                <Icon icon="ant-design:reload" :size="14" />
+              </span>
+            </a-tooltip>
+          </div>
+        </div>
+
+        <ConfigForm :key="activeTab.key" :cards="activeTab.cards" />
+      </div>
+    </div>
   </PageWrapper>
 </template>
 
 <script lang="ts">
   import type { ConfigTabs } from './types';
-  import { defineComponent, ref } from 'vue';
-  import { Skeleton, Tabs } from 'ant-design-vue';
+  import { computed, defineComponent, provide, reactive, ref, watch } from 'vue';
+  import { Skeleton } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
+  import Icon from '/@/components/Icon';
   import { useDesign } from '/@/hooks/web/useDesign';
   import ConfigForm from './components/ConfigForm.vue';
   import { queryConfigTabs } from './config.api';
@@ -51,8 +77,7 @@
     components: {
       PageWrapper,
       Skeleton,
-      Tabs,
-      TabPane: Tabs.TabPane,
+      Icon,
       ConfigForm,
     },
     setup() {
@@ -62,18 +87,59 @@
       const configTabs = ref<ConfigTabs>([]);
       const activeKey = ref('');
 
+      // 折叠信号：CardForm 通过 inject 读取，实现「收起/展开全部」
+      const foldSignal = reactive({ mode: 'expand' as 'expand' | 'collapse', tick: 0 });
+      provide('cfgFoldSignal', foldSignal);
+      const allFolded = ref(false);
+
+      const activeTab = computed(() => configTabs.value.find((tab) => tab.key === activeKey.value) ?? null);
+
+      function countFields(cards: any[] | undefined) {
+        return (cards ?? []).reduce((sum, card) => {
+          const schemas = (card?.schemas ?? []) as any[];
+          return sum + schemas.filter((s) => s && s.component !== 'SOFT_GROUP_BEGIN' && s.component !== 'Divider').length;
+        }, 0);
+      }
+
+      const totalFieldCount = computed(() => configTabs.value.reduce((sum, tab) => sum + countFields(tab.cards as any[]), 0));
+      const activeFieldCount = computed(() => countFields(activeTab.value?.cards as any[]));
+
+      function toggleAll() {
+        allFolded.value = !allFolded.value;
+        foldSignal.mode = allFolded.value ? 'collapse' : 'expand';
+        foldSignal.tick++;
+      }
+
+      function pad(n: number) {
+        return String(n).padStart(2, '0');
+      }
+
       async function loadConfig() {
         loading.value = true;
         try {
           configTabs.value = (await queryConfigTabs()) || [];
-          activeKey.value = configTabs.value[0]?.key ?? '';
+          if (!configTabs.value.some((tab) => tab.key === activeKey.value)) {
+            activeKey.value = configTabs.value[0]?.key ?? '';
+          }
         } finally {
           loading.value = false;
           pageLoading.value = false;
         }
       }
 
+      function reloadConfig() {
+        allFolded.value = false;
+        foldSignal.mode = 'expand';
+        foldSignal.tick++;
+        loadConfig();
+      }
+
       loadConfig();
+
+      // 切换分组后卡片会重新挂载，折叠状态回到默认
+      watch(activeKey, () => {
+        allFolded.value = false;
+      });
 
       return {
         prefixCls,
@@ -81,10 +147,18 @@
         loading,
         configTabs,
         activeKey,
+        activeTab,
+        allFolded,
+        totalFieldCount,
+        activeFieldCount,
+        pad,
+        toggleAll,
+        reloadConfig,
       };
     },
   });
 </script>
+
 <style lang="less">
   //noinspection LessUnresolvedVariable
   @ns: ~'@{namespace}';
@@ -93,18 +167,6 @@
   .@{prefix-cls} {
   }
 
-  .db-config {
-    padding: 4px 18px 0;
-    margin-top: 14px;
-    background: var(--g-card-bg);
-    border: 1px solid var(--g-card-border);
-    border-radius: 14px;
-    box-shadow: var(--g-card-shadow);
-  }
-
-  .db-config__tabs {
-    margin-bottom: 0;
-  }
   .fade-enter-active,
   .fade-leave-active {
     opacity: 1;

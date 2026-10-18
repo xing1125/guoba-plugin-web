@@ -705,7 +705,8 @@ html[data-theme='dark'] .db-hero {
 }
 
 .db-hero__time {
-  color: var(--g-text-mute);
+  font-size: 12px;
+  color: var(--g-text-sub);
 }
 
 .db-hero__side {
@@ -911,11 +912,374 @@ html[data-theme='dark'] .db-hero {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* -------- 响应式 -------- */
+/* --------------------------- 配置工作台外壳 --------------------------- */
+/*
+ * 后台管理系统规格的「左导航 + 右工作区」骨架。
+ * 配置管理页（system config）与插件配置页（plugin detail）共用同一套结构，
+ * 保证两处的分组导航、吸顶操作条、面板节奏完全一致。
+ */
+
+.db-cfg {
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+/* -------- 左侧分组导航 -------- */
+
+.db-cfg__nav {
+  position: sticky;
+  top: 8px;
+  padding: 10px 8px 12px;
+  background: var(--g-card-bg);
+  border: 1px solid var(--g-card-border);
+  border-radius: 14px;
+  box-shadow: var(--g-card-shadow);
+}
+
+.db-cfg__nav-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--g-text-mute);
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+}
+
+.db-cfg__nav-item {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 9px;
+  font-size: 12.5px;
+  color: var(--g-text-sub);
+  cursor: pointer;
+  border-radius: 9px;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.db-cfg__nav-item + .db-cfg__nav-item {
+  margin-top: 2px;
+}
+
+.db-cfg__nav-item:hover {
+  color: var(--g-text);
+  background: var(--g-hover);
+}
+
+.db-cfg__nav-item.is-active {
+  font-weight: 620;
+  color: var(--g-text);
+  background: rgb(98 168 234 / 13%);
+  box-shadow: inset 2px 0 0 var(--g-blue);
+}
+
+.db-cfg__nav-idx {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--g-text-mute);
+  background: var(--g-chip-bg);
+  border-radius: 6px;
+  transition: all 0.18s ease;
+}
+
+.db-cfg__nav-item.is-active .db-cfg__nav-idx {
+  color: var(--g-blue);
+  background: rgb(98 168 234 / 20%);
+}
+
+.db-cfg__nav-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-cfg__nav-cnt {
+  flex: none;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--g-text-mute);
+  opacity: 0.85;
+}
+
+.db-cfg__nav-foot {
+  padding: 10px 8px 0;
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--g-text-mute);
+  border-top: 1px dashed var(--g-card-border);
+}
+
+/* -------- 右侧工作区 -------- */
+
+.db-cfg__body {
+  min-width: 0;
+}
+
+/* 吸顶操作条：分组名 + 统计 + 全局动作（展开/保存） */
+.db-cfg__bar {
+  position: sticky;
+  top: 8px;
+  z-index: 8;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  background: var(--g-card-bg);
+  border: 1px solid var(--g-card-border);
+  border-radius: 12px;
+  box-shadow: var(--g-card-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.db-cfg__bar-main {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.db-cfg__bar-title {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--g-text);
+  letter-spacing: 0.2px;
+}
+
+.db-cfg__bar-sub {
+  font-size: 11.5px;
+  color: var(--g-text-mute);
+  white-space: nowrap;
+}
+
+.db-cfg__bar-ops {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 图标型操作按钮（无边框，hover 才出底） */
+.db-cfg__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--g-text-sub);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.18s ease;
+}
+
+.db-cfg__icon-btn:hover {
+  color: var(--g-blue);
+  background: var(--g-hover);
+}
+
+/* -------- 配置面板（CardForm / ArrayForm 的统一外观） -------- */
+
+.db-card {
+  position: relative;
+  margin-bottom: 12px;
+  overflow: hidden;
+  background: var(--g-card-bg);
+  border: 1px solid var(--g-card-border);
+  border-radius: 13px;
+  box-shadow: var(--g-card-shadow);
+  animation: g-fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: border-color 0.22s ease;
+}
+
+.db-card:hover {
+  border-color: var(--g-card-border-strong);
+}
+
+.db-card__head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 13px 16px;
+  background: linear-gradient(180deg, var(--g-card-bg-soft), transparent);
+  border-bottom: 1px solid var(--g-card-border);
+  transition: background 0.2s ease;
+}
+
+.db-card.is-foldable .db-card__head {
+  cursor: pointer;
+  user-select: none;
+}
+
+.db-card.is-foldable .db-card__head:hover {
+  background: linear-gradient(180deg, var(--g-card-bg-soft), var(--g-hover));
+}
+
+/* 标题前的金蓝渐变竖条，与 .g-card__title 同一视觉语言 */
+.db-card__mark {
+  flex: none;
+  width: 3px;
+  height: 15px;
+  margin-top: 2px;
+  background: linear-gradient(180deg, var(--g-gold), var(--g-blue));
+  border-radius: 2px;
+}
+
+.db-card__title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.db-card__title {
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--g-text);
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.db-card__desc {
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--g-text-mute);
+}
+
+.db-card__meta {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  align-items: center;
+}
+
+.db-card__cnt {
+  padding: 1px 8px;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--g-text-mute);
+  background: var(--g-chip-bg);
+  border-radius: 20px;
+}
+
+.db-card__act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--g-text-mute);
+  cursor: pointer;
+  border-radius: 7px;
+  transition: all 0.18s ease;
+}
+
+.db-card__act:hover {
+  color: var(--g-blue);
+  background: var(--g-hover);
+}
+
+.db-card__fold {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  color: var(--g-text-mute);
+  background: var(--g-chip-bg);
+  border-radius: 20px;
+  transition: color 0.18s ease;
+}
+
+.db-card.is-foldable:hover .db-card__fold {
+  color: var(--g-blue);
+}
+
+.db-card__body {
+  padding: 16px 16px 0;
+}
+
+/* 面板底部操作条：右对齐，与表单区用细线分隔 */
+.db-card__foot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px 0 13px;
+  margin-top: 6px;
+  border-top: 1px dashed var(--g-card-border);
+}
+
+.db-card__foot-left {
+  margin-right: auto;
+  font-size: 11.5px;
+  color: var(--g-text-mute);
+}
+
+/* 折叠态：头部即收口，底部圆角自洽 */
+.db-card.is-folded .db-card__head {
+  border-bottom-color: transparent;
+}
+
+/* -------- 配置表单内部（ant 组件）统一密度 -------- */
+
+.db-card .ant-form-item {
+  margin-bottom: 14px;
+}
+
+.db-card .ant-form-item-label > label {
+  font-size: 12.5px;
+  color: var(--g-text-sub);
+}
+
+/* -------- 响应式：窄屏把导航压成横向滚动条 -------- */
 @media (max-width: 1180px) {
   .db-grid--8-4,
   .db-grid--5-7,
   .db-grid--6-6 {
     grid-template-columns: 1fr;
+  }
+
+  .db-cfg {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .db-cfg__nav {
+    position: static;
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    overflow-x: auto;
+  }
+
+  .db-cfg__nav-head,
+  .db-cfg__nav-foot {
+    display: none;
+  }
+
+  .db-cfg__nav-item {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .db-cfg__nav-item + .db-cfg__nav-item {
+    margin-top: 0;
   }
 }

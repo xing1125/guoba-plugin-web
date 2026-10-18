@@ -1,58 +1,59 @@
 <template>
-  <a-card :class="[prefixCls, { 'allow-fold': allowFold, folded }]" :bordered="false">
-    <template #title>
-      <div class="card-title" @click="onClickTitle">
-        <span>{{ cardTitle }}</span>
-        <span v-if="allowFold" style="margin-left: 8px">
-          <icon v-if="folded" icon="ant-design:caret-down" />
-          <icon v-else icon="ant-design:caret-up" />
-        </span>
+  <section :class="[prefixCls, 'db-card', { 'is-foldable': allowFold, 'is-folded': folded }]">
+    <header class="db-card__head" @click="onClickTitle">
+      <span class="db-card__mark"></span>
+      <div class="db-card__title-wrap">
+        <div class="db-card__title" :title="cardTitle">{{ cardTitle }}</div>
+        <div v-if="card.desc" class="db-card__desc">{{ card.desc }}</div>
       </div>
-    </template>
+      <div class="db-card__meta">
+        <span v-if="fieldCount > 0" class="db-card__cnt">{{ fieldCount }} 项</span>
+        <a-tooltip title="重新读取">
+          <span class="db-card__act" @click.stop="() => emit('redo', form)">
+            <Icon icon="ant-design:redo" :size="13" />
+          </span>
+        </a-tooltip>
+        <a-tooltip v-if="allowFold" :title="folded ? '展开此配置块' : '收起此配置块'">
+          <span class="db-card__act" @click.stop="onClickTitle">
+            <Icon :icon="folded ? 'ant-design:down' : 'ant-design:up'" :size="12" />
+          </span>
+        </a-tooltip>
+      </div>
+    </header>
 
-    <template #extra>
-      <a-tooltip title="刷新">
-        <icon icon="ant-design:redo" style="cursor: pointer" @click="() => emit('redo', form)" />
-      </a-tooltip>
-    </template>
-
-    <a-spin :spinning="form.loading">
-      <BasicForm @register="form.register" />
-      <div style="text-align: center">
-        <a-button type="primary" pre-icon="ant-design:save" @click="onSubmit">
-          <span>保存</span>
-        </a-button>
-        <template v-if="isDefault">
-          <a-divider type="vertical" />
-          <a-button v-if="card.allowAdd" pre-icon="ant-design:plus" @click="onAddCard">
-            <span>{{ addBtnText }}</span>
-          </a-button>
-        </template>
-        <template v-else>
-          <a-divider type="vertical" />
-          <a-popconfirm title="确定要删除当前配置吗？" @confirm="onRemoveCard">
-            <a-button v-if="card.allowDel" pre-icon="ant-design:minus" danger>
-              <span>删除当前配置</span>
-            </a-button>
+    <div v-show="!folded" class="db-card__body">
+      <a-spin :spinning="form.loading">
+        <BasicForm @register="form.register" />
+        <footer class="db-card__foot">
+          <span class="db-card__foot-left">{{ footHint }}</span>
+          <a-popconfirm v-if="!isDefault && card.allowDel" title="确定要删除当前配置吗？" @confirm="onRemoveCard">
+            <a-button danger pre-icon="ant-design:delete">删除当前配置</a-button>
           </a-popconfirm>
-        </template>
-      </div>
-    </a-spin>
-  </a-card>
+          <a-button v-if="isDefault && card.allowAdd" pre-icon="ant-design:plus" @click="onAddCard">
+            {{ addBtnText }}
+          </a-button>
+          <a-button type="primary" pre-icon="ant-design:save" :loading="form.loading" @click="onSubmit">
+            保存
+          </a-button>
+        </footer>
+      </a-spin>
+    </div>
+  </section>
 </template>
 
 <script lang="ts">
   import type { PropType } from 'vue';
-  import { computed, defineComponent, ref, provide } from 'vue';
+  import { computed, defineComponent, inject, ref, watch, provide } from 'vue';
   import type { IConfigCard, FormType } from '../types';
   import { propTypes } from '/@/utils/propTypes';
   import { BasicForm } from '/@/components/Form';
+  import Icon from '/@/components/Icon';
   import { useDesign } from '/@/hooks/web/useDesign';
   import { usePrompt } from '/@/components/Guoba';
 
   export default defineComponent({
     name: 'CardForm',
-    components: { BasicForm },
+    components: { BasicForm, Icon },
     props: {
       card: propTypes.object.isRequired.type as PropType<IConfigCard>,
       form: propTypes.object.isRequired.type as PropType<FormType>,
@@ -66,16 +67,34 @@
     setup(props, { emit }) {
       const { createPrompt } = usePrompt();
       const { prefixCls } = useDesign('card-form');
+
+      // 由页面 provide 的折叠信号（驱动「展开/收起全部」）
+      const foldSignal = inject<{ mode: 'expand' | 'collapse'; tick: number } | null>('cfgFoldSignal', null);
       const folded = ref<boolean>(!!props.defaultFold);
 
-      const cardTitle = computed(() => {
-        // if (props.form!.key === 'default') {
-        //   return '默认配置'
-        // }
-        return decodeTitle(props.card!, props.form!);
+      watch(
+        () => foldSignal?.tick,
+        () => {
+          if (foldSignal) {
+            folded.value = foldSignal.mode === 'collapse';
+          }
+        },
+      );
+
+      const cardTitle = computed(() => decodeTitle(props.card!, props.form!));
+
+      // 配置项数量（软分组的标记字段不计入）
+      const fieldCount = computed(() => {
+        const schemas = (props.card?.schemas ?? []) as any[];
+        return schemas.filter((s) => s && s.component !== 'SOFT_GROUP_BEGIN' && s.component !== 'Divider').length;
       });
 
-      const addBtnText = computed(() => props.card?.addBtnText ?? '新增');
+      const addBtnText = computed(() => props.card?.addBtnText ?? '新增配置');
+
+      const footHint = computed(() => {
+        if (!props.isDefault && props.card?.allowDel) return '此配置块可单独保存或删除';
+        return '保存后立即写入配置文件';
+      });
 
       function decodeTitle(card: IConfigCard, form: FormType) {
         return card.title.replace(/{{([^}]+)}}/g, (_, $1) => {
@@ -115,7 +134,9 @@
         prefixCls,
         folded,
         cardTitle,
+        fieldCount,
         addBtnText,
+        footHint,
 
         onClickTitle,
         onSubmit,
@@ -126,31 +147,40 @@
   });
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
   //noinspection LessUnresolvedVariable
   @prefix-cls: ~'@{namespace}-card-form';
 
   .@{prefix-cls} {
-    margin-bottom: 12px;
-
-    .ant-card-head-title {
-      padding: 0;
+    /* 面板外观由 design/guoba-modules.less 的 .db-card 统一提供 */
+    :deep(.ant-form) {
+      margin-bottom: 2px;
     }
 
-    .card-title {
-      padding: 16px 0;
+    /* 输入控件统一边框色，深浅主题跟随令牌 */
+    :deep(.ant-input),
+    :deep(.ant-input-number),
+    :deep(.ant-select:not(.ant-select-customize-input) .ant-select-selector),
+    :deep(.ant-picker) {
+      background: var(--g-card-bg-soft);
+      border-color: var(--g-card-border);
     }
-  }
 
-  .@{prefix-cls}.allow-fold {
-    .card-title {
-      cursor: pointer;
+    :deep(.ant-input:focus),
+    :deep(.ant-input-focused),
+    :deep(.ant-select-focused:not(.ant-select-disabled).ant-select:not(.ant-select-customize-input) .ant-select-selector) {
+      border-color: var(--g-blue);
+      box-shadow: none;
     }
 
-    &.folded {
-      .ant-card-body {
-        display: none;
-      }
+    :deep(.ant-form-item-extra) {
+      font-size: 11.5px;
+      color: var(--g-text-mute);
+    }
+
+    /* 分区分隔更适合浅色底 */
+    :deep(.ant-divider) {
+      border-color: var(--g-card-border);
     }
   }
 </style>

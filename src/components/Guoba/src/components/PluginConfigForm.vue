@@ -56,11 +56,12 @@
       const schemas = initSchemas();
 
       const [registerForm, formActions] = useForm({
-        labelWidth: 120,
+        labelWidth: 116,
         schemas: schemas,
         labelAlign: 'right',
         showActionButtonGroup: false,
-        baseColProps: { span: 24 },
+        // 后台规格：宽屏两列网格
+        baseColProps: { xs: 24, sm: 24, md: 12, lg: 12, xl: 12, xxl: 12 },
       });
 
       provide('formActions', formActions);

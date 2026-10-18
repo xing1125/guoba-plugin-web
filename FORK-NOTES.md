@@ -30,6 +30,20 @@
 | 游戏签到 | `/sign` | `system/sign/index.vue` | 签到 KPI、每日趋势、游戏完成度、每日汇总表、流水明细、单日明细抽屉 |
 | 数据管理 | `/data` | `system/data/index.vue` | 三段式：数据域总览 / Redis 键浏览编辑 / 插件 data 文件编辑（含备份恢复） |
 
+### 控制类页面（后台管理系统规格）
+
+| 页面 | 路径 | 组件 | 说明 |
+|---|---|---|---|
+| 插件管理 | `/plugins` | `plugins/index.vue` | 4 张可点击 KPI（已安装/未安装/可配置/已失效）+ 工具栏（正则搜索、作者多选、口径分段）+ 结构化行（图标/标题/包名、作者胶囊、状态徽标、行内「配置 / 详情」）+ 批量卸载 + 自定义分页 |
+| 插件配置 | `/plugin/@/:name` | `plugins/plugin-detail/index.vue` | 页头（图标/标题/仓库链接/状态胶囊）+ 左侧软分组导航（带字段数）+ 吸顶操作条（保存配置）+ 双列表单 |
+| 配置管理 | `/config` | `config/index.vue` | 「左分组导航 + 右工作区」双栏；吸顶条含分组名、字段数、展开/收起全部、重载；配置块为统一面板（标题/描述/项数/折叠/底部操作条） |
+
+配置块组件 `config/components/{CardForm,ArrayForm}.vue` 统一使用设计层的 `.db-card` 面板语言，
+折叠由页面 `provide('cfgFoldSignal')` 总控，`ConfigForm.vue` 的表单为宽屏两列网格（`baseColProps` md/lg/xl = 12）。
+
+> 注意：`a-table` / `a-pagination` 没有在 `registerGlobComp.ts` 全局注册，用到时必须
+> `import { Table, Pagination } from 'ant-design-vue'`，否则会渲染为空。
+
 菜单由后端 `server/service/both/system/model/menus/systemMenus.js` 下发，
 `menus/index.js` 注册。**前端路由无需改动**，前端通过 `import.meta.glob` 按 `component` 字符串解析。
 
@@ -39,7 +53,7 @@
 |---|---|
 | `src/views/guoba/system/_shared/stats.ts` | 统计接口封装、TS 类型、数字格式化、图表主题基座（深浅自适应）、`kpiPalette()` |
 | `src/design/guoba-admin.less` | 设计层：深浅双主题设计令牌 + `.g-card` / `.g-stat` / `.g-bar` / `.g-spark` / `.g-rank` 等复用样式 |
-| `src/design/guoba-modules.less` | 模块化组件层：`.gm-*`（面板、瓦片、分段控件）与 `.db-*`（页头、KPI、栅格、图表卡） |
+| `src/design/guoba-modules.less` | 模块化组件层：`.gm-*`（面板、瓦片、分段控件）、`.db-*`（页头、KPI、栅格、图表卡）、`.db-cfg` / `.db-card`（配置工作台外壳与配置面板） |
 | `src/design/menuIcons.ts` | 菜单图标静态清单，供构建期收集打包 |
 
 ## 深浅色主题

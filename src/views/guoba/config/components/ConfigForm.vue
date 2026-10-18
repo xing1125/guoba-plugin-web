@@ -19,7 +19,7 @@
       <template v-else-if="card.type === 'arrayFormCard'">
         <ArrayForm :card="card" :form="forms[idx]" :value="arrayForms[card.key]" @redo="onRedo" @submit="onSubmit" />
       </template>
-      <CardForm v-else :card="card" :form="forms[idx]" @redo="onRedo" @submit="onSubmit" />
+      <CardForm v-else :card="card" :form="forms[idx]" allowFold @redo="onRedo" @submit="onSubmit" />
     </template>
   </div>
 </template>
@@ -71,11 +71,12 @@
 
       function useNormalForm(card: any, other?): FormType {
         const [register, actions] = useForm({
-          labelWidth: 120,
+          labelWidth: 104,
           schemas: card.schemas,
           labelAlign: 'right',
           showActionButtonGroup: false,
-          baseColProps: { span: 24 },
+          // 后台规格：宽屏两列网格，窄屏单列，避免输入框被拉满整行
+          baseColProps: { xs: 24, sm: 24, md: 12, lg: 12, xl: 12, xxl: 12 },
         });
         return { key: card.key, loading: false, register, actions, ...other };
       }
