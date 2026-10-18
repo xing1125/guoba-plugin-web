@@ -153,9 +153,41 @@ const enum StatsApi {
   groups = '/admin/stats/groups',
   trend = '/admin/stats/trend',
   games = '/admin/stats/games',
+  runtime = '/admin/stats/runtime',
+}
+
+export interface BotRuntime {
+  available: boolean;
+  updatedAt: string;
+  system: {
+    platform: string;
+    arch: string;
+    hostname: string;
+    osRelease: string;
+    cpuModel: string;
+    cpuCores: number;
+  };
+  nodeVersion: string;
+  botUptime: number;
+  osUptime: number;
+  cpuUsage: number | null;
+  memory: {
+    total: number;
+    used: number;
+    free: number;
+    usagePct: number;
+    rss: number;
+    heapUsed: number;
+    heapTotal: number;
+  };
+  redis: { keys: number; version: string | null };
+  bots: { uin: string; nickname: string; platform: string | null; status: number | null }[];
 }
 
 export const statsApi = {
+  getRuntime() {
+    return defHttp.get<BotRuntime>({ url: StatsApi.runtime });
+  },
   getOverview() {
     return defHttp.get<OverviewCards>({ url: StatsApi.overview });
   },

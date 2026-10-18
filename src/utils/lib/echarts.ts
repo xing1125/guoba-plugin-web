@@ -1,6 +1,6 @@
 import * as echarts from 'echarts/core';
 
-import { BarChart, LineChart, PieChart, MapChart, PictorialBarChart, RadarChart, ScatterChart } from 'echarts/charts';
+import { BarChart, GaugeChart, LineChart, PieChart, MapChart, PictorialBarChart, RadarChart, ScatterChart } from 'echarts/charts';
 
 import {
   TitleComponent,
@@ -29,9 +29,10 @@ echarts.use([
   PolarComponent,
   AriaComponent,
   ParallelComponent,
-  BarChart,
-  LineChart,
-  PieChart,
+    BarChart,
+    LineChart,
+    PieChart,
+    GaugeChart,
   MapChart,
   RadarChart,
   SVGRenderer,
