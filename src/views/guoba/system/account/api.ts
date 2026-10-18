@@ -14,6 +14,8 @@ export interface AccountRow {
   uids: Record<string, string[]>;
   /** 绑定的 Bot 用户标识（wxid / qq） */
   bindIds: string[];
+  /** 与 bindIds 一一对应的昵称，取不到时为空串 */
+  bindNames?: string[];
   ckStatus: CkStatus;
   checkedAt?: string | null;
   updatedAt?: string | null;

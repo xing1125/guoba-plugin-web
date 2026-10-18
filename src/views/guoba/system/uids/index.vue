@@ -25,11 +25,8 @@
           :class="{ 'is-active': activeGame === g.key }"
           @click="switchGame(g.key)"
         >
-          <div
-            class="db-kpi__icon"
-            :style="{ background: `linear-gradient(135deg, ${toneOf(i)[0]}, ${toneOf(i)[1]})` }"
-          >
-            <Icon :icon="g.icon || 'ant-design:trophy-outlined'" :size="19" />
+          <div class="db-kpi__icon is-plain">
+            <GameIcon :game="g.key" :size="26" />
           </div>
           <div class="db-kpi__body">
             <div class="db-kpi__label">{{ g.label }}</div>
@@ -69,7 +66,7 @@
           :data-source="list"
           :loading="loading"
           :pagination="pagination"
-          :scroll="{ x: 860 }"
+          :scroll="{ x: 820 }"
           @change="handleTableChange"
         >
           <template #bodyCell="{ column, record }">
@@ -78,9 +75,10 @@
             </template>
 
             <template v-else-if="column.key === 'game'">
-              <Tag :color="GAME_TABS.find((g) => g.key === record.game)?.color">
-                {{ gameName(record.game) }}
-              </Tag>
+              <span class="game-cell">
+                <GameIcon :game="record.game" :size="22" />
+                <span>{{ gameName(record.game) }}</span>
+              </span>
             </template>
 
             <template v-else-if="column.key === 'ltuid'">
@@ -88,9 +86,19 @@
             </template>
 
             <template v-else-if="column.key === 'bindIds'">
-              <template v-if="record.bindIds && record.bindIds.length">
-                <Tag v-for="id in record.bindIds" :key="id" class="mono">{{ maskId(id) }}</Tag>
-              </template>
+              <div v-if="record.bindIds && record.bindIds.length" class="bind-cell">
+                <span
+                  v-for="(id, i) in record.bindIds.slice(0, 3)"
+                  :key="id"
+                  class="bind-chip"
+                  :title="id"
+                >
+                  {{ bindLabel(record, i) }}
+                </span>
+                <span v-if="record.bindIds.length > 3" class="bind-more">
+                  +{{ record.bindIds.length - 3 }}
+                </span>
+              </div>
               <span v-else class="muted">未绑定用户</span>
             </template>
 
@@ -129,7 +137,7 @@
   import type { UidRow } from './api';
   import { uidApi } from './api';
   import { GAME_TABS, MOCK_UIDS } from './data';
-  import { kpiPalette } from '../_shared/stats';
+  import GameIcon from '../_shared/GameIcon.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import { adminApi } from '../account/api';
 
@@ -163,16 +171,8 @@
     }
   }
 
-  const TONES = ['blue', 'cyan', 'violet', 'green', 'amber', 'rose'] as const;
-
   const { getDarkMode } = useRootSetting();
   const isDark = computed(() => unref(getDarkMode) === ThemeEnum.DARK);
-  const palette = computed(() => kpiPalette(isDark.value));
-
-  /** 第 i 个游戏 tab 的渐变色 */
-  function toneOf(i: number) {
-    return palette.value[TONES[i % TONES.length]];
-  }
 
   const loading = ref(false);
   const demoMode = ref(false);
@@ -183,11 +183,11 @@
   const gameTotals = reactive<Record<string, number>>({});
 
   const columns = [
-    { title: 'UID', dataIndex: 'uid', key: 'uid', width: 160 },
-    { title: '游戏', dataIndex: 'game', key: 'game', width: 120 },
-    { title: '归属 ltuid', dataIndex: 'ltuid', key: 'ltuid', width: 150 },
+    { title: 'UID', dataIndex: 'uid', key: 'uid', width: 170 },
+    { title: '游戏', key: 'game', width: 158 },
+    { title: '归属账号', key: 'ltuid', width: 145 },
     { title: '绑定用户', dataIndex: 'bindIds', key: 'bindIds' },
-    { title: '操作', key: 'action', width: 100, fixed: 'right' as const },
+    { title: '操作', key: 'action', width: 90, fixed: 'right' as const },
   ];
 
   const pagination = computed(() => ({
@@ -237,6 +237,13 @@
     if (!id) return '';
     if (id.length <= 10) return id;
     return `${id.slice(0, 8)}****${id.slice(-2)}`;
+  }
+
+  /** 绑定用户展示：昵称优先，取不到时回退脱敏 id */
+  function bindLabel(row: UidRow, index: number) {
+    const name = row.bindNames?.[index];
+    if (name) return name;
+    return maskId(row.bindIds?.[index] ?? '');
   }
 
   function applyMock() {
@@ -326,5 +333,46 @@
     margin-top: 12px;
     font-size: 12px;
     opacity: 0.45;
+  }
+
+  /* KPI 卡图标：统一容器 + 游戏徽标 */
+  .db-kpi__icon.is-plain {
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+  }
+
+  .game-cell {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--g-text);
+  }
+
+  .bind-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .bind-chip {
+    display: inline-flex;
+    align-items: center;
+    max-width: 160px;
+    padding: 2px 8px;
+    overflow: hidden;
+    font-size: 12px;
+    color: var(--g-text-sub);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    background: var(--g-chip-bg);
+    border: 1px solid var(--g-card-border);
+    border-radius: 6px;
+  }
+
+  .bind-more {
+    font-size: 11.5px;
+    color: var(--g-text-mute);
   }
 </style>

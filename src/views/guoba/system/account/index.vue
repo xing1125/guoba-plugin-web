@@ -87,10 +87,19 @@
             </template>
 
             <template v-else-if="column.key === 'bindIds'">
-              <template v-if="record.bindIds && record.bindIds.length">
-                <Tag v-for="id in record.bindIds.slice(0, 2)" :key="id" class="mono">{{ maskId(id) }}</Tag>
-                <Tag v-if="record.bindIds.length > 2">+{{ record.bindIds.length - 2 }}</Tag>
-              </template>
+              <div v-if="record.bindIds && record.bindIds.length" class="bind-cell">
+                <span
+                  v-for="(id, i) in record.bindIds.slice(0, 2)"
+                  :key="id"
+                  class="bind-chip"
+                  :title="id"
+                >
+                  {{ record.bindNames?.[i] || maskId(id) }}
+                </span>
+                <span v-if="record.bindIds.length > 2" class="bind-more">
+                  +{{ record.bindIds.length - 2 }}
+                </span>
+              </div>
               <span v-else class="muted">未绑定</span>
             </template>
 
@@ -162,7 +171,17 @@
         <div class="drawer-block">
           <div class="block-title">绑定的 Bot 用户</div>
           <template v-if="drawer.record.bindIds && drawer.record.bindIds.length">
-            <Tag v-for="id in drawer.record.bindIds" :key="id" class="mono">{{ id }}</Tag>
+            <div class="bind-cell">
+              <span
+                v-for="(id, i) in drawer.record.bindIds"
+                :key="id"
+                class="bind-chip"
+                style="max-width: 180px"
+                :title="id"
+              >
+                {{ drawer.record.bindNames?.[i] || id }}
+              </span>
+            </div>
           </template>
           <span v-else class="muted">暂无绑定</span>
         </div>
@@ -716,5 +735,32 @@
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
+  }
+
+  .bind-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .bind-chip {
+    display: inline-flex;
+    align-items: center;
+    max-width: 110px;
+    padding: 1px 7px;
+    overflow: hidden;
+    font-size: 11.5px;
+    color: var(--g-text-sub);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    background: var(--g-chip-bg);
+    border: 1px solid var(--g-card-border);
+    border-radius: 5px;
+  }
+
+  .bind-more {
+    font-size: 11px;
+    color: var(--g-text-mute);
   }
 </style>

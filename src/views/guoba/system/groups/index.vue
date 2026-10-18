@@ -304,7 +304,8 @@
             <div v-for="(u, i) in detail.top" :key="u.user" class="g-rank__row">
               <div class="g-rank__idx" :class="{ 'g-rank__idx--top': i < 3 }">{{ i + 1 }}</div>
               <div class="g-rank__main">
-                <div class="g-rank__name g-mono">{{ maskUser(u.user) }}</div>
+                <div class="g-rank__name">{{ u.name || maskUser(u.user) }}</div>
+                <div v-if="u.name" class="g-rank__id">{{ maskUser(u.user) }}</div>
               </div>
               <div class="g-rank__val">{{ thousands(u.score) }}</div>
             </div>
@@ -925,6 +926,14 @@
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
     border-radius: 10px;
+  }
+
+  .g-rank__id {
+    margin-top: 2px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 10.5px;
+    color: var(--g-text-mute);
+    opacity: 0.8;
   }
 
   .roles__row {

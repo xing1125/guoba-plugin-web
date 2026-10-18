@@ -84,8 +84,13 @@
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'uid'">
-              <div class="uid">{{ record.name || shortUid(record.uid) }}</div>
-              <div class="g-muted">{{ shortUid(record.uid) }}</div>
+              <div class="ucell">
+                <span class="ucell__avatar" :style="avatarStyle(record.uid)">{{ initialOf(record) }}</span>
+                <div class="ucell__body">
+                  <div class="ucell__name">{{ record.name || '未命名用户' }}</div>
+                  <div class="ucell__id">{{ shortUid(record.uid) }}</div>
+                </div>
+              </div>
             </template>
 
             <template v-else-if="column.key === 'total'">
@@ -94,12 +99,13 @@
             </template>
 
             <template v-else-if="column.key === 'ratio'">
-              <div class="ratio">
-                <div class="ratio__recv" :style="{ width: recvRatio(record), background: primary }" />
-                <div class="ratio__send" :style="{ width: sendRatio(record), background: secondary }" />
+              <div class="mcell__bar">
+                <i class="is-recv" :style="{ width: pct(record.recv, record.total) }" />
+                <i class="is-send" :style="{ width: pct(record.send, record.total) }" />
               </div>
-              <div class="ratio__text g-muted">
-                收 {{ fmtNum(record.recv) }} · 发 {{ fmtNum(record.send) }}
+              <div class="mcell__legend">
+                <span><i class="is-recv" />收 {{ fmtNum(record.recv) }}</span>
+                <span><i class="is-send" />发 {{ fmtNum(record.send) }}</span>
               </div>
             </template>
 
@@ -130,6 +136,16 @@
     <!-- 用户详情抽屉 -->
     <Drawer :visible="drawer.visible" :title="drawerTitle" width="640" @close="drawer.visible = false">
       <template v-if="detail">
+        <div class="dm-user">
+          <span class="dm-user__avatar" :style="avatarStyle(drawer.uid || '')">
+            {{ drawerName ? drawerName.slice(0, 1) : '?' }}
+          </span>
+          <div class="dm-user__body">
+            <div class="dm-user__name">{{ drawerName || '未命名用户' }}</div>
+            <div class="dm-user__id">{{ drawer.uid }}</div>
+          </div>
+        </div>
+
         <div class="detail-stats">
           <div v-for="s in detailStats" :key="s.label" class="detail-stat">
             <div class="g-muted">{{ s.label }}</div>
@@ -273,19 +289,40 @@
     ];
   });
 
-  function recvRatio(r: UserRow) {
-    const t = Math.max(r.recv + r.send, 1);
-    return `${(r.recv / t) * 100}%`;
-  }
-
-  function sendRatio(r: UserRow) {
-    const t = Math.max(r.recv + r.send, 1);
-    return `${(r.send / t) * 100}%`;
+  /** 收发结构占比（与群数据页保持同一套视觉） */
+  function pct(v: number, total: number) {
+    const t = Math.max(total || 0, 1);
+    return `${Math.min(100, (v / t) * 100).toFixed(2)}%`;
   }
 
   function shortUid(uid: string) {
     const s = String(uid || '');
     return s.length <= 24 ? s : `${s.slice(0, 18)}…`;
+  }
+
+  /** 头像色板：按 uid 哈希稳定取色，同一用户始终同色 */
+  const AVATAR_TONES: [string, string][] = [
+    ['#6E9BFF', '#3F6FD8'],
+    ['#9B8BF0', '#6C5CD6'],
+    ['#57C795', '#329C6C'],
+    ['#F0A46B', '#D07A3C'],
+    ['#EC7FA9', '#C95B87'],
+    ['#4FC0DE', '#2E93B4'],
+  ];
+
+  function avatarStyle(uid: string) {
+    const s = String(uid || '');
+    let h = 0;
+    for (let i = 0; i < s.length; i += 1) {
+      h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    }
+    const [a, b] = AVATAR_TONES[h % AVATAR_TONES.length];
+    return { background: `linear-gradient(135deg, ${a}, ${b})` };
+  }
+
+  function initialOf(row: UserRow) {
+    const name = String(row.name || '').trim();
+    return name ? name.slice(0, 1) : '?';
   }
 
   /* ------------------------------ 图表 ------------------------------ */
@@ -390,7 +427,12 @@
   const monthRef = ref<HTMLDivElement | null>(null);
   const monthChart = useECharts(monthRef);
 
-  const drawerTitle = computed(() => `用户 ${shortUid(drawer.uid) || ''} 详情`);
+  const drawerTitle = computed(() => '用户详情');
+
+  /** 当前抽屉用户的昵称（取自列表行，详情接口不返回昵称） */
+  const drawerName = computed(
+    () => list.value.find((r) => r.uid === drawer.uid)?.name || '',
+  );
 
   const detailStats = computed(() => {
     const d = detail.value;
@@ -514,39 +556,118 @@
     width: 110px;
   }
 
-  .ratio {
+  /* 收发结构条：与群数据页一致（收=蓝 / 发=紫） */
+  .mcell__bar {
     display: flex;
-    height: 7px;
+    gap: 2px;
+    height: 5px;
     overflow: hidden;
     background: var(--g-track);
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
-  .ratio__recv {
-    background: linear-gradient(90deg, var(--g-gold), var(--g-blue));
-    transition: width 0.5s;
+  .mcell__bar i,
+  .mcell__legend i {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
   }
 
-  .ratio__send {
-    background: linear-gradient(90deg, var(--g-blue), var(--g-violet));
-    transition: width 0.5s;
+  .mcell__bar .is-recv,
+  .mcell__legend .is-recv {
+    background: var(--g-blue);
   }
 
-  .ratio__text {
+  .mcell__bar .is-send,
+  .mcell__legend .is-send {
+    background: var(--g-violet);
+  }
+
+  .mcell__legend {
+    display: flex;
+    gap: 10px;
     margin-top: 5px;
+    font-size: 11px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+
+    span {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    i {
+      width: 6px;
+      height: 6px;
+      border-radius: 2px;
+    }
   }
 
-  .uid {
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 13px;
+  /* 表头与行：去掉 antd 默认粗分隔，改成细线 + hover 层次 */
+  :deep(.ant-table-thead > tr > th) {
+    height: 40px;
+    font-size: 11.5px;
     font-weight: 600;
+    color: var(--g-text-mute) !important;
+    letter-spacing: 0.3px;
+    background: var(--g-card-bg-soft) !important;
+    border-bottom: 1px solid var(--g-card-border) !important;
+
+    &::before {
+      display: none !important;
+    }
+  }
+
+  :deep(.ant-table-tbody > tr > td) {
+    border-bottom: 1px solid var(--g-card-border);
+  }
+
+  :deep(.ant-table-tbody > tr:hover > td) {
+    background: var(--g-hover) !important;
+  }
+
+  /* 抽屉顶部用户身份条 */
+  .dm-user {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 12px;
+  }
+
+  .dm-user__avatar {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 11px;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%);
+  }
+
+  .dm-user__name {
+    font-size: 15px;
+    font-weight: 650;
     color: var(--g-text);
-    letter-spacing: -0.2px;
+  }
+
+  .dm-user__id {
+    margin-top: 3px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
   }
 
   .detail-stats {
-    display: grid;
-    gap: 10px;
+    display: grid;    gap: 10px;
     padding: 14px 16px;
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
@@ -587,5 +708,47 @@
     margin-top: 2px;
     font-size: 16px;
     color: var(--g-gold);
+  }
+
+  /* 用户单元格：头像 + 昵称 + ID */
+  .ucell {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .ucell__avatar {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 9px;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%);
+  }
+
+  .ucell__body {
+    min-width: 0;
+  }
+
+  .ucell__name {
+    overflow: hidden;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--g-text);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ucell__id {
+    margin-top: 2px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 11px;
+    color: var(--g-text-mute);
   }
 </style>

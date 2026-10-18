@@ -5,6 +5,8 @@ export interface UidRow {
   game: string;
   ltuid: number;
   bindIds: string[];
+  /** 与 bindIds 一一对应的昵称，取不到时为空串 */
+  bindNames?: string[];
 }
 
 export interface PageResult<T> {

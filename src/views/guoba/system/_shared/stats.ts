@@ -80,7 +80,7 @@ export interface GroupListResult {
 
 export interface GroupDetailResult extends GroupRow {
   available: boolean;
-  top: { user: string; score: number }[];
+  top: { user: string; score: number; name?: string }[];
   topSlot?: string;
 }
 
