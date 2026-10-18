@@ -109,7 +109,10 @@
               <div class="gcell">
                 <div class="gcell__dot" :class="`is-${fresh(record.lastDate).level}`" />
                 <div class="gcell__body">
-                  <div class="gcell__name">{{ record.name || '未命名群' }}</div>
+                  <div class="gcell__name">
+                    {{ record.name || '未命名群' }}
+                    <Tag v-if="record.inGroup === false" color="orange" class="gcell__lefttag">已退群</Tag>
+                  </div>
                   <div class="gcell__gid">{{ record.gid.replace(/@chatroom$/i, '') }}</div>
                 </div>
               </div>
@@ -1395,12 +1398,24 @@
   }
 
   .gcell__name {
+    display: flex;
+    gap: 6px;
+    align-items: center;
     overflow: hidden;
     font-size: 13.5px;
     font-weight: 600;
     color: var(--g-text);
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  .gcell__lefttag {
+    flex: none;
+    font-size: 10px;
+    line-height: 16px;
+    padding: 0 5px;
+    margin-right: 0;
+    border-radius: 4px;
   }
 
   .gcell__gid {

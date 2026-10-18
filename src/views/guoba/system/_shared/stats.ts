@@ -38,6 +38,8 @@ export interface DailyPoint {
 export interface GroupRow {
   gid: string;
   name: string;
+  /** Bot 是否仍在该群（false = 已退群，无群名属正常） */
+  inGroup?: boolean;
   recv: number;
   send: number;
   total: number;
