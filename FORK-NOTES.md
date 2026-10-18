@@ -50,6 +50,11 @@
 | 插件详情弹窗 | `components/Guoba/src/GPluginModal.vue` | 身份条（图标/标题/包名/状态胶囊）+ Tabs + 键值行 + 双端 footer（左危险操作+提示，右关闭/保存）；替换原 `Description` 描述列表 |
 | 关于页 | `about/index.vue` | vben `Description` 卡片用 `:deep()` 接设计令牌（暗色不再黑块）、版本标签改胶囊 |
 | 迁移页 | `v2/index.vue` | 硬编码 `#f5f5f5` 改为令牌背景 + 卡片化；**修复卡片塌陷成 2px**（容器高度 0 时 flex 压缩子项，加 `min-height` 参照与 `flex-shrink: 0`） |
+| 登录页 | `sys/login/Login.vue` | 左品牌区（Logo / eyebrow / 标题 / 三条能力 / 立绘 / 版本页脚）+ 右登录卡；独立命名空间 `db-login`，**不要**沿用 `@{namespace}-login`，否则模板 `db-login__*` 与 less 前缀不匹配会整页样式失效 |
+| 登录表单 | `sys/login/GuobaLoginForm.vue` | 「三步引导 + 验证码输入 + 获取验证码 + 登录」替代原来的 `a-empty` 空状态；样式前缀 `glf`（scoped） |
+
+登录页立绘 `yunzai-right.png` 自带不透明浅底，在暗色下会露出方块边界，因此用
+`mask-image: radial-gradient(closest-side ...)` 把四角淡出（浅暗两套各一档半径）。
 
 暗色主题下还统一接管了浮层组件（`guoba-admin.less`）：`.ant-modal-*`、`.ant-popover-*`、
 `.ant-drawer-*`、`.ant-dropdown-menu`、`.ant-select-dropdown`、`.ant-pagination-*`，
