@@ -306,40 +306,47 @@
     >
       <div v-if="detail" class="dm">
         <aside class="dm__side">
-          <div class="dm-user">
-            <span class="dm-user__avatar" :style="avatarStyle(drawer.uid || '')">
-              {{ drawerName ? drawerName.slice(0, 1) : '?' }}
-            </span>
-            <div class="dm-user__body">
-              <div class="dm-user__name">{{ drawerName || '未命名用户' }}</div>
-              <div class="dm-user__id">{{ drawer.uid }}</div>
+          <div class="dm-panel">
+            <div class="dm-user">
+              <span class="dm-user__avatar" :style="avatarStyle(drawer.uid || '')">
+                {{ drawerName ? drawerName.slice(0, 1) : '?' }}
+              </span>
+              <div class="dm-user__body">
+                <div class="dm-user__name" :title="drawerName">{{ drawerName || '未命名用户' }}</div>
+                <div class="dm-user__id" :title="drawer.uid">{{ drawer.uid }}</div>
+              </div>
+            </div>
+
+            <div class="dm-stats dm-stats--cols2 dm-stats--divider">
+              <div v-for="s in detailStats" :key="s.label" class="dm-stat">
+                <span class="dm-stat__label">{{ s.label }}</span>
+                <span class="dm-stat__value">{{ s.value }}</span>
+              </div>
             </div>
           </div>
 
-          <div class="detail-stats detail-stats--side">
-            <div v-for="s in detailStats" :key="s.label" class="detail-stat">
-              <div class="g-muted">{{ s.label }}</div>
-              <div class="detail-stat__value">{{ s.value }}</div>
-            </div>
-          </div>
-
-          <div class="dm-hint">
-            数据来自 <span class="g-mono">Yz:count:*:msg:user:*</span> 日计数键，
-            昵称取自 Bot 运行时好友列表。
-          </div>
+          <p class="dm-hint">
+            数据来自 <span class="g-mono">Yz:count:*:msg:user:*</span> 日计数键；昵称取自 Bot 运行时好友列表。
+          </p>
         </aside>
 
         <div class="dm__main">
-          <div class="drawer-block">
-            <div class="block-title">近 30 天消息量</div>
+          <section class="dm-block">
+            <header class="dm-block__head">
+              <span class="dm-block__title">近 30 天消息量</span>
+              <span class="dm-block__meta">{{ detail.daily?.length || 0 }} 天有记录</span>
+            </header>
             <div v-if="detail.daily?.length" ref="detailRef" class="g-chart g-chart--sm" />
             <GEmpty v-else title="无逐日数据" desc="该用户近期没有日级计数键" :size="64" />
-          </div>
+          </section>
 
-          <div v-if="detail.monthly?.length" class="drawer-block">
-            <div class="block-title">月度分布（近 12 个月）</div>
+          <section v-if="detail.monthly?.length" class="dm-block">
+            <header class="dm-block__head">
+              <span class="dm-block__title">月度分布</span>
+              <span class="dm-block__meta">近 12 个月</span>
+            </header>
             <div ref="monthRef" class="g-chart g-chart--sm" />
-          </div>
+          </section>
         </div>
       </div>
 
@@ -689,7 +696,7 @@
 
   const drawerTitle = computed(() => '用户详情');
 
-  /** 当前抽屉用户的昵称（取自列表行，详情接口不返回昵称） */
+  /** 当前弹窗用户的昵称（取自列表行，详情接口不返回昵称） */
   const drawerName = computed(() => list.value.find((r) => r.uid === drawer.uid)?.name || '');
 
   const detailStats = computed(() => {
@@ -717,7 +724,7 @@
     }
     await nextTick();
     renderDetail();
-    // 抽屉有展开动画，容器高度可能仍为 0，延迟补一次渲染
+    // 弹窗有入场动画，容器高度可能仍为 0，延迟补一次渲染
     setTimeout(() => renderDetail(), 420);
   }
 
@@ -798,6 +805,7 @@
 </script>
 
 <style scoped lang="less">
+  @import '../_shared/dialog/dm.less';
   .toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -1353,16 +1361,41 @@
     background: var(--g-hover) !important;
   }
 
-  /* 抽屉顶部用户身份条 */
-  .dm-user {
+  /* 详情弹窗：左身份 + 指标卡片，右图表区块 */
+  .dm {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: 286px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .dm__side {
     display: flex;
+    flex-direction: column;
     gap: 12px;
-    align-items: center;
-    padding: 12px 14px;
-    margin-bottom: 14px;
+    min-width: 0;
+  }
+
+  .dm__main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+
+  .dm-panel {
+    padding: 14px;
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
     border-radius: 12px;
+  }
+
+  .dm-user {
+    display: flex;
+    gap: 11px;
+    align-items: center;
+    padding-bottom: 13px;
+    border-bottom: 1px solid var(--g-card-border);
   }
 
   .dm-user__avatar {
@@ -1379,91 +1412,41 @@
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%);
   }
 
+  .dm-user__body {
+    flex: 1;
+    min-width: 0;
+  }
+
   .dm-user__name {
-    font-size: 15px;
+    overflow: hidden;
+    font-size: 14.5px;
     font-weight: 650;
+    line-height: 1.35;
     color: var(--g-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .dm-user__id {
     margin-top: 3px;
+    overflow: hidden;
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 11.5px;
-    color: var(--g-text-mute);
-  }
-
-  .detail-stats {
-    display: grid;
-    gap: 10px;
-    padding: 14px 16px;
-    background: var(--g-card-bg-soft);
-    border: 1px solid var(--g-card-border);
-    border-radius: 12px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  /* 详情弹窗两栏：左身份与指标，右图表 */
-  .dm {
-    display: grid;
-    gap: 16px;
-    grid-template-columns: 300px minmax(0, 1fr);
-    align-items: start;
-  }
-
-  .dm__side {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-width: 0;
-  }
-
-  .dm__main {
-    min-width: 0;
-
-    .drawer-block:first-child {
-      margin-top: 0;
-    }
-  }
-
-  .detail-stats--side {
-    gap: 12px 10px;
-    padding: 12px 14px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dm-hint {
-    padding: 2px 2px 0;
     font-size: 11px;
-    line-height: 1.75;
+    line-height: 1.4;
     color: var(--g-text-mute);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   @media (max-width: 900px) {
     .dm {
+      gap: 16px;
       grid-template-columns: minmax(0, 1fr);
     }
-  }
 
-  .detail-stat__value {
-    margin-top: 3px;
-    font-size: 17px;
-    font-weight: 650;
-    color: var(--g-text);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .drawer-block {
-    margin-top: 20px;
-  }
-
-  .block-title {
-    display: flex;
-    gap: 8px;
-    align-items: baseline;
-    margin-bottom: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--g-text);
+    .dm__main {
+      gap: 16px;
+    }
   }
 
   .tip {

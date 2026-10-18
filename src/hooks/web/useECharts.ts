@@ -53,17 +53,26 @@ export function useECharts(elRef: Ref<HTMLDivElement>, theme: 'light' | 'dark' |
     }
   }
 
-  function setOptions(options: EChartsOption, clear = true) {
+  /**
+   * @param retry 容器未挂载时的重试次数（弹窗/懒加载场景需要）
+   *   容器为 null 或高度为 0 时不直接写选项，否则会落到「已销毁的实例」上，
+   *   导致图表永远空白（见下面的主题切换分支）。
+   */
+  function setOptions(options: EChartsOption, clear = true, retry = 6) {
     cacheOptions.value = options;
-    if (unref(elRef)?.offsetHeight === 0) {
-      useTimeoutFn(() => {
-        setOptions(unref(getOptions));
-      }, 30);
+    const el = unref(elRef);
+    if (!el || el.offsetHeight === 0) {
+      if (retry > 0) {
+        useTimeoutFn(() => {
+          setOptions(unref(getOptions) as EChartsOption, clear, retry - 1);
+        }, 40);
+      }
       return;
     }
     nextTick(() => {
       useTimeoutFn(() => {
-        if (!chartInstance) {
+        if (!chartInstance || isDisposed()) {
+          chartInstance = null;
           initCharts(getDarkMode.value as 'default');
 
           if (!chartInstance) return;
@@ -75,8 +84,13 @@ export function useECharts(elRef: Ref<HTMLDivElement>, theme: 'light' | 'dark' |
     });
   }
 
+  function isDisposed() {
+    return !!chartInstance && typeof chartInstance.isDisposed === 'function' && chartInstance.isDisposed();
+  }
+
   function resize() {
-    chartInstance?.resize({
+    if (!chartInstance || isDisposed()) return;
+    chartInstance.resize({
       animation: {
         duration: 300,
         easing: 'quadraticIn',
@@ -87,8 +101,16 @@ export function useECharts(elRef: Ref<HTMLDivElement>, theme: 'light' | 'dark' |
   watch(
     () => getDarkMode.value,
     (theme) => {
+      // 容器未挂载（弹窗未打开 / v-if 未命中）时不能 dispose 后留着旧引用：
+      // 否则后续 setOptions 会误判「实例已存在」而跳过 initCharts，
+      // 图表就会永远画在已销毁的实例上，容器一片空白。
+      if (!unref(elRef)) {
+        chartInstance = null;
+        return;
+      }
       if (chartInstance) {
         chartInstance.dispose();
+        chartInstance = null;
         initCharts(theme as 'default');
         setOptions(cacheOptions.value);
       }
@@ -103,7 +125,8 @@ export function useECharts(elRef: Ref<HTMLDivElement>, theme: 'light' | 'dark' |
   });
 
   function getInstance(): echarts.ECharts | null {
-    if (!chartInstance) {
+    if (!chartInstance || isDisposed()) {
+      chartInstance = null;
       initCharts(getDarkMode.value as 'default');
     }
     return chartInstance;

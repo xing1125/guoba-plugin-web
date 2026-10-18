@@ -222,23 +222,25 @@
     <!-- 群详情抽屉 -->
     <GModal v-model:visible="drawer.visible" eyebrow="GROUP DETAIL" title="群详情" :subtitle="drawerTitle" size="lg" body-height="60vh">
       <template v-if="detail">
-        <div class="detail-stats">
-          <div v-for="s in detailStats" :key="s.label" class="detail-stat">
-            <div class="g-muted">{{ s.label }}</div>
-            <div class="detail-stat__value">{{ s.value }}</div>
+        <div class="dm-stats dm-stats--panel">
+          <div v-for="s in detailStats" :key="s.label" class="dm-stat">
+            <div class="dm-stat__label">{{ s.label }}</div>
+            <div class="dm-stat__value">{{ s.value }}</div>
           </div>
         </div>
 
-        <div class="drawer-block">
-          <div class="block-title">近 14 天消息量</div>
+        <div class="dm-block">
+          <div class="dm-block__head"><span class="dm-block__title">近 14 天消息量</span></div>
           <div ref="detailRef" class="g-chart g-chart--sm" />
         </div>
 
-        <div class="drawer-block">
-          <div class="block-title">
-            群主 / 群管名单
-            <Button type="link" size="small" @click="openRoleModal('groupAdmin')">添加群管</Button>
-            <Button type="link" size="small" @click="openRoleModal('owner')">设置群主</Button>
+        <div class="dm-block">
+          <div class="dm-block__head">
+            <span class="dm-block__title">群主 / 群管名单</span>
+            <span class="dm-block__actions">
+              <Button type="link" size="small" @click="openRoleModal('groupAdmin')">添加群管</Button>
+              <Button type="link" size="small" @click="openRoleModal('owner')">设置群主</Button>
+            </span>
           </div>
           <div class="roles">
             <div class="roles__row">
@@ -271,8 +273,8 @@
           </div>
         </div>
 
-        <div class="drawer-block">
-          <div class="block-title">AI 分群开关</div>
+        <div class="dm-block">
+          <div class="dm-block__head"><span class="dm-block__title">AI 分群开关</span></div>
           <div class="ai-switches">
             <div class="ai-switch">
               <div>
@@ -303,10 +305,10 @@
           </div>
         </div>
 
-        <div class="drawer-block">
-          <div class="block-title">
-            活跃榜 TOP
-            <span class="g-muted" v-if="detail.topSlot">周期：{{ slotName(detail.topSlot) }}</span>
+        <div class="dm-block">
+          <div class="dm-block__head">
+            <span class="dm-block__title">活跃榜 TOP</span>
+            <span class="dm-block__meta" v-if="detail.topSlot">周期：{{ slotName(detail.topSlot) }}</span>
           </div>
           <div v-if="detail.top && detail.top.length" class="g-rank">
             <div v-for="(u, i) in detail.top" :key="u.user" class="g-rank__row">
@@ -1737,36 +1739,25 @@
     content: '';
   }
 
-  .detail-stats {
-    display: grid;
-    gap: 10px;
-    padding: 14px 16px;
-    background: var(--g-card-bg-soft);
-    border: 1px solid var(--g-card-border);
-    border-radius: 12px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  @import '../_shared/dialog/dm.less';
 
-  .detail-stat__value {
-    margin-top: 3px;
-    font-size: 17px;
-    font-weight: 650;
-    color: var(--g-text);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .drawer-block {
+  /* 弹窗内竖向节奏：指标条与区块之间 20px */
+  .dm-stats + .dm-block,
+  .dm-block + .dm-block {
     margin-top: 20px;
   }
 
-  .block-title {
+  .dm-block__actions {
     display: flex;
-    gap: 8px;
-    align-items: baseline;
-    margin-bottom: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--g-text);
+    flex: 0 0 auto;
+    gap: 4px;
+    align-items: center;
+
+    :deep(.ant-btn) {
+      height: 24px;
+      padding: 0 6px;
+      font-size: 11.5px;
+    }
   }
 
   .tip__icon {

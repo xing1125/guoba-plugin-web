@@ -116,7 +116,15 @@
               />
               <div v-else class="ac-list">
                 <div v-for="a in list" :key="a.id" class="ac-row" :class="{ 'is-open': opened.has(a.id) }">
-                  <div class="ac-row__head" role="button" tabindex="0" @click="toggleRow(a.id)" @keydown.enter="toggleRow(a.id)">
+                  <div
+                    class="ac-row__head"
+                    role="button"
+                    tabindex="0"
+                    :aria-expanded="opened.has(a.id)"
+                    @click="toggleRow(a.id)"
+                    @keydown.enter.prevent="toggleRow(a.id)"
+                    @keydown.space.prevent="toggleRow(a.id)"
+                  >
                     <span class="ac-row__chev">
                       <Icon icon="ant-design:right-outlined" :size="11" />
                     </span>
@@ -873,6 +881,17 @@
     cursor: pointer;
     background: transparent;
     border: none;
+    border-radius: 10px;
+    transition: background 0.16s ease;
+
+    &:hover {
+      background: var(--g-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--g-blue);
+      outline-offset: -2px;
+    }
   }
 
   .ac-row__chev {

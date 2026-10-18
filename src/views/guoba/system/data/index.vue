@@ -281,25 +281,31 @@
     <!-- ============================ Redis 值抽屉 ============================ -->
     <GModal v-model:visible="keyDrawer.visible" eyebrow="REDIS KEY" title="键详情" :subtitle="keyDetail?.key || ''" size="xl" body-height="64vh">
       <template v-if="keyDetail">
-        <div class="dm-meta">
-          <div class="dm-meta__row">
-            <span class="g-muted">键名</span>
-            <span class="mono">{{ keyDetail.key }}</span>
+        <dl class="dm-meta">
+          <div class="dm-meta__item dm-meta__item--wide">
+            <dt>键名</dt>
+            <dd class="mono">{{ keyDetail.key }}</dd>
           </div>
-          <div class="dm-meta__row">
-            <span class="g-muted">类型</span>
-            <span class="dm-type" :class="`is-${keyDetail.type}`">{{ keyDetail.type }}</span>
-            <span class="g-muted" style="margin-left: 12px">大小</span>
-            <span>{{ fmtSize(keyDetail.size) }}</span>
-            <span class="g-muted" style="margin-left: 12px">TTL</span>
-            <span>{{ ttlText(keyDetail.ttl) }}</span>
+          <div class="dm-meta__item">
+            <dt>类型</dt>
+            <dd><span class="dm-type" :class="`is-${keyDetail.type}`">{{ keyDetail.type }}</span></dd>
           </div>
-          <div v-if="keyDetail.domain" class="dm-meta__row">
-            <span class="g-muted">归属</span>
-            <span>{{ keyDetail.domain.plugin }} · {{ keyDetail.domain.label }}</span>
-            <span class="dm-risk" :class="`is-${keyDetail.domain.risk}`">{{ riskText(keyDetail.domain.risk) }}</span>
+          <div class="dm-meta__item">
+            <dt>大小</dt>
+            <dd>{{ fmtSize(keyDetail.size) }}</dd>
           </div>
-        </div>
+          <div class="dm-meta__item">
+            <dt>TTL</dt>
+            <dd>{{ ttlText(keyDetail.ttl) }}</dd>
+          </div>
+          <div v-if="keyDetail.domain" class="dm-meta__item dm-meta__item--wide">
+            <dt>归属</dt>
+            <dd>
+              {{ keyDetail.domain.plugin }} · {{ keyDetail.domain.label }}
+              <span class="dm-risk" :class="`is-${keyDetail.domain.risk}`">{{ riskText(keyDetail.domain.risk) }}</span>
+            </dd>
+          </div>
+        </dl>
 
         <div class="dm-editor">
           <div class="dm-editor__head">
@@ -336,16 +342,20 @@
     <!-- ============================ 文件编辑抽屉 ============================ -->
     <GModal v-model:visible="fileDrawer.visible" eyebrow="PLUGIN FILE" title="文件预览" :subtitle="fileDrawer.path" size="xl" body-height="64vh">
       <template v-if="fileContent">
-        <div class="dm-meta">
-          <div class="dm-meta__row">
-            <span class="g-muted">插件</span>
-            <span>{{ fileContent.plugin }}</span>
-            <span class="g-muted" style="margin-left: 12px">大小</span>
-            <span>{{ fmtSize(fileContent.size) }}</span>
-            <span class="g-muted" style="margin-left: 12px">修改时间</span>
-            <span>{{ (fileContent.mtime || '').replace('T', ' ').slice(0, 19) }}</span>
+        <dl class="dm-meta">
+          <div class="dm-meta__item">
+            <dt>插件</dt>
+            <dd>{{ fileContent.plugin }}</dd>
           </div>
-        </div>
+          <div class="dm-meta__item">
+            <dt>大小</dt>
+            <dd>{{ fmtSize(fileContent.size) }}</dd>
+          </div>
+          <div class="dm-meta__item">
+            <dt>修改时间</dt>
+            <dd>{{ (fileContent.mtime || '').replace('T', ' ').slice(0, 19) }}</dd>
+          </div>
+        </dl>
         <Input.TextArea v-model:value="fileDrawer.text" :rows="20" class="mono dm-editor__area" />
         <div v-if="fileBackups.length" class="dm-backups">
           <div v-for="b in fileBackups.slice(0, 8)" :key="b.name" class="dm-backups__row">
@@ -1291,24 +1301,46 @@
 
   /* 抽屉内容 */
   .dm-meta {
+    display: grid;
+    gap: 10px 20px;
     padding: 12px 14px;
     margin-bottom: 14px;
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
     border-radius: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 
-  .dm-meta__row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-items: baseline;
+  .dm-meta__item {
+    min-width: 0;
+  }
+
+  .dm-meta__item--wide {
+    grid-column: 1 / -1;
+  }
+
+  .dm-meta__item dt {
+    margin-bottom: 3px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--g-text-mute);
+    letter-spacing: 0.01em;
+  }
+
+  .dm-meta__item dd {
+    margin: 0;
+    overflow: hidden;
     font-size: 12.5px;
+    line-height: 1.5;
     color: var(--g-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .dm-meta__row + .dm-meta__row {
-    margin-top: 8px;
+  .dm-meta__item--wide dd {
+    font-size: 11.5px;
+    word-break: break-all;
+    white-space: normal;
   }
 
   .dm-editor__head {

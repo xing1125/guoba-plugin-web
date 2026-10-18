@@ -10,6 +10,48 @@
 
 ---
 
+## [2.1.2] - 2026-10-19
+
+弹窗细节打磨：内容排版类统一、深色图表修复、可访问性补齐。
+
+### 新增
+
+- **`_shared/dialog/dm.less`**：弹窗内容通用排版类，页面用 `@import` 一行引入
+  - `.dm-stats` 指标条（默认 3 列，`--cols2` / `--cols3` / `--panel` / `--divider`）
+  - `.dm-stat__label` 11px 弱化、`.dm-stat__value` 15px/650/`tabular-nums`
+  - `.dm-block__head`（下边框 1px）+ `.dm-block__title` 12.5px/600 + `.dm-block__meta` 11px
+  - `.dm-hint` 弱化说明
+- `GModal` 新增 `footerHint`（footer 左侧弱化提示）与 `#tools`（头部右侧工具位）插槽
+- `docs/design-spec.md` §3.5：弹窗内容排版类规范 + 两条自检项
+
+### 修复
+
+- **深色模式下弹窗内图表永久空白**：`useECharts` 在容器未挂载（弹窗没开）时
+  `dispose()` 后没把 `chartInstance` 置空，之后 `setOptions` 误判「实例存在」跳过
+  `initCharts`，图形全画在已销毁实例上。现改为：元素缺席直接断引用、`isDisposed()`
+  兜底、容器未就绪按 6×40ms 重试
+- **弹窗 body 内容被裁切**：`.g-modal__body` 的 `flex-basis` 由 `0%` 改 `auto`，
+  内容高时在 `max-height` 内滚动，不再被 `.ant-modal-content` 的 `overflow:hidden` 切掉
+  （键详情的 JSON 编辑区、私聊记录列表曾出现半截）
+- **私聊记录翻页按钮压住聊天气泡**：翻页移入弹窗 footer（左翻页 + 右关闭），
+  聊天区取消自身滚动，统一由弹窗 body 滚动
+- **`GModal` 遮罩模糊没生效**：`.ant-modal-mask` 是 `.ant-modal-wrap` 的兄弟节点，
+  选择器一直匹配不到，改为全局命中
+- 弹窗入场动效与 antd 自带 zoom 叠加：统一由 `g-modal-rise` 覆盖
+
+### 调整
+
+- 用户详情：左栏改 `.dm-panel`（身份条 + 两列指标，偶数列带分隔线），
+  右栏两个区块统一标题 + 右侧 meta（「N 天有记录」「近 12 个月」）
+- 群详情 / 签到明细：指标条与区块改用 `dm-*` 共享类（原来 13px 无分隔的标题
+  统一为 12.5px + 下边框），群主群管区的「添加群管 / 设置群主」进 `.dm-block__actions`
+- 数据管理「键详情 / 文件预览」：元信息由一行内联 span 改为 `<dl>` 网格，
+  键名 / 归属独占一行并可 `break-all` 换行
+- 账号页手风琴行：补 `aria-expanded`、Space 键展开、hover 底色与 `focus-visible` 轮廓
+- `GModal` 关闭键 28×28 + `focus-visible` 外轮廓 + 按下缩放
+
+---
+
 ## [2.1.1] - 2026-10-19
 
 弹窗体系统一：详情/记录/确认全部改居中弹窗，不再用右侧抽屉。

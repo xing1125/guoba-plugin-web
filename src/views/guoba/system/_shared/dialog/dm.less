@@ -1,0 +1,114 @@
+/**
+ * dm.less —— 弹窗内容通用排版（Design spec §3.4）
+ *
+ * 用法：在页面的 `<style scoped lang="less">` 顶部
+ *   @import '../_shared/dialog/dm.less';
+ * less 先内联，再由 vue-loader 打 scoped 标记，样式只作用于当前页。
+ *
+ *  - .dm-stats  指标条（默认 3 列）
+ *      · --cols2    两列
+ *      · --cols3    三列（显式）
+ *      · --panel    加卡片底 / 描边（独立使用，不贴卡片时用）
+ *      · --divider  偶数列左侧加分隔线（两列并排时用）
+ *  - .dm-block  弹窗内区块（不设外边距，间距由所在容器 gap / 局部规则控制）
+ *  - .dm-hint   区块下方弱化说明
+ */
+
+/* ------------------------------ 指标条 ------------------------------ */
+
+.dm-stats {
+  display: grid;
+  gap: 12px 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  &--cols2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  &--cols3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  &--panel {
+    padding: 14px 16px;
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 12px;
+  }
+
+  &--divider .dm-stat:nth-child(even) {
+    padding-left: 11px;
+    border-left: 1px solid var(--g-card-border);
+  }
+}
+
+.dm-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.dm-stat__label {
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--g-text-mute);
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dm-stat__value {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--g-text);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------ 区块 ------------------------------ */
+
+.dm-block {
+  min-width: 0;
+}
+
+.dm-block__head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--g-card-border);
+}
+
+.dm-block__title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--g-text);
+  letter-spacing: 0.01em;
+}
+
+.dm-block__meta {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--g-text-mute);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dm-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.72;
+  color: var(--g-text-mute);
+}

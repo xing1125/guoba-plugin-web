@@ -182,6 +182,34 @@
 </GModal>
 ```
 
+### 3.5 弹窗内容排版类（`dm-*`）
+
+弹窗里的内容不许各页自己发明类名。指标条、区块、弱化说明统一用
+`_shared/dialog/dm.less`，在页面 `<style scoped lang="less">` 顶部一行引入：
+
+```less
+@import '../_shared/dialog/dm.less';
+```
+
+| 类名 | 作用 | 关键数值 |
+| --- | --- | --- |
+| `.dm-stats` | 指标条（默认 3 列，`12px 10px` 间距） | 有 `--cols2` / `--cols3` / `--panel`（卡片底+描边+12 圆角）/ `--divider`（偶数列左分隔线） |
+| `.dm-stat__label` | 指标名 | 11px / `--g-text-mute` / 单行省略 |
+| `.dm-stat__value` | 指标值 | 15px / 650 / `tabular-nums` / 单行省略 |
+| `.dm-block` | 弹窗内区块（不设外边距） | 间距交给容器 `gap` 或页面局部规则 |
+| `.dm-block__head` | 区块头（左标题、右 meta） | 下内边 8 + 下边框 1px |
+| `.dm-block__title` | 区块标题 | 12.5px / 600 / `letter-spacing .01em` |
+| `.dm-block__meta` | 区块右侧补充说明（如「12 天有记录」） | 11px / `--g-text-mute` |
+| `.dm-hint` | 区块或面板下方说明 | 11px / 行高 1.72 |
+
+- 两栏详情：左栏固定 `286px`（`.dm` 的 `grid-template-columns`），右栏 `minmax(0,1fr)`；
+  `< 900px` 自动单栏。
+- 键值信息（键名/类型/大小/TTL）用 `<dl class="dm-meta">` + `.dm-meta__item`，
+  长键名加 `--wide` 独占一行并 `word-break: break-all`。
+- **弹窗内图表必须等容器可见后再 `setOptions`**：`useECharts` 现在对「容器未挂载」
+  做 6 次 / 40ms 重试，主题切换时不会再把已 dispose 的实例留在引用里
+  （旧行为会让深色模式下弹窗图表永久空白）。
+
 ---
 
 ## 4. 自检清单（提交前逐条过）
@@ -192,4 +220,6 @@
 - [ ] 数字列 `tabular-nums`，时间列已格式化
 - [ ] 空态有解释文案，首次加载有骨架
 - [ ] 弹窗 body 可滚，头尾常驻；ESC 可关；遮罩点击不关
+- [ ] 弹窗内指标/区块用的是 `dm-*` 共享类，没有自己造 `.detail-stats` / `.block-title`
+- [ ] 深浅两套下弹窗内的图表都真的画出来了（切主题后再开弹窗必须复验）
 - [ ] 1920 / 1366 两个宽度下无横向滚动（表格内部除外）

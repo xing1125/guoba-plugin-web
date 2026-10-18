@@ -237,7 +237,7 @@
     <!-- ============================ 某天明细抽屉 ============================ -->
     <GModal v-model:visible="dayDrawer.visible" eyebrow="SIGN DETAIL" title="签到明细" :subtitle="dayDrawer.date" size="xl" body-height="62vh">
       <template v-if="dayData">
-        <div class="drawer-tabs">
+        <div class="dm-tabs">
           <span class="gm-seg">
             <span class="gm-seg__item" :class="{ 'is-active': dayTab === 'overview' }" @click="dayTab = 'overview'">
               当日概览
@@ -249,20 +249,24 @@
         </div>
 
         <template v-if="dayTab === 'overview'">
-          <div class="day-stats">
-            <div v-for="s in dayStats" :key="s.label" class="day-stat">
-              <div class="g-muted">{{ s.label }}</div>
-              <div class="day-stat__value" :class="s.cls">{{ s.value }}</div>
+          <div class="dm-stats dm-stats--panel">
+            <div v-for="s in dayStats" :key="s.label" class="dm-stat">
+              <div class="dm-stat__label">{{ s.label }}</div>
+              <div class="dm-stat__value" :class="s.cls">{{ s.value }}</div>
             </div>
           </div>
 
-          <div class="drawer-block">
-            <div class="block-title">各游戏签到人数</div>
+          <div class="dm-block">
+            <div class="dm-block__head"><span class="dm-block__title">各游戏签到人数</span></div>
             <div class="sign-games">
               <div v-for="g in dayGames" :key="g.key" class="sign-game">
                 <div class="sign-game__top">
                   <span class="sign-game__name"><i :style="{ background: g.color }" />{{ g.label }}</span>
-                  <span class="sign-game__val"><b>{{ g.signed }}</b><em>已签</em></span>
+                  <span class="sign-game__val">
+                    <b>{{ g.signed }}</b>
+                    <em>已签 · 成功率 {{ g.rate }}%</em>
+                    <span v-if="g.unbound" class="sign-game__unbound">未绑 {{ g.unbound }}</span>
+                  </span>
                 </div>
                 <div class="sign-game__track">
                   <div class="sign-game__fill" :style="{ width: `${g.rate}%`, background: g.color }" />
@@ -707,6 +711,7 @@
         label: g.label,
         color: chartColors(isDark.value)[GAME_LIST.findIndex((x) => x.value === g.value) % 8],
         signed: st.signed,
+        unbound: st.unbound,
         rate: base ? Math.round((st.signed / base) * 100) : 0,
       };
     });
@@ -925,50 +930,27 @@
   }
 
   /* 抽屉 */
-  .drawer-tabs {
+  .dm-tabs {
     display: flex;
-    justify-content: center;
-    padding-bottom: 14px;
-    margin-bottom: 4px;
-    border-bottom: 1px dashed var(--g-card-border);
+    margin-bottom: 14px;
   }
 
-  .day-stats {
-    display: grid;
-    gap: 10px;
-    padding: 14px 16px;
+  @import '../_shared/dialog/dm.less';
+
+  .dm-stats {
     margin-bottom: 16px;
-    background: var(--g-card-bg-soft);
-    border: 1px solid var(--g-card-border);
-    border-radius: 12px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .day-stat__value {
-    margin-top: 3px;
-    font-size: 17px;
-    font-weight: 650;
-    color: var(--g-text);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .day-stat__value.is-ok {
-    color: var(--g-green);
-  }
-
-  .day-stat__value.is-fail {
-    color: #e0664a;
-  }
-
-  .drawer-block {
+  .dm-block {
     margin-bottom: 18px;
   }
 
-  .block-title {
-    margin-bottom: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--g-text);
+  .dm-stat__value.is-ok {
+    color: var(--g-green);
+  }
+
+  .dm-stat__value.is-fail {
+    color: #e0664a;
   }
 
   .record-raw {
