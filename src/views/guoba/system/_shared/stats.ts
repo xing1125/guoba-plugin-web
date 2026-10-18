@@ -156,8 +156,26 @@ const enum StatsApi {
   runtime = '/admin/stats/runtime',
 }
 
-export interface BotRuntime {
+export interface InvalidGroupItem {
+  gid: string;
+  name: string;
+  total: number;
+  lastDate: string | null;
+  recent14: number;
+  botUins: string[];
+}
+
+export interface InvalidGroupsResult {
   available: boolean;
+  botGroupCount: number;
+  trackedCount: number;
+  left: InvalidGroupItem[];
+  idle: InvalidGroupItem[];
+  low: InvalidGroupItem[];
+  updatedAt: string;
+}
+
+export interface BotRuntime {  available: boolean;
   updatedAt: string;
   system: {
     platform: string;
@@ -220,6 +238,12 @@ export const statsApi = {
       url: '/admin/groups/batch-clear',
       data: { gids, scope },
     });
+  },
+  getInvalidGroups() {
+    return defHttp.get<InvalidGroupsResult>({ url: '/admin/groups/invalid' });
+  },
+  quitGroup(gid: string) {
+    return defHttp.post<{ gid: string; bots: string[] }>({ url: '/admin/groups/quit', data: { gid } });
   },
   getGroupRoles(gid: string) {
     return defHttp.get<{ gid: string; owner: string[]; groupAdmin: string[] }>({

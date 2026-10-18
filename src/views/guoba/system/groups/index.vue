@@ -73,6 +73,10 @@
             <Button class="icon-btn" :loading="loading" title="刷新" @click="loadAll">
               <Icon icon="ant-design:reload-outlined" :size="14" />
             </Button>
+            <Button :loading="invalidDrawer.loading" @click="openInvalid">
+              <Icon icon="ant-design:clear-outlined" :size="13" />
+              无效群检测
+            </Button>
           </div>
         </div>
 
@@ -315,6 +319,100 @@
       </template>
     </Drawer>
 
+    <!-- 无效群检测抽屉 -->
+    <Drawer :visible="invalidDrawer.visible" title="无效群检测" width="700" @close="invalidDrawer.visible = false">
+      <template v-if="invalidDrawer.data">
+        <div class="inv-summary">
+          跟踪 <b>{{ invalidDrawer.data.trackedCount }}</b> 个群 · Bot 当前在
+          <b>{{ invalidDrawer.data.botGroupCount }}</b> 个群 · 已退群
+          <b class="inv-warn">{{ invalidDrawer.data.left.length }}</b> · 零活跃
+          <b class="inv-warn">{{ invalidDrawer.data.idle.length }}</b> · 低活跃
+          <b>{{ invalidDrawer.data.low.length }}</b>
+          <span class="inv-summary__time">检测于 {{ shortTime(invalidDrawer.data.updatedAt) }}</span>
+        </div>
+
+        <div class="inv-tabs">
+          <span class="gm-seg">
+            <span
+              v-for="t in invTabs"
+              :key="t.key"
+              class="gm-seg__item"
+              :class="{ 'is-active': invalidDrawer.tab === t.key }"
+              @click="switchInvTab(t.key)"
+            >
+              {{ t.label }} · {{ (invalidDrawer.data[t.key] || []).length }}
+            </span>
+          </span>
+          <Checkbox
+            :checked="allCurrentChecked"
+            :indeterminate="someCurrentChecked"
+            @change="toggleAllCurrent"
+          >
+            全选本组
+          </Checkbox>
+        </div>
+
+        <div v-if="currentInvList.length" class="inv-list">
+          <div v-for="g in currentInvList" :key="g.gid" class="inv-row">
+            <Checkbox
+              :checked="invChecked.includes(g.gid)"
+              @change="(e: any) => toggleInv(g.gid, e?.target?.checked)"
+            />
+            <div class="inv-row__main">
+              <b>{{ g.name || shortGid(g.gid) }}</b>
+              <span class="g-mono">{{ shortGid(g.gid) }}</span>
+            </div>
+            <div class="inv-row__meta">
+              <span>累计 <b>{{ thousands(g.total) }}</b></span>
+              <span>近14天 <b>{{ thousands(g.recent14) }}</b></span>
+              <span>最后活跃 {{ g.lastDate ? g.lastDate.slice(5) : '—' }}</span>
+            </div>
+            <span v-if="invalidDrawer.tab === 'left'" class="inv-chip inv-chip--warn">Bot 已退出</span>
+            <Button
+              v-else
+              type="link"
+              danger
+              size="small"
+              @click="openQuit(g)"
+            >
+              退群
+            </Button>
+          </div>
+        </div>
+        <div v-else class="g-empty" style="padding: 30px 0">该分组没有检测到群 🎉</div>
+
+        <div class="inv-actions">
+          <span>已选 {{ invChecked.length }} 个群</span>
+          <Button danger :disabled="!invChecked.length" :loading="invClearModal.loading" @click="openInvClear">
+            清空选中群数据（活跃+拓展）
+          </Button>
+        </div>
+      </template>
+      <div v-else class="gm-skeleton" style="height: 300px" />
+    </Drawer>
+
+    <!-- 退群确认 -->
+    <GConfirmModal
+      v-model:visible="quitModal.visible"
+      title="Bot 退群确认"
+      :content="quitModal.content"
+      hint="将调用适配器接口让 Bot 退出该群，操作不可撤销。清数据可在退群前或退群后另行执行。"
+      danger
+      :loading="quitModal.loading"
+      @ok="doQuit"
+    />
+
+    <!-- 无效群批量清数据确认 -->
+    <GConfirmModal
+      v-model:visible="invClearModal.visible"
+      title="批量清空无效群数据"
+      :content="invClearModal.content"
+      hint="等同 #清活跃 + #清拓展，删除后不可恢复。"
+      danger
+      :loading="invClearModal.loading"
+      @ok="doInvClear"
+    />
+
     <!-- 批量清数据确认 -->
     <GConfirmModal
       v-model:visible="batchModal.visible"
@@ -349,7 +447,7 @@
 
 <script setup lang="ts">
   import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
-  import { Button, Drawer, Input, message, Select, Switch, Table, Tag } from 'ant-design-vue';
+  import { Button, Checkbox, Drawer, Input, message, Select, Switch, Table, Tag } from 'ant-design-vue';
   import { CloseOutlined, InfoCircleOutlined } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
@@ -359,7 +457,7 @@
   import GEmpty from '../_shared/GEmpty.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import GFormModal from '../_shared/dialog/GFormModal.vue';
-  import type { GroupDetailResult, GroupRow, GroupSummary, TrendPoint } from '../_shared/stats';
+  import type { GroupDetailResult, GroupRow, GroupSummary, InvalidGroupItem, InvalidGroupsResult, TrendPoint } from '../_shared/stats';
   import {
     chartBase,
     daysAgo,
@@ -678,6 +776,119 @@
     }
   }
 
+  /* ------------------------------ 无效群检测 ------------------------------ */
+
+  const invTabs = [
+    { key: 'left', label: '已退群' },
+    { key: 'idle', label: '零活跃' },
+    { key: 'low', label: '低活跃' },
+  ] as const;
+
+  const invalidDrawer = reactive({
+    visible: false,
+    loading: false,
+    tab: 'left' as 'left' | 'idle' | 'low',
+    data: null as InvalidGroupsResult | null,
+  });
+  const invChecked = ref<string[]>([]);
+
+  const currentInvList = computed<InvalidGroupItem[]>(() => invalidDrawer.data?.[invalidDrawer.tab] ?? []);
+
+  const allCurrentChecked = computed(
+    () => currentInvList.value.length > 0 && currentInvList.value.every((g) => invChecked.value.includes(g.gid)),
+  );
+  const someCurrentChecked = computed(
+    () => !allCurrentChecked.value && currentInvList.value.some((g) => invChecked.value.includes(g.gid)),
+  );
+
+  function shortTime(iso?: string | null) {
+    return String(iso || '').replace('T', ' ').slice(5, 16);
+  }
+
+  function switchInvTab(key: 'left' | 'idle' | 'low') {
+    invalidDrawer.tab = key;
+  }
+
+  function toggleInv(gid: string, checked: boolean) {
+    invChecked.value = checked ? [...invChecked.value, gid] : invChecked.value.filter((x) => x !== gid);
+  }
+
+  function toggleAllCurrent(e: any) {
+    const checked = e?.target?.checked;
+    const ids = currentInvList.value.map((g) => g.gid);
+    invChecked.value = checked
+      ? [...new Set([...invChecked.value, ...ids])]
+      : invChecked.value.filter((x) => !ids.includes(x));
+  }
+
+  async function openInvalid() {
+    invalidDrawer.visible = true;
+    invalidDrawer.loading = true;
+    invalidDrawer.data = null;
+    invChecked.value = [];
+    try {
+      const res = await statsApi.getInvalidGroups();
+      invalidDrawer.data = res;
+      if (res) {
+        invalidDrawer.tab = res.left.length ? 'left' : res.idle.length ? 'idle' : 'low';
+        // 已退群 + 零活跃默认全选；低活跃仅提醒，不默认选中
+        invChecked.value = [...res.left.map((g) => g.gid), ...res.idle.map((g) => g.gid)];
+      }
+    } catch (e: any) {
+      message.error(e?.message || '检测失败，请确认 Bot 已重启（接口 /admin/groups/invalid）');
+      invalidDrawer.visible = false;
+    } finally {
+      invalidDrawer.loading = false;
+    }
+  }
+
+  const invClearModal = reactive({ visible: false, content: '', loading: false });
+
+  function openInvClear() {
+    const n = invChecked.value.length;
+    invClearModal.content = `即将清空 ${n} 个群的活跃榜与拓展数据（签到/积分/复读/撤回/风控记录等）。`;
+    invClearModal.visible = true;
+  }
+
+  async function doInvClear() {
+    invClearModal.loading = true;
+    try {
+      const res = await statsApi.batchClearGroups(invChecked.value, 'all');
+      message.success(`清理完成：${invChecked.value.length} 个群，共删除 ${res?.total ?? 0} 个键`);
+      invClearModal.visible = false;
+      invChecked.value = [];
+      await openInvalid();
+    } catch (e: any) {
+      message.error(e?.message || '操作失败');
+    } finally {
+      invClearModal.loading = false;
+    }
+  }
+
+  const quitModal = reactive({ visible: false, gid: '', name: '', content: '', loading: false });
+
+  function openQuit(g: InvalidGroupItem) {
+    quitModal.gid = g.gid;
+    quitModal.name = g.name || shortGid(g.gid);
+    quitModal.content = `即将让 Bot 退出「${quitModal.name}」（${shortGid(g.gid)}）。退群后该群的后续消息不会再产生统计。`;
+    quitModal.visible = true;
+  }
+
+  async function doQuit() {
+    quitModal.loading = true;
+    try {
+      const res = await statsApi.quitGroup(quitModal.gid);
+      message.success(`退群指令已发送（Bot：${(res?.bots || []).join('、') || '—'}）`);
+      quitModal.visible = false;
+      await openInvalid();
+      loadData();
+    } catch (e: any) {
+      message.error(e?.message || '退群失败');
+    } finally {
+      quitModal.loading = false;
+    }
+  }
+
   /* ------------------------------ 群管名单 ------------------------------ */
 
   const roles = reactive<{ owner: string[]; groupAdmin: string[] }>({ owner: [], groupAdmin: [] });
@@ -893,6 +1104,127 @@
 </script>
 
 <style scoped lang="less">
+  /* ---------------- 无效群检测抽屉 ---------------- */
+  .inv-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: baseline;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+    color: var(--g-text-sub);
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 10px;
+
+    b {
+      color: var(--g-text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .inv-warn {
+      color: var(--g-amber, #d4af37);
+    }
+  }
+
+  .inv-summary__time {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--g-text-mute);
+  }
+
+  .inv-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .inv-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    max-height: 46vh;
+    overflow-y: auto;
+  }
+
+  .inv-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 10px;
+    transition: border-color 0.18s;
+
+    &:hover {
+      border-color: var(--g-card-border-strong);
+    }
+  }
+
+  .inv-row__main {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 8px;
+    align-items: baseline;
+    min-width: 0;
+
+    b {
+      overflow: hidden;
+      font-size: 13px;
+      color: var(--g-text);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--g-text-mute);
+    }
+  }
+
+  .inv-row__meta {
+    display: flex;
+    flex-shrink: 0;
+    gap: 12px;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+
+    b {
+      color: var(--g-text-sub);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .inv-chip {
+    flex-shrink: 0;
+    padding: 1px 8px;
+    font-size: 11px;
+    border-radius: 20px;
+  }
+
+  .inv-chip--warn {
+    color: var(--g-amber, #d4af37);
+    background: rgb(212 175 55 / 12%);
+  }
+
+  .inv-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: 12px;
+    margin-top: 4px;
+    font-size: 12.5px;
+    color: var(--g-text-sub);
+    border-top: 1px dashed var(--g-card-border);
+  }
+
   .toolbar {
     display: flex;
     flex-wrap: wrap;
