@@ -52,28 +52,34 @@
           <div class="gm-panel__head">
             <div class="gm-panel__title">
               <i><Icon icon="ant-design:cluster-outlined" :size="13" /></i>
-              插件数据域
+              游戏数据域
             </div>
-            <span class="gm-panel__extra">点命名空间直接进入键列表</span>
+            <span class="gm-panel__extra">按游戏归类 · 点命名空间直接进入键列表</span>
           </div>
           <div class="dm-plugins">
-            <div v-for="p in domains.plugins" :key="p.plugin" class="dm-plugin">
+            <div v-for="g in domainGames" :key="g.id" class="dm-plugin">
               <div class="dm-plugin__head">
-                <span class="dm-plugin__name">{{ p.plugin }}</span>
-                <span class="dm-plugin__count">{{ thousands(p.count) }} 键</span>
+                <span class="dm-plugin__name">
+                  <GameIcon :game="g.id" :size="18" />
+                  {{ g.name }}
+                  <small v-if="g.domainCount" class="g-muted">{{ g.domainCount }} 个数据域</small>
+                </span>
+                <span class="dm-plugin__count">{{ thousands(g.count) }} 键</span>
               </div>
               <div class="dm-plugin__domains">
                 <span
-                  v-for="d in p.domains"
+                  v-for="d in g.domains"
                   :key="d.prefix"
                   class="dm-chip"
                   :class="`is-${d.risk}`"
-                  :title="d.desc"
+                  :title="`${d.prefix} · ${d.desc}`"
                   @click="openPrefix(d.prefix)"
                 >
                   {{ d.label }}
                   <em>{{ thousands(d.count) }}</em>
+                  <small>{{ d.plugin }}</small>
                 </span>
+                <span v-if="!g.domains.length" class="dm-chip is-unknown">该分类下暂无已收录的数据域</span>
               </div>
             </div>
             <div v-if="domains.unknownCount" class="dm-plugin">
@@ -104,18 +110,39 @@
                 <span>全部键</span>
                 <em>{{ thousands(domains.totalKeys) }}</em>
               </div>
+
+              <!-- 一级：游戏分类 → 二级：数据域 → 三级：右侧键列表 -->
               <div
-                v-for="d in sortedDomains"
-                :key="d.prefix"
-                class="dm-ns__item"
-                :class="{ 'is-active': prefix === d.prefix }"
-                @click="openPrefix(d.prefix)"
+                v-for="g in domainGames"
+                :key="g.id"
+                class="dm-game"
+                :class="{ 'is-open': openGames.has(g.id), 'is-empty': !g.count }"
               >
-                <span class="dm-ns__label">
-                  <i :class="`risk-${d.risk}`" />{{ d.label }}
-                  <small>{{ d.plugin }}</small>
-                </span>
-                <em>{{ thousands(d.count || 0) }}</em>
+                <div class="dm-game__head" @click="toggleGame(g.id)">
+                  <GameIcon :game="g.id" :size="18" />
+                  <span class="dm-game__name">{{ g.name }}</span>
+                  <em class="dm-game__count">{{ thousands(g.count || 0) }}</em>
+                  <Icon icon="ant-design:right-outlined" :size="11" class="dm-game__arrow" />
+                </div>
+                <div v-show="openGames.has(g.id)" class="dm-game__body">
+                  <div
+                    v-for="d in g.domains"
+                    :key="d.prefix"
+                    class="dm-ns__item"
+                    :class="{ 'is-active': prefix === d.prefix }"
+                    @click="openPrefix(d.prefix)"
+                  >
+                    <span class="dm-ns__label">
+                      <i :class="`risk-${d.risk}`" />{{ d.label }}
+                      <small>{{ d.plugin }}</small>
+                    </span>
+                    <em>{{ thousands(d.count || 0) }}</em>
+                  </div>
+                  <div v-if="g.id === 'unknown' && g.samples?.length" class="dm-unknown">
+                    <span v-for="s in g.samples" :key="s" class="mono">{{ s }}</span>
+                  </div>
+                  <div v-if="!g.domainCount" class="dm-game__empty">该分类下暂无数据域</div>
+                </div>
               </div>
             </div>
           </div>
@@ -388,6 +415,7 @@
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
+  import GameIcon from '../_shared/GameIcon.vue';
   import type { DomainMeta, DomainsResult, FileContent, FileItem, FilePlugin, KeyDetail, KeyPage } from './api';
   import { dataApi } from './api';
   import { kpiPalette, thousands } from '../_shared/stats';
@@ -412,9 +440,40 @@
     totalKeys: 0,
     unknownCount: 0,
     unknownSamples: [],
+    games: [],
     plugins: [],
     domains: [],
   });
+
+  /* 三级导航：一级游戏分组（可折叠）→ 二级数据域 → 三级右侧键列表 */
+  const domainGames = computed(() => domains.value.games || []);
+  const openGames = reactive(new Set<string>());
+
+  function toggleGame(id: string) {
+    if (openGames.has(id)) {
+      openGames.delete(id);
+    } else {
+      openGames.add(id);
+    }
+  }
+
+  /** 加载完成后：默认展开有数据的前两组；若当前选中域在某个组里，也把它展开 */
+  function ensureGamesOpen() {
+    if (openGames.size) {
+      return;
+    }
+    const withData = domainGames.value.filter((g) => g.count > 0);
+    withData.slice(0, 2).forEach((g) => openGames.add(g.id));
+    if (prefix.value) {
+      const hit = domainGames.value.find((g) => g.domains.some((d) => d.prefix === prefix.value));
+      if (hit) {
+        openGames.add(hit.id);
+      }
+    }
+    if (!withData.length && domainGames.value.length) {
+      openGames.add(domainGames.value[0].id);
+    }
+  }
 
   const shortTime = (iso?: string) => (iso ? iso.slice(5, 16).replace('T', ' ') : '');
 
@@ -423,6 +482,7 @@
   const domainCards = computed(() => {
     const p = kpiPalette(isDark.value);
     const plugins = domains.value.plugins?.length ?? 0;
+    const games = (domains.value.games || []).filter((g) => g.count > 0 && g.id !== 'unknown').length;
     const known = domains.value.totalKeys - domains.value.unknownCount;
     return [
       {
@@ -430,7 +490,7 @@
         label: 'Redis 键总数',
         icon: 'ant-design:cloud-server-outlined',
         value: thousands(domains.value.totalKeys),
-        foot: `覆盖 ${plugins} 个插件/模块`,
+        foot: `覆盖 ${games} 款游戏 · ${plugins} 个插件/模块`,
         color: p.blue[0],
         color2: p.blue[1],
       },
@@ -468,6 +528,7 @@
     loading.value = true;
     try {
       domains.value = await dataApi.getDomains(force);
+      ensureGamesOpen();
     } catch (e: any) {
       message.error(e?.message || '加载数据域失败');
     } finally {
@@ -487,7 +548,7 @@
 
   const prefix = ref('');
   const activeDomain = computed<DomainMeta | null>(
-    () => sortedDomains.value.find((d) => d.prefix === prefix.value) || null,
+    () => (domains.value.domains || []).find((d) => d.prefix === prefix.value) || null,
   );
   const keyLoading = ref(false);
   const keyQuery = reactive({ q: '' });
@@ -924,21 +985,111 @@
 
   .dm-plugin__head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     margin-bottom: 10px;
   }
 
   .dm-plugin__name {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
     font-size: 13.5px;
     font-weight: 650;
     color: var(--g-text);
+
+    small {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--g-text-mute);
+    }
   }
 
   .dm-plugin__count {
     font-size: 12px;
     color: var(--g-text-mute);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* ------------ 三级导航：游戏分组（keys tab 左栏） ------------ */
+  .dm-game {
+    margin-bottom: 4px;
+
+    &.is-empty .dm-game__head {
+      opacity: 0.55;
+    }
+  }
+
+  .dm-game__head {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 7px 10px;
+    cursor: pointer;
+    border-radius: 9px;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: var(--g-hover);
+    }
+  }
+
+  .dm-game__name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--g-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dm-game__count {
+    font-size: 11px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .dm-game__arrow {
+    color: var(--g-text-mute);
+    transition: transform 0.18s ease;
+  }
+
+  .dm-game.is-open .dm-game__arrow {
+    transform: rotate(90deg);
+  }
+
+  .dm-game__body {
+    padding: 2px 0 4px 6px;
+    margin-top: 2px;
+    border-left: 2px solid var(--g-card-border);
+  }
+
+  .dm-game__body .dm-ns__item {
+    margin: 1px 0 1px 4px;
+  }
+
+  .dm-game__empty {
+    padding: 6px 10px;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+  }
+
+  .dm-unknown {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 10px;
+    margin: 1px 0 1px 4px;
+
+    span {
+      overflow: hidden;
+      font-size: 10.5px;
+      color: var(--g-text-mute);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
 
   .dm-plugin__domains {
@@ -965,6 +1116,13 @@
     font-style: normal;
     color: var(--g-text-mute);
     font-variant-numeric: tabular-nums;
+  }
+
+  .dm-chip small {
+    font-size: 10.5px;
+    font-weight: 400;
+    color: var(--g-text-mute);
+    opacity: 0.85;
   }
 
   .dm-chip:hover {

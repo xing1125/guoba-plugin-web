@@ -2,6 +2,7 @@ import { defHttp } from '/@/utils/http/axios';
 
 export interface DomainMeta {
   prefix: string;
+  game?: string;
   plugin: string;
   label: string;
   risk: 'low' | 'mid' | 'high';
@@ -16,11 +17,21 @@ export interface DomainPlugin {
   domains: DomainMeta[];
 }
 
+export interface DomainGame {
+  id: string;
+  name: string;
+  count: number;
+  domainCount: number;
+  domains: DomainMeta[];
+  samples?: string[];
+}
+
 export interface DomainsResult {
   available: boolean;
   totalKeys: number;
   unknownCount: number;
   unknownSamples: string[];
+  games: DomainGame[];
   plugins: DomainPlugin[];
   domains: DomainMeta[];
   scannedAt?: string;
