@@ -44,28 +44,80 @@ bash deploy-to-guoba.sh
 >
 > ⚠️ 锅巴默认 `helloTRSS: true`，会与 Bot 共享端口，后台地址是 `http://<IP>:<Bot端口>/guoba/`，不是 `application.yaml` 里的 50831。
 
-## 目录结构
+## 目录介绍
+
+### 顶层
+
+```
+guoba-web-fork/
+├── build/                     # Vite 构建配置（purgeIconsOffline、styleImport 等插件）
+├── docs/upstream/             # 上游 vben 的历史变更日志（已归档，不再更新）
+├── src/                       # 源码（见下方）
+├── CHANGELOG.md               # 本项目的版本记录
+├── FORK-NOTES.md              # 逐页实现说明 + 上游同步策略 + 踩坑记录（最详细的文档）
+├── deploy-to-guoba.sh         # 构建产物部署脚本（改名备份 + 拷贝）
+└── preview-server.mjs         # 本地预览服务（不入库，含真实样例数据）
+```
+
+### `src/` 源码
 
 ```
 src/
-├── design/                    # 设计层：令牌 + 模块样式（.g-card / .db-* / .gm-*）
-│   ├── guoba-admin.less       # 全局令牌、布局、浮层主题化
-│   └── guoba-modules.less     # 页面级模块样式
+├── design/                    # ★ 设计层（本项目最重要的一层）
+│   ├── guoba-admin.less       #   全局令牌 --g-*（页面底/卡片/边框/文字/语义六色）
+│   │                          #   + 布局外壳 + 暗色浮层接管
+│   ├── guoba-modules.less     #   页面级模块样式（.db-* 工作台 / .gm-* 弹窗 / .g-card）
+│   ├── menuIcons.ts           #   菜单图标名白名单（离线图标按需收集，新增菜单要同步这里）
+│   └── var/ index.less        #   上游 vben 原有的变量与入口（index.less 引入本 fork 的两个 less）
+│
 ├── views/
-│   ├── guoba/
-│   │   ├── system/            # 后台各数据模块（dashboard/groups/users/account/...）
-│   │   ├── config/            # 配置管理（双栏工作台）
-│   │   ├── plugins/           # 插件管理 + 插件配置 + 喵喵帮助
-│   │   ├── about/  home/  v2/ # 关于、首页、迁移页
-│   └── sys/
-│       ├── login/             # 登录页（品牌区 + 登录卡）
-│       ├── lock/              # 锁屏
-│       └── exception/         # 403/404/500
+│   ├── guoba/                 # ★ 锅巴页面（本 fork 的主战场）
+│   │   ├── system/            #   后台数据模块
+│   │   │   ├── dashboard/     #     数据总览 /dashboard
+│   │   │   ├── groups/        #     群数据 /groups
+│   │   │   ├── users/         #     用户数据 /users
+│   │   │   ├── plugins/       #     插件数据 /plugins-data
+│   │   │   ├── account/       #     账号管理 /account（原「施工中」占位页）
+│   │   │   ├── uids/          #     游戏 UID /uid（原「施工中」占位页）
+│   │   │   ├── sign/          #     游戏签到 /sign
+│   │   │   ├── data/          #     数据管理 /data（Redis 键 + 插件文件）
+│   │   │   └── _shared/       #     共享组件（弹窗、空态、游戏图标）
+│   │   ├── config/            #   配置管理 /config（双栏工作台 + 折叠总控）
+│   │   ├── plugins/           #   插件管理 /plugins + 插件配置 /plugin/@/:name
+│   │   │   └── extra-config/  #     喵喵帮助 v1 / v2（含共享页头 MiaoHero）
+│   │   ├── home/  about/  v2/ #   首页 / 关于页 / 迁移页
+│   │   └── login/             #   群聊登录入口 /ml/:code（MasterLogin，配合 loginInGroup 配置）
+│   │
+│   └── sys/                   # 框架级页面（登录/锁屏/异常）
+│       ├── login/             #   登录页（品牌区 + 登录卡 + 三步引导）
+│       ├── lock/              #   锁屏（毛玻璃时钟 + 解锁面板）
+│       ├── exception/         #   403 / 404 / 500（渐变状态码单卡）
+│       ├── iframe/            #   内嵌页容器
+│       └── error-log/         #   错误日志（开发者调试页，不在菜单）
+│
+├── components/Guoba/          # 锅巴业务组件（GPluginModal 插件详情弹窗等）
+├── layouts/                   # 框架布局（顶栏深浅开关挂在 header/index.vue）
+├── router/                    # 路由（菜单由后端 systemMenus.js 下发，前端靠
+│                              #   import.meta.glob 把菜单的 component 字符串解析成组件）
+├── store/                     # Pinia 状态（user / lock / app 等）
+├── api/                       # 接口封装
+└── logics/ initAppConfig.ts   # 应用初始化（强制开启深浅色开关、覆盖旧缓存）
 ```
+
+### 约定速览
+
+| 约定 | 说明 |
+|---|---|
+| 类名前缀 | 全局组件用 `g-`，后台工作台 `db-`，弹窗 `gm-`，页面特例用页面缩写（`pf-` 插件管理、`mh-` 喵喵帮助、`glf-` 登录表单） |
+| 颜色 | 一律走 `--g-*` 令牌，**禁止硬编码**；深浅两套主题靠同一令牌切换 |
+| 全局 less | 不能用 `:deep()`，它只允许出现在页面 scoped 样式里 |
+| antd 组件 | `a-table` / `a-pagination` 未全局注册，用到必须显式 `import { Table, Pagination } from 'ant-design-vue'` |
+| 新增菜单 | 后端 `systemMenus.js` 下发 + 前端 `menuIcons.ts` 同步图标名，缺图标会导致整批图标收集失败 |
 
 ## 文档
 
 - **[FORK-NOTES.md](./FORK-NOTES.md)** —— 逐页的实现说明、上游同步策略，以及踩过的坑（`a-table` 未全局注册、antd 浮层不吃令牌、vben `min-height:0` 压掉内容区高度等）
+- **[CHANGELOG.md](./CHANGELOG.md)** —— 本项目的版本记录；上游 vben 的历史变更归档在 [docs/upstream/](./docs/upstream/)
 - 设计约束：配色与组件全部走 `--g-*` 令牌，不硬编码；同一套令牌深浅两套主题同时生效
 
 ## 上游同步
