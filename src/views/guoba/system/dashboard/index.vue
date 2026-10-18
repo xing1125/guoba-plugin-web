@@ -569,7 +569,7 @@
   html[data-theme='dark'] .db-hero {
     background:
       radial-gradient(520px 180px at 88% 0%, rgb(98 168 234 / 18%), transparent 70%),
-      linear-gradient(108deg, #12163a 0%, #171a44 52%, #1d1c49 100%);
+      linear-gradient(108deg, #0d2033 0%, #112a42 52%, #14334a 100%);
     border: 1px solid rgb(255 255 255 / 12%);
     box-shadow: 0 12px 34px -20px rgb(0 0 0 / 70%);
   }

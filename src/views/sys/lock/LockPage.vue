@@ -122,7 +122,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: #07091b;
+    background: #081422;
   }
 
   /* 深色极光底料：锁屏固定深色，不随主题切换 */
@@ -131,8 +131,8 @@
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(760px 520px at 18% 10%, rgb(46 63 143 / 62%), transparent 70%),
-      radial-gradient(680px 480px at 86% 24%, rgb(91 74 158 / 44%), transparent 70%),
+      radial-gradient(760px 520px at 18% 10%, rgb(23 74 110 / 62%), transparent 70%),
+      radial-gradient(680px 480px at 86% 24%, rgb(79 195 247 / 15%), transparent 70%),
       radial-gradient(620px 460px at 60% 98%, rgb(211 188 141 / 14%), transparent 72%);
   }
 
@@ -242,7 +242,7 @@
   .db-lock__card {
     width: 340px;
     padding: 30px 28px 22px;
-    background: rgb(28 27 61 / 92%);
+    background: rgb(8 22 36 / 92%);
     border: 1px solid rgb(255 255 255 / 14%);
     border-radius: 18px;
     box-shadow: 0 28px 70px -26px rgb(0 0 0 / 86%);

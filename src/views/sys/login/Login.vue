@@ -116,8 +116,8 @@
 
   html[data-theme='dark'] .@{prefix-cls}__aurora {
     background:
-      radial-gradient(680px 460px at 10% 4%, rgb(46 63 143 / 46%), transparent 70%),
-      radial-gradient(620px 440px at 92% 22%, rgb(91 74 158 / 38%), transparent 70%),
+      radial-gradient(680px 460px at 10% 4%, rgb(23 74 110 / 50%), transparent 70%),
+      radial-gradient(620px 440px at 92% 22%, rgb(79 195 247 / 13%), transparent 70%),
       radial-gradient(560px 420px at 72% 98%, rgb(211 188 141 / 16%), transparent 72%);
   }
 

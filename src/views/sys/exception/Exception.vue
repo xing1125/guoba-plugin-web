@@ -182,7 +182,7 @@
   }
 
   html[data-theme='dark'] .db-exc__glow {
-    background: radial-gradient(closest-side, rgb(46 63 143 / 52%), transparent 72%);
+    background: radial-gradient(closest-side, rgb(23 74 110 / 55%), transparent 72%);
   }
 
   .db-exc__card {
