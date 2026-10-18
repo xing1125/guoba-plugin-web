@@ -615,7 +615,17 @@
     color: var(--g-text-mute);
     cursor: pointer;
     border-radius: 50%;
-    transition: color @ctl-dur ease, background @ctl-dur ease;
+    transition: color @ctl-dur ease, background @ctl-dur ease, opacity @ctl-dur ease;
+  }
+
+  /* 清除钮默认隐藏，hover / 聚焦输入框才浮现（避免有值时一直挂着灰点） */
+  .gc-input__clear {
+    opacity: 0;
+  }
+
+  .gc-input:hover .gc-input__clear,
+  .gc-input.is-focused .gc-input__clear {
+    opacity: 1;
   }
 
   .gc-input__clear:hover,
@@ -930,11 +940,19 @@
     color: var(--g-text-mute);
     cursor: pointer;
     border-radius: 50%;
+    transition: color @ctl-dur ease, background @ctl-dur ease, opacity @ctl-dur ease;
+    opacity: 0;
+  }
 
-    &:hover {
-      color: var(--g-text);
-      background: var(--g-card-border-strong);
-    }
+  .gc-select:hover .gc-select__clear,
+  .gc-select:focus-within .gc-select__clear,
+  .gc-select.is-open .gc-select__clear {
+    opacity: 1;
+  }
+
+  .gc-select__clear:hover {
+    color: var(--g-text);
+    background: var(--g-card-border-strong);
   }
 
   /* ---- 下拉面板 ---- */
