@@ -11,4 +11,8 @@ export const Notify = createAsyncComponent(() => import('./notify/index.vue'));
 
 export const ErrorAction = createAsyncComponent(() => import('./ErrorAction.vue'));
 
+export const GuobaNotice = createAsyncComponent(() => import('./GuobaNotice.vue'));
+
+export const GuobaShortcuts = createAsyncComponent(() => import('./GuobaShortcuts.vue'));
+
 export { FullScreen };

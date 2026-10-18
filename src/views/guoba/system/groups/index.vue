@@ -70,6 +70,7 @@
               <Icon :icon="query.order === 'desc' ? 'ant-design:arrow-down-outlined' : 'ant-design:arrow-up-outlined'" :size="13" />
             </Button>
             <Button type="primary" @click="handleSearch">查询</Button>
+            <Button :disabled="!list.length" @click="exportCsv">导出 CSV</Button>
             <Button class="icon-btn" :loading="loading" title="刷新" @click="loadAll">
               <Icon icon="ant-design:reload-outlined" :size="14" />
             </Button>
@@ -457,6 +458,7 @@
   const TabPane = Tabs.TabPane;
   import { CloseOutlined, InfoCircleOutlined } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
+  import { downloadCsv } from '/@/utils/export/csv';
   import { Icon } from '/@/components/Icon';
   import { useECharts } from '/@/hooks/web/useECharts';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
@@ -509,6 +511,20 @@
     { label: '按绑定用户', value: 'boundUsers' },
     { label: '按最近活跃', value: 'lastDate' },
   ];
+
+  function exportCsv() {
+    downloadCsv('groups', [
+      { title: '群号', key: 'gid' },
+      { title: '群名', key: 'name' },
+      { title: '在群', format: (r: GroupRow) => (r.inGroup === false ? '否' : '是') },
+      { title: '接收消息', key: 'recv' },
+      { title: '发送消息', key: 'send' },
+      { title: '消息总量', key: 'total' },
+      { title: '活跃天数', key: 'activeDays' },
+      { title: '活跃榜人数', format: (r: GroupRow) => Object.keys(r.active || {}).length },
+      { title: '最近活跃', key: 'lastDate' },
+    ], list.value);
+  }
 
   const columns = [
     { title: '群', dataIndex: 'gid', key: 'gid', width: 200, fixed: 'left' as const },

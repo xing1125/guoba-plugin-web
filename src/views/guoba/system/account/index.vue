@@ -58,6 +58,7 @@
             />
             <Select v-model:value="query.game" class="w-140" :options="gameOpts" placeholder="游戏" allow-clear />
             <Button type="primary" @click="handleSearch">查询</Button>
+            <Button :disabled="!list.length" @click="exportCsv">导出 CSV</Button>
             <Button @click="handleReset">重置</Button>
             <span class="muted">已选 {{ selected.length }} 项</span>
             <Button :loading="verifying" :disabled="!selected.length" @click="handleVerify(selected)">
@@ -264,6 +265,7 @@
     message,
   } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
+  import { downloadCsv } from '/@/utils/export/csv';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import GFormModal from '../_shared/dialog/GFormModal.vue';
   import { Icon } from '/@/components/Icon';
@@ -291,6 +293,24 @@
 
   const statusOpts = STATUS_OPTIONS;
   const gameOpts = GAME_OPTIONS;
+
+  function exportCsv() {
+    downloadCsv('accounts', [
+      { title: 'ltuid', key: 'ltuid' },
+      { title: '绑定标识', format: (r: AccountRow) => (r.bindIds || []).join('|') },
+      { title: '绑定昵称', format: (r: AccountRow) => (r.bindNames || []).join('|') },
+      { title: 'Cookie', key: 'ckMask' },
+      {
+        title: '游戏 UID',
+        format: (r: AccountRow) =>
+          Object.entries(r.uids || {})
+            .map(([g, arr]) => `${g}:${(arr || []).join('/')}`)
+            .join(' '),
+      },
+      { title: 'CK 状态', key: 'ckStatus' },
+      { title: '最后校验', key: 'checkedAt' },
+    ], list.value);
+  }
 
   const columns = [
     { title: 'ltuid', dataIndex: 'ltuid', key: 'ltuid', width: 150 },

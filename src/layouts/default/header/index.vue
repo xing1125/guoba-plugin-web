@@ -23,6 +23,9 @@
 
       <!--      <Notify v-if="getShowNotice" :class="`${prefixCls}-action__item notify-item`" />-->
 
+      <!-- 通知中心：聚合审计留痕与失败登录 -->
+      <GuobaNotice :class="`${prefixCls}-action__item`" />
+
       <FullScreen v-if="getShowFullScreen" :class="`${prefixCls}-action__item fullscreen-item`" />
 
       <!-- 深浅色主题切换 -->
@@ -34,6 +37,8 @@
       <!--        :showText="false"-->
       <!--        :class="`${prefixCls}-action__item`"-->
       <!--      />-->
+
+      <GuobaShortcuts />
 
       <UserDropDown :theme="getHeaderTheme" />
 
@@ -68,6 +73,8 @@
     FullScreen,
     // Notify,
     ErrorAction,
+    GuobaNotice,
+    GuobaShortcuts,
   } from './components';
   import { useAppInject } from '/@/hooks/web/useAppInject';
   import { useDesign } from '/@/hooks/web/useDesign';
@@ -86,6 +93,8 @@
       UserDropDown,
       // AppLocalePicker,
       FullScreen,
+      GuobaNotice,
+      GuobaShortcuts,
       // Notify,
       AppSearch,
       ErrorAction,

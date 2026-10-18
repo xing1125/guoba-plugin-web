@@ -19,4 +19,6 @@ export const MENU_ICONS = [
   'ant-design:user-outlined',
   'mdi:gamepad-variant-outline',
   'ant-design:info-circle-outlined',
+  'ant-design:team-outlined',
+  'ant-design:audit-outlined',
 ];
