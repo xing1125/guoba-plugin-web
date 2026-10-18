@@ -5,29 +5,191 @@
       <section class="db-hero">
         <div class="db-hero__main">
           <div class="db-hero__eyebrow">USER ANALYTICS</div>
-          <div class="db-hero__title">用户数据</div>
-          <div class="db-hero__desc">按用户聚合的消息量、活跃天数与首末活跃时间</div>
+          <div class="db-hero__title">用户统计</div>
+          <div class="db-hero__desc">账号绑定、活跃度、游戏档案与消息行为的用户维度总览</div>
         </div>
         <div class="db-hero__side">
           <Button :loading="loading" @click="loadAll">刷新数据</Button>
         </div>
       </section>
 
-      <!-- 概览 -->
-      <section class="db-kpi">
-        <div v-for="c in cards" :key="c.key" class="db-kpi__card">
-          <div class="db-kpi__icon" :style="{ background: `linear-gradient(135deg, ${c.color}, ${c.color2})` }">
-            <Icon :icon="c.icon" :size="19" />
-          </div>
-          <div class="db-kpi__body">
-            <div class="db-kpi__label">{{ c.label }}</div>
-            <div class="db-kpi__value">
-              {{ c.value }}<small v-if="c.unit">{{ c.unit }}</small>
+      <!-- 绑定率 + 指标 -->
+      <section class="ur-top">
+        <div class="g-card ur-bind">
+          <div class="gm-panel__head">
+            <div class="gm-panel__title">
+              <i><Icon icon="ant-design:link-outlined" :size="13" /></i>
+              账号绑定率
             </div>
-            <div class="db-kpi__foot">{{ c.foot }}</div>
+            <span class="gm-panel__extra">米游社 UID</span>
+          </div>
+
+          <div class="ur-bind__body">
+            <div class="ur-ring">
+              <svg viewBox="0 0 120 120" class="ur-ring__svg">
+                <circle cx="60" cy="60" r="52" class="ur-ring__track" />
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="52"
+                  class="ur-ring__value"
+                  :stroke-dasharray="ringDash"
+                  transform="rotate(-90 60 60)"
+                />
+              </svg>
+              <div class="ur-ring__label">
+                <div class="ur-ring__num">{{ hero.users.bindRate }}<small>%</small></div>
+                <div class="ur-ring__cap">已绑定</div>
+              </div>
+            </div>
+
+            <div class="ur-bind__facts">
+              <div class="ur-fact">
+                <span class="ur-fact__dot is-total" />
+                <span class="ur-fact__label">用户总数</span>
+                <span class="ur-fact__value">{{ thousands(hero.users.total) }}</span>
+              </div>
+              <div class="ur-fact">
+                <span class="ur-fact__dot is-bound" />
+                <span class="ur-fact__label">已绑定</span>
+                <span class="ur-fact__value">{{ thousands(hero.users.bound) }}</span>
+              </div>
+              <div class="ur-fact">
+                <span class="ur-fact__dot is-unbound" />
+                <span class="ur-fact__label">未绑定</span>
+                <span class="ur-fact__value">{{ thousands(unbound) }}</span>
+              </div>
+              <div class="ur-bind__hint">
+                绑定率来自 <span class="g-mono">Users.ltuids</span>，与账号管理页的
+                <span class="g-mono">MysUsers</span> 账号数分开统计。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ur-metrics">
+          <div v-for="m in metrics" :key="m.key" class="g-card ur-metric">
+            <div class="ur-metric__top">
+              <span class="ur-metric__icon" :style="{ background: m.bg, color: m.fg }">
+                <Icon :icon="m.icon" :size="14" />
+              </span>
+              <span class="ur-metric__label">{{ m.label }}</span>
+            </div>
+            <div class="ur-metric__value">
+              {{ m.value }}<small v-if="m.unit">{{ m.unit }}</small>
+            </div>
+            <div class="ur-metric__foot">{{ m.foot }}</div>
           </div>
         </div>
       </section>
+
+      <!-- TOP5 + 7 日活性 -->
+      <section class="ur-mid">
+        <div class="g-card">
+          <div class="gm-panel__head">
+            <div class="gm-panel__title">
+              <i><Icon icon="ant-design:trophy-outlined" :size="13" /></i>
+              最活跃用户 TOP5
+            </div>
+            <span class="gm-panel__extra">按累计消息量</span>
+          </div>
+          <GEmpty v-if="!hero.top.length" title="暂无排行" desc="用户消息日计数尚未生成" :size="64" />
+          <div v-else class="ur-top5">
+            <div v-for="(t, i) in hero.top" :key="t.uid" class="ur-top5__row">
+              <span class="ur-top5__rank" :class="`is-${i + 1}`">{{ i + 1 }}</span>
+              <span class="ur-top5__avatar" :style="avatarStyle(t.uid)">{{ (t.name || '?').slice(0, 1) }}</span>
+              <div class="ur-top5__body">
+                <div class="ur-top5__name">{{ t.name || '未命名用户' }}</div>
+                <div class="ur-top5__meta">{{ shortUid(t.uid) }} · 活跃 {{ t.activeDays }} 天</div>
+              </div>
+              <span class="ur-top5__value">{{ fmtNum(t.total) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="g-card">
+          <div class="gm-panel__head">
+            <div class="gm-panel__title">
+              <i><Icon icon="ant-design:bar-chart-outlined" :size="13" /></i>
+              近 7 日消息活性
+            </div>
+            <span class="gm-panel__extra">合计 {{ fmtNum(hero.message.last7) }} 条</span>
+          </div>
+          <div class="ur-spark">
+            <div v-for="s in spark" :key="s.date" class="ur-spark__col">
+              <span class="ur-spark__num">{{ sparkMax ? fmtNum(s.total) : '' }}</span>
+              <div class="ur-spark__track">
+                <i class="ur-spark__bar" :style="{ height: barHeight(s.total) }" :title="`${s.date} ${s.total} 条`" />
+              </div>
+              <span class="ur-spark__label">{{ s.date.slice(5) }}</span>
+            </div>
+          </div>
+          <div class="ur-spark__foot">
+            <span>今日 {{ fmtNum(hero.message.today) }} 条</span>
+            <span>昨日 {{ fmtNum(hero.message.yesterday) }} 条</span>
+            <span>近 7 日活跃 {{ hero.active.last7 }} 人</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 游戏绑定矩阵 -->
+      <div class="g-card">
+        <div class="gm-panel__head">
+          <div class="gm-panel__title">
+            <i><Icon icon="ant-design:appstore-outlined" :size="13" /></i>
+            游戏绑定矩阵
+          </div>
+          <div class="toolbar">
+            <span class="gm-panel__extra">米游社 6 款 + 鸣潮（库街区）</span>
+            <button class="ur-link" @click="goAccounts()">进入账号管理 →</button>
+          </div>
+        </div>
+
+        <div v-if="gamesLoading && !games.length" class="ur-games">
+          <div v-for="i in 7" :key="i" class="g-skeleton ur-game-skeleton" />
+        </div>
+        <div v-else class="ur-games">
+          <button
+            v-for="g in games"
+            :key="g.key"
+            class="ur-game"
+            :style="{ '--g1': g.from, '--g2': g.to, '--gfg': g.fg }"
+            @click="goAccounts(g.key)"
+          >
+            <div class="ur-game__head">
+              <GameIcon :game="g.key" :size="24" />
+              <div class="ur-game__title">
+                <div class="ur-game__name">{{ g.name }}</div>
+                <div class="ur-game__en">{{ g.en }}</div>
+              </div>
+              <span class="ur-game__rate">{{ g.rate }}%</span>
+            </div>
+
+            <div class="ur-game__nums">
+              <div>
+                <span class="ur-game__num">{{ fmtNum(g.uidCount) }}</span>
+                <span class="ur-game__cap">个 UID</span>
+              </div>
+              <div>
+                <span class="ur-game__num">{{ fmtNum(g.accountCount) }}</span>
+                <span class="ur-game__cap">个账号</span>
+              </div>
+            </div>
+
+            <div class="ur-game__bar">
+              <i :style="{ width: `${Math.min(100, g.rate)}%` }" />
+            </div>
+
+            <div class="ur-game__tags">
+              <span class="ur-tag" :class="{ 'is-off': !g.ckSaved }">
+                {{ g.source === 'waves' ? '令牌' : 'CK' }} {{ g.ckSaved }}
+              </span>
+              <span v-if="g.skSupported" class="ur-tag" :class="{ 'is-off': !g.skSaved }">SK {{ g.skSaved }}</span>
+              <span v-else class="ur-tag is-ghost">无 SK 体系</span>
+            </div>
+          </button>
+        </div>
+      </div>
 
       <!-- 趋势 -->
       <div class="g-card">
@@ -170,6 +332,7 @@
 
 <script setup lang="ts">
   import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
+  import { useRouter } from 'vue-router';
   import { Button, Drawer, Input, Select, Table } from 'ant-design-vue';
   import { InfoCircleOutlined } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
@@ -178,22 +341,31 @@
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import GEmpty from '../_shared/GEmpty.vue';
-  import type { TrendPoint, UserDetailResult, UserRow, UserSummary } from '../_shared/stats';
+  import GameIcon from '../_shared/GameIcon.vue';
+  import type {
+    TrendPoint,
+    UserDetailResult,
+    UserHero,
+    UserRow,
+    UserSummary,
+  } from '../_shared/stats';
   import {
     activeText,
     areaGradient,
     chartBase,
     fmtNum,
     hexToRgba,
-    kpiPalette,
     primaryColor,
     secondaryColor,
     statsApi,
     thousands,
   } from '../_shared/stats';
+  import type { GameOverviewItem } from '../account/gameApi';
+  import { gameApi } from '../account/gameApi';
 
   defineOptions({ name: 'Users' });
 
+  const router = useRouter();
   const { getDarkMode } = useRootSetting();
   const isDark = computed(() => unref(getDarkMode) === ThemeEnum.DARK);
   const primary = computed(() => primaryColor(isDark.value));
@@ -211,6 +383,91 @@
   });
   const pager = reactive({ page: 1, size: 20, total: 0 });
   const query = reactive({ keyword: '', sort: 'total', order: 'desc' });
+
+  /* ------------------------------ hero / 游戏矩阵 ------------------------------ */
+
+  const emptyHero = (): UserHero => ({
+    available: false,
+    users: { total: 0, bound: 0, bindRate: 0 },
+    active: { today: 0, last7: 0, new7: 0 },
+    message: { today: 0, yesterday: 0, last7: 0 },
+    spark: [],
+    top: [],
+  });
+
+  const hero = ref<UserHero>(emptyHero());
+  const games = ref<GameOverviewItem[]>([]);
+  const gamesLoading = ref(false);
+
+  const unbound = computed(() => Math.max(0, hero.value.users.total - hero.value.users.bound));
+
+  /** 近 7 日活性（hero.spark 为空时补 7 个空点，避免柱区塌陷） */
+  const spark = computed(() => {
+    const src = hero.value.spark || [];
+    if (src.length) return src;
+    const out: { date: string; total: number }[] = [];
+    for (let i = 6; i >= 0; i -= 1) {
+      const d = new Date(Date.now() - i * 86400000);
+      out.push({ date: d.toISOString().slice(0, 10), total: 0 });
+    }
+    return out;
+  });
+
+  const sparkMax = computed(() => Math.max(...spark.value.map((s) => s.total), 1));
+
+  function barHeight(v: number) {
+    if (!v) return '4px';
+    return `${Math.max(6, Math.round((v / sparkMax.value) * 100))}%`;
+  }
+
+  const ringDash = computed(() => {
+    const c = 2 * Math.PI * 52;
+    const p = Math.min(100, Math.max(0, hero.value.users.bindRate)) / 100;
+    return `${(c * p).toFixed(1)} ${(c * (1 - p)).toFixed(1)}`;
+  });
+
+  const metrics = computed(() => [
+    {
+      key: 'today',
+      label: '今日活跃',
+      icon: 'ant-design:fire-outlined',
+      value: fmtNum(hero.value.active.today),
+      unit: '人',
+      foot: '今天有消息往来的用户',
+      bg: 'rgb(240 164 107 / 16%)',
+      fg: '#D07A3C',
+    },
+    {
+      key: 'last7',
+      label: '近 7 日活跃',
+      icon: 'ant-design:calendar-outlined',
+      value: fmtNum(hero.value.active.last7),
+      unit: '人',
+      foot: `7 日内新增 ${hero.value.active.new7} 人`,
+      bg: 'rgb(87 199 149 / 16%)',
+      fg: '#329C6C',
+    },
+    {
+      key: 'msg',
+      label: '今日消息',
+      icon: 'ant-design:message-outlined',
+      value: fmtNum(hero.value.message.today),
+      unit: '条',
+      foot: `昨日 ${fmtNum(hero.value.message.yesterday)} 条`,
+      bg: 'rgb(110 155 255 / 16%)',
+      fg: '#3F6FD8',
+    },
+    {
+      key: 'avg',
+      label: '人均累计',
+      icon: 'ant-design:fund-outlined',
+      value: fmtNum(summary.value.avgPerUser),
+      unit: '条',
+      foot: `累计 ${fmtNum(summary.value.totalMsg)} 条`,
+      bg: 'rgb(155 139 240 / 16%)',
+      fg: '#6C5CD6',
+    },
+  ]);
 
   const sortOptions = [
     { label: '按消息总量', value: 'total' },
@@ -243,51 +500,10 @@
     showTotal: (t: number) => `共 ${t} 个用户`,
   }));
 
-  const cards = computed(() => {
-    const p = kpiPalette(isDark.value);
-    return [
-      {
-        key: 'users',
-        label: '用户总数',
-        icon: 'ant-design:team-outlined',
-        value: thousands(summary.value.userCount),
-        unit: '人',
-        foot: `今日活跃 ${summary.value.activeToday} 人`,
-        color: p.violet[0],
-        color2: p.violet[1],
-      },
-      {
-        key: 'today',
-        label: '今日活跃',
-        icon: 'ant-design:fire-outlined',
-        value: String(summary.value.activeToday),
-        unit: '人',
-        foot: '今天有消息往来的用户',
-        color: p.green[0],
-        color2: p.green[1],
-      },
-      {
-        key: 'total',
-        label: '累计消息',
-        icon: 'ant-design:message-outlined',
-        value: fmtNum(summary.value.totalMsg),
-        unit: '条',
-        foot: '全部用户收发合计',
-        color: p.blue[0],
-        color2: p.blue[1],
-      },
-      {
-        key: 'avg',
-        label: '人均累计',
-        icon: 'ant-design:fund-outlined',
-        value: fmtNum(summary.value.avgPerUser),
-        unit: '条',
-        foot: '累计消息 / 用户数',
-        color: p.amber[0],
-        color2: p.amber[1],
-      },
-    ];
-  });
+  /** 跳到账号管理页并带上游戏参数 */
+  function goAccounts(game?: string) {
+    router.push({ path: '/account', query: game ? { game } : {} });
+  }
 
   /** 收发结构占比（与群数据页保持同一套视觉） */
   function pct(v: number, total: number) {
@@ -378,6 +594,27 @@
 
   /* ------------------------------ 数据 ------------------------------ */
 
+  async function loadHero(force = false) {
+    try {
+      const res = await statsApi.getUserHero(force);
+      if (res) hero.value = { ...emptyHero(), ...res };
+    } catch {
+      hero.value = emptyHero();
+    }
+  }
+
+  async function loadGames(force = false) {
+    gamesLoading.value = true;
+    try {
+      const res = await gameApi.overview(force);
+      games.value = res?.games ?? [];
+    } catch {
+      games.value = [];
+    } finally {
+      gamesLoading.value = false;
+    }
+  }
+
   async function loadData() {
     loading.value = true;
     try {
@@ -404,6 +641,8 @@
   }
 
   function loadAll() {
+    loadHero(true);
+    loadGames(true);
     loadData();
   }
 
@@ -430,9 +669,7 @@
   const drawerTitle = computed(() => '用户详情');
 
   /** 当前抽屉用户的昵称（取自列表行，详情接口不返回昵称） */
-  const drawerName = computed(
-    () => list.value.find((r) => r.uid === drawer.uid)?.name || '',
-  );
+  const drawerName = computed(() => list.value.find((r) => r.uid === drawer.uid)?.name || '');
 
   const detailStats = computed(() => {
     const d = detail.value;
@@ -532,11 +769,14 @@
     }),
   );
 
-  onMounted(loadAll);
+  onMounted(() => {
+    loadHero();
+    loadGames();
+    loadData();
+  });
 </script>
 
 <style scoped lang="less">
-
   .toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -556,7 +796,473 @@
     width: 110px;
   }
 
-  /* 收发结构条：与群数据页一致（收=蓝 / 发=紫） */
+  /* --------------------------- 绑定率 + 指标 --------------------------- */
+
+  .ur-top {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.4fr);
+  }
+
+  .ur-bind__body {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    padding: 4px 2px 2px;
+  }
+
+  .ur-ring {
+    position: relative;
+    flex: 0 0 auto;
+    width: 132px;
+    height: 132px;
+  }
+
+  .ur-ring__svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .ur-ring__track {
+    fill: none;
+    stroke: var(--g-track);
+    stroke-width: 11;
+  }
+
+  .ur-ring__value {
+    fill: none;
+    stroke: var(--g-blue);
+    stroke-width: 11;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.5s ease;
+  }
+
+  .ur-ring__label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ur-ring__num {
+    font-size: 27px;
+    font-weight: 700;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+
+    small {
+      margin-left: 1px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--g-text-mute);
+    }
+  }
+
+  .ur-ring__cap {
+    font-size: 11px;
+    color: var(--g-text-mute);
+    letter-spacing: 0.4px;
+  }
+
+  .ur-bind__facts {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ur-fact {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 12.5px;
+
+    & + .ur-fact {
+      border-top: 1px solid var(--g-card-border);
+    }
+  }
+
+  .ur-fact__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+
+    &.is-total {
+      background: var(--g-violet);
+    }
+
+    &.is-bound {
+      background: var(--g-blue);
+    }
+
+    &.is-unbound {
+      background: var(--g-track);
+    }
+  }
+
+  .ur-fact__label {
+    color: var(--g-text-mute);
+  }
+
+  .ur-fact__value {
+    margin-left: auto;
+    font-weight: 650;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ur-bind__hint {
+    margin-top: 8px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--g-text-mute);
+  }
+
+  .ur-metrics {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ur-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+    padding: 14px 16px !important;
+  }
+
+  .ur-metric__top {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+  }
+
+  .ur-metric__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+  }
+
+  .ur-metric__label {
+    font-size: 12px;
+    color: var(--g-text-mute);
+  }
+
+  .ur-metric__value {
+    font-size: 23px;
+    font-weight: 700;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+
+    small {
+      margin-left: 2px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--g-text-mute);
+    }
+  }
+
+  .ur-metric__foot {
+    font-size: 11px;
+    color: var(--g-text-mute);
+  }
+
+  /* --------------------------- TOP5 + 活性 --------------------------- */
+
+  .ur-mid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ur-top5 {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ur-top5__row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 0;
+
+    & + .ur-top5__row {
+      border-top: 1px solid var(--g-card-border);
+    }
+  }
+
+  .ur-top5__rank {
+    flex: 0 0 auto;
+    width: 18px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--g-text-mute);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+
+    &.is-1 {
+      color: #D8A62B;
+    }
+
+    &.is-2 {
+      color: #94A9BC;
+    }
+
+    &.is-3 {
+      color: #C08050;
+    }
+  }
+
+  .ur-top5__avatar {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 8px;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%);
+  }
+
+  .ur-top5__body {
+    min-width: 0;
+  }
+
+  .ur-top5__name {
+    overflow: hidden;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--g-text);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ur-top5__meta {
+    margin-top: 2px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 10.5px;
+    color: var(--g-text-mute);
+  }
+
+  .ur-top5__value {
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ur-spark {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    height: 158px;
+    padding: 6px 2px 0;
+  }
+
+  .ur-spark__col {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    height: 100%;
+  }
+
+  .ur-spark__num {
+    font-size: 10px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ur-spark__track {
+    display: flex;
+    flex: 1;
+    align-items: flex-end;
+    width: 100%;
+    max-width: 34px;
+    background: var(--g-chip-bg);
+    border-radius: 6px;
+  }
+
+  .ur-spark__bar {
+    display: block;
+    width: 100%;
+    background: linear-gradient(180deg, var(--g-cyan), var(--g-blue));
+    border-radius: 6px;
+    transition: height 0.4s ease;
+  }
+
+  .ur-spark__label {
+    font-size: 10.5px;
+    color: var(--g-text-mute);
+  }
+
+  .ur-spark__foot {
+    display: flex;
+    gap: 16px;
+    padding-top: 10px;
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+    border-top: 1px solid var(--g-card-border);
+  }
+
+  /* --------------------------- 游戏矩阵 --------------------------- */
+
+  .ur-games {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .ur-game {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 13px 14px;
+    text-align: left;
+    cursor: pointer;
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 13px;
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+
+    &:hover {
+      border-color: var(--g-card-border-strong);
+      box-shadow: var(--g-card-shadow);
+      transform: translateY(-2px);
+    }
+  }
+
+  .ur-game__head {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+  }
+
+  .ur-game__title {
+    min-width: 0;
+  }
+
+  .ur-game__name {
+    overflow: hidden;
+    font-size: 12.5px;
+    font-weight: 650;
+    color: var(--g-text);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ur-game__en {
+    margin-top: 1px;
+    overflow: hidden;
+    font-size: 9px;
+    color: var(--g-text-mute);
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ur-game__rate {
+    margin-left: auto;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 650;
+    color: var(--g-text-sub);
+    background: var(--g-chip-bg);
+    border-radius: 7px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ur-game__nums {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+  }
+
+  .ur-game__num {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ur-game__cap {
+    margin-left: 3px;
+    font-size: 10.5px;
+    color: var(--g-text-mute);
+  }
+
+  .ur-game__bar {
+    height: 4px;
+    overflow: hidden;
+    background: var(--g-track);
+    border-radius: 3px;
+
+    i {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--g1), var(--g2));
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+  }
+
+  .ur-game__tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .ur-tag {
+    padding: 1px 7px;
+    font-size: 10.5px;
+    color: var(--g-text-sub);
+    background: var(--g-chip-bg);
+    border: 1px solid var(--g-card-border);
+    border-radius: 6px;
+
+    &.is-off {
+      color: var(--g-text-mute);
+      opacity: 0.7;
+    }
+
+    &.is-ghost {
+      font-style: italic;
+      opacity: 0.65;
+    }
+  }
+
+  .ur-game-skeleton {
+    height: 108px;
+    border-radius: 13px;
+  }
+
+  .ur-link {
+    padding: 0;
+    font-size: 11.5px;
+    color: var(--g-blue);
+    cursor: pointer;
+    background: none;
+    border: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  /* --------------------------- 列表 --------------------------- */
+
   .mcell__bar {
     display: flex;
     gap: 2px;
@@ -604,7 +1310,6 @@
     }
   }
 
-  /* 表头与行：去掉 antd 默认粗分隔，改成细线 + hover 层次 */
   :deep(.ant-table-thead > tr > th) {
     height: 40px;
     font-size: 11.5px;
@@ -667,7 +1372,8 @@
   }
 
   .detail-stats {
-    display: grid;    gap: 10px;
+    display: grid;
+    gap: 10px;
     padding: 14px 16px;
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
@@ -750,5 +1456,16 @@
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-size: 11px;
     color: var(--g-text-mute);
+  }
+
+  @media (max-width: 1180px) {
+    .ur-top,
+    .ur-mid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ur-games {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 </style>

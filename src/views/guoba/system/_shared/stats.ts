@@ -147,6 +147,22 @@ export interface UserDetailResult extends UserRow {
   monthly: DailyPoint[];
 }
 
+export interface UserHeroTop {
+  uid: string;
+  name: string;
+  total: number;
+  activeDays: number;
+}
+
+export interface UserHero {
+  available: boolean;
+  users: { total: number; bound: number; bindRate: number };
+  active: { today: number; last7: number; new7: number };
+  message: { today: number; yesterday: number; last7: number };
+  spark: DailyPoint[];
+  top: UserHeroTop[];
+}
+
 /* ---------------------------------- 接口 ---------------------------------- */
 
 const enum StatsApi {
@@ -234,6 +250,12 @@ export const statsApi = {
   },
   getUserDetail(uid: string) {
     return defHttp.get<UserDetailResult>({ url: `/admin/stats/user/${encodeURIComponent(uid)}` });
+  },
+  getUserHero(force = false) {
+    return defHttp.get<UserHero>({
+      url: '/admin/stats/user-hero',
+      params: force ? { force: 'true' } : {},
+    });
   },
   batchClearGroups(gids: string[], scope: 'activity' | 'ext' | 'all' | 'trace') {
     return defHttp.post<{ total: number; results: { gid: string; deleted: number }[] }>({

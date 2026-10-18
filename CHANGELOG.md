@@ -10,6 +10,38 @@
 
 ---
 
+## [2.1.0] - 2026-10-19
+
+用户统计页与游戏账号页按设计稿重做，接入 7 款游戏（含鸣潮）的账号档案。
+
+### 新增
+
+- **游戏账号聚合接口**（后端 `GameAccountService` / `GameAccountController`）
+  - `GET /admin/games/overview`：7 游戏的 UID 数 / 账号数 / 绑定率 / CK、SK 已存数
+  - `GET /admin/games/:game/accounts`：单游戏账号明细（UID 列表 + 昵称 + 等级 + 绑定用户）
+  - `GET /admin/games/stoken/report`：Stoken 覆盖报告（来源 Lotus 档案，只读）
+- **用户 hero 聚合** `GET /admin/stats/user-hero`：绑定率、今日/近 7 日活跃、新增、
+  今日/昨日消息、近 7 日逐日消息、最活跃 TOP5
+- **Lotus Stoken 适配器**：只读 `Lotus-Plugin/data/users/*.yaml` 的
+  `account.stoken` / `game_roles`，仅返回布尔与角色昵称，**不返回 token 原文**
+- **鸣潮账号**：读 Redis `Yz:wavesJs:users` / `Yz:wavesJs:user:<qq>`，
+  展示库街区 kuroUid、区服、角色名与令牌有效性
+
+### 调整
+
+- **用户统计页**重排：环形绑定率 + 4 项活跃/消息指标 + 最活跃 TOP5 +
+  近 7 日活性柱 + 游戏绑定矩阵（7 卡，点击带 `?game=` 跳账号页）+ 原趋势与列表
+- **游戏账号页**重排：左侧 7 游戏竖排导航 → 当前游戏 hero（绑定 UID / CK / SK）
+  → 「UID 绑定 / Cookie 状态 / Stoken 状态」三段 → 手风琴账号行
+  （展开看 UID 列表、单 UID 解绑、CK 校验、删除账号）
+- 账号页支持按游戏导出 CSV；鸣潮行不给解绑入口（由 `#ww` 指令管理）
+
+### 修复
+
+- 顶栏深色主题细节、`v-else` 相邻条件、构建产物缺失 `_app.config.js` 的加载失败
+
+---
+
 ## [2.0.0] - 2026-10-18
 
 B 端正规化改造（需配合后端 Guoba-Plugin 更新并重启 Bot）。
