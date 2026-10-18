@@ -27,4 +27,8 @@ export const uidApi = {
   getUids(params: UidQuery) {
     return defHttp.get<PageResult<UidRow>>({ url: '/admin/uids', params });
   },
+  /** 手动添加 / 修改一个 UID（origin 传原 UID 即为编辑） */
+  upsertUid(data: { ltuid: number; game: string; uid: string; origin?: string }) {
+    return defHttp.post({ url: '/admin/uids/upsert', data });
+  },
 };

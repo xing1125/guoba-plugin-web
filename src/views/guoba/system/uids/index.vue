@@ -46,6 +46,7 @@
             <span class="gm-panel__extra" style="margin-left: 8px">共 {{ pager.total ?? list.length }} 个</span>
           </div>
           <div class="toolbar">
+            <Button type="primary" @click="openEdit()">添加 UID</Button>
             <Input
               v-model:value="q"
               class="w-240"
@@ -53,7 +54,7 @@
               allow-clear
               @press-enter="handleSearch"
             />
-            <Button type="primary" @click="handleSearch">查询</Button>
+            <Button type="primary" ghost @click="handleSearch">查询</Button>
             <Button @click="handleReset">重置</Button>
             <Button :loading="loading" @click="loadData">刷新</Button>
           </div>
@@ -103,13 +104,14 @@
             </template>
 
             <template v-else-if="column.key === 'action'">
+              <Button type="link" size="small" @click="openEdit(record)">编辑</Button>
               <Button type="link" size="small" danger @click="openUnbind(record)">解绑</Button>
             </template>
           </template>
         </Table>
 
         <div class="footnote">
-          解绑只会移除该账号（ltuid）下的这一个 UID，不影响其它账号；操作会写入后台审计日志。
+          支持手动添加 / 编辑 / 解绑：只改动该账号（ltuid）下这一个 UID，不影响其它账号；全部操作写入后台审计日志。
         </div>
       </div>
     </div>
@@ -124,12 +126,49 @@
       ok-text="确认解绑"
       @ok="doUnbind"
     />
+
+    <!-- 添加 / 编辑 UID -->
+    <Modal
+      v-model:visible="edit.visible"
+      :title="edit.origin ? '编辑 UID' : '添加 UID'"
+      :confirm-loading="edit.loading"
+      :mask-closable="false"
+      ok-text="保存"
+      cancel-text="取消"
+      @ok="doSave"
+    >
+      <div class="edit-form">
+        <div class="edit-form__item">
+          <label>归属账号 ltuid</label>
+          <Select
+            v-model:value="edit.ltuid"
+            show-search
+            :options="accountOptions"
+            :filter-option="filterAccount"
+            :disabled="!!edit.origin"
+            placeholder="选择米游社账号"
+          />
+        </div>
+        <div class="edit-form__item">
+          <label>游戏</label>
+          <Select v-model:value="edit.game" :options="gameOptions" :disabled="!!edit.origin" />
+        </div>
+        <div class="edit-form__item">
+          <label>UID</label>
+          <Input v-model:value="edit.uid" placeholder="4~20 位纯数字" allow-clear />
+        </div>
+        <p class="edit-form__tip">
+          {{ edit.origin ? `将把 ${edit.origin} 改为新 UID；` : '' }}只能为已存在的米游社账号维护
+          UID，保存后立即生效并写入审计日志。
+        </p>
+      </div>
+    </Modal>
   </PageWrapper>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, unref } from 'vue';
-  import { Button, Input, Table, Tag, message } from 'ant-design-vue';
+  import { Button, Input, Modal, Select, Table, Tag, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
@@ -142,6 +181,83 @@
   import { adminApi } from '../account/api';
 
   defineOptions({ name: 'Uids' });
+
+  /* ------------------------------ 添加 / 编辑 UID ------------------------------ */
+  const gameOptions = GAME_TABS.map((g) => ({ label: g.label, value: g.key }));
+  const accountOptions = ref<{ label: string; value: number }[]>([]);
+
+  const edit = reactive({
+    visible: false,
+    loading: false,
+    origin: '',
+    ltuid: undefined as number | undefined,
+    game: 'gs',
+    uid: '',
+  });
+
+  function openEdit(row?: UidRow) {
+    if (row) {
+      edit.origin = String(row.uid);
+      edit.ltuid = Number(row.ltuid);
+      edit.game = String(row.game);
+      edit.uid = String(row.uid);
+    } else {
+      edit.origin = '';
+      edit.ltuid = undefined;
+      edit.game = activeGame.value || 'gs';
+      edit.uid = '';
+      loadAccounts();
+    }
+    edit.visible = true;
+  }
+
+  async function loadAccounts() {
+    if (accountOptions.value.length) return;
+    try {
+      const res = await adminApi.getAccounts({ page: 1, size: 100 });
+      accountOptions.value = (res?.list || []).map((a: any) => ({
+        label: `${a.ltuid}${a.accountType ? ' · ' + a.accountType : ''}`,
+        value: Number(a.ltuid),
+      }));
+    } catch {
+      /* 下拉拉不到就留空，用户仍可直接看列表里的 ltuid */
+    }
+  }
+
+  function filterAccount(input: string, option: any) {
+    const text = `${option?.value ?? ''} ${option?.label ?? ''}`.toLowerCase();
+    return text.includes(String(input || '').toLowerCase());
+  }
+
+  async function doSave() {
+    if (!edit.ltuid) {
+      message.error('请选择归属账号');
+      return;
+    }
+    const uid = edit.uid.trim();
+    if (!/^\d{4,20}$/.test(uid)) {
+      message.error('UID 需为 4~20 位纯数字');
+      return;
+    }
+    edit.loading = true;
+    try {
+      await uidApi.upsertUid({
+        ltuid: Number(edit.ltuid),
+        game: edit.game,
+        uid,
+        origin: edit.origin || undefined,
+      });
+      message.success(edit.origin ? 'UID 已更新' : 'UID 已添加');
+      edit.visible = false;
+      activeGame.value = edit.game;
+      pager.page = 1;
+      await loadData();
+    } catch (e: any) {
+      message.error(e?.message || '保存失败');
+    } finally {
+      edit.loading = false;
+    }
+  }
 
   const unbind = reactive({
     visible: false,
@@ -187,7 +303,7 @@
     { title: '游戏', key: 'game', width: 158 },
     { title: '归属账号', key: 'ltuid', width: 145 },
     { title: '绑定用户', dataIndex: 'bindIds', key: 'bindIds' },
-    { title: '操作', key: 'action', width: 90, fixed: 'right' as const },
+    { title: '操作', key: 'action', width: 130, fixed: 'right' as const },
   ];
 
   const pagination = computed(() => ({
@@ -373,6 +489,33 @@
 
   .bind-more {
     font-size: 11.5px;
+    color: var(--g-text-mute);
+  }
+
+  /* 添加 / 编辑 UID 表单 */
+  .edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 4px;
+  }
+
+  .edit-form__item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--g-text-sub);
+    }
+  }
+
+  .edit-form__tip {
+    margin: 2px 0 0;
+    font-size: 11.5px;
+    line-height: 1.7;
     color: var(--g-text-mute);
   }
 </style>

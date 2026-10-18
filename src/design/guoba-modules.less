@@ -661,6 +661,21 @@ html[data-theme='dark'] .db-hero {
   box-shadow: 0 12px 34px -20px rgb(0 0 0 / 70%);
 }
 
+/* hero 右侧点阵网格：后台系统的经典点缀，向右淡出避免喧宾夺主 */
+.db-hero::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background-image: radial-gradient(rgb(98 168 234 / 22%) 1px, transparent 1px);
+  background-size: 17px 17px;
+  mask-image: linear-gradient(105deg, transparent 52%, rgb(0 0 0 / 60%));
+  pointer-events: none;
+}
+
+html[data-theme='light'] .db-hero::before {
+  background-image: radial-gradient(rgb(47 134 196 / 20%) 1px, transparent 1px);
+}
+
 .db-hero::after {
   position: absolute;
   top: -70px;
@@ -759,6 +774,19 @@ html[data-theme='dark'] .db-hero {
   border-radius: 14px;
   box-shadow: var(--g-card-shadow);
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+/* 右上角一抹柔光：给指标卡一点「灯箱」感 */
+.db-kpi__card::before {
+  position: absolute;
+  top: -34px;
+  right: -34px;
+  width: 96px;
+  height: 96px;
+  content: '';
+  background: radial-gradient(circle, var(--g-sheen), transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 .db-kpi__card:hover {

@@ -5,6 +5,7 @@ export const GAME_TABS = [
   { key: 'gs', label: '原神', color: 'gold' },
   { key: 'sr', label: '星穹铁道', color: 'blue' },
   { key: 'zzz', label: '绝区零', color: 'purple' },
+  { key: 'waves', label: '鸣潮', color: 'volcano' },
   { key: 'bh3', label: '崩坏3', color: 'cyan' },
   { key: 'bh2', label: '崩坏学园2', color: 'geekblue' },
   { key: 'wd', label: '未定事件簿', color: 'magenta' },
