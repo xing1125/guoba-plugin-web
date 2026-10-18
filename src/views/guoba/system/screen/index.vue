@@ -45,7 +45,11 @@
           <div class="scr-panel__head">
             <span class="scr-panel__tag" />
             消息趋势
-            <em class="scr-panel__extra">近 14 天 · 收 / 发</em>
+            <em class="scr-panel__extra scr-legend">
+              <i style="background: #4fc3f7" />接收
+              <i style="background: #d4af37" />发送
+              <span>近 14 天</span>
+            </em>
           </div>
           <div v-show="hasTrend" ref="trendRef" class="scr-chart scr-chart--trend" />
           <div v-if="!hasTrend" class="scr-empty">{{ booting ? '数据加载中…' : '暂无趋势数据' }}</div>
@@ -62,7 +66,9 @@
           <div v-if="topGroups.length" class="scr-rank">
             <div v-for="(g, i) in topGroups" :key="g.gid" class="scr-rank__row">
               <span class="scr-rank__no" :class="`is-${i + 1}`">{{ i + 1 }}</span>
-              <b class="scr-rank__name" :title="g.name || g.gid">{{ g.name || shortGid(g.gid) }}</b>
+              <b class="scr-rank__name" :class="{ 'is-plain': !g.name }" :title="g.name || g.gid">
+                {{ g.name || `群 ${shortGid(g.gid)}` }}
+              </b>
               <div class="scr-rank__track">
                 <i :style="{ width: rankPct(g.total) }" />
               </div>
@@ -117,7 +123,7 @@
             <div v-if="runtime.bots?.length" class="scr-bots__list">
               <div v-for="b in runtime.bots" :key="b.uin" class="scr-bot-row">
                 <i class="scr-bot__dot" />
-                <b>{{ b.nickname || 'Bot' }}</b>
+                <b>{{ b.nickname || `Bot·${String(b.uin || '').slice(-4)}` }}</b>
                 <span class="g-mono">{{ b.uin }}</span>
               </div>
             </div>
@@ -150,7 +156,9 @@
           </div>
           <div v-if="recentGroups.length" class="scr-recent">
             <div v-for="g in recentGroups" :key="g.gid" class="scr-recent__row">
-              <b class="scr-recent__name" :title="g.name || g.gid">{{ g.name || shortGid(g.gid) }}</b>
+              <b class="scr-recent__name" :class="{ 'is-plain': !g.name }" :title="g.name || g.gid">
+                {{ g.name || `群 ${shortGid(g.gid)}` }}
+              </b>
               <div class="scr-spark">
                 <i
                   v-for="(d, di) in g.daily.slice(-14)"
@@ -213,18 +221,34 @@
     return b?.nickname ? `${b.nickname}（${b.uin}）` : 'Yunzai Bot';
   });
 
+  /** 系统名清洗：Windows_NT 10.0.26300 -> Windows 10.0.26300 */
+  function cleanOs(s: string) {
+    return String(s || '').replace('Windows_NT', 'Windows').replace(/_/g, ' ');
+  }
+
+  /** CPU 型号清洗：去掉 (R)/(TM)/CPU @/频率尾巴，只留核心型号 */
+  function cleanCpu(m: string) {
+    return String(m || '')
+      .replace(/\((R|TM)\)/g, '')
+      .replace(/\s*CPU\s*@.*$/, '')
+      .replace(/\s+with\s+.*$/i, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
   const sysInfo = computed(() => {
     const s = runtime.value.system;
     const up = runtime.value.botUptime ?? 0;
+    const rd = runtime.value.redis;
     return [
-      { k: '操作系统', v: s?.osRelease || '—' },
-      { k: '处理器', v: s?.cpuModel || '—' },
+      { k: '操作系统', v: s?.osRelease ? cleanOs(s.osRelease) : '—' },
+      { k: '处理器', v: s?.cpuModel ? cleanCpu(s.cpuModel) : '—' },
       { k: 'CPU 核心', v: s?.cpuCores ? `${s.cpuCores} 核` : '—' },
       { k: '运行平台', v: s ? `${s.platform} / ${s.arch}` : '—' },
       { k: 'Bot 运行时长', v: fmtDuration(up) },
       { k: '主机在线', v: fmtDuration(runtime.value.osUptime ?? 0) },
       { k: '进程内存 RSS', v: fmtBytes(runtime.value.memory?.rss) },
-      { k: 'Redis 键数', v: thousands(runtime.value.redis?.keys ?? 0) },
+      { k: 'Redis 版本', v: rd?.version ? `v${rd.version}` : '—' },
     ];
   });
 
@@ -411,7 +435,7 @@
           title: { offsetCenter: [0, '38%'], color: 'rgba(167,189,210,0.85)', fontSize: 12 },
           detail: {
             offsetCenter: [0, '-4%'],
-            formatter: val == null ? '采样中' : `${val}%`,
+            formatter: val == null ? '--' : `${val}%`,
             color: '#e6f2fc',
             fontSize: 24,
             fontWeight: 700,
@@ -475,6 +499,10 @@
     loadAll();
     clockTimer = setInterval(tickClock, 1000);
     pollTimer = setInterval(loadAll, 30_000);
+    // CPU 占用按两次采样差值计算：首拉后 3 秒补一次采样，避免「--」挂满 30 秒
+    setTimeout(() => {
+      statsApi.getRuntime().then((r) => r && (runtime.value = r)).catch(() => {});
+    }, 3000);
   });
 
   onBeforeUnmount(() => {
@@ -637,9 +665,17 @@
     gap: 11px;
     align-items: center;
     padding: 13px 15px;
-    background: var(--scr-panel);
+    background:
+      linear-gradient(180deg, rgba(79, 195, 247, 0.06), transparent 42%),
+      var(--scr-panel);
     border: 1px solid var(--scr-line);
     border-radius: 12px;
+    transition: border-color 0.25s ease, transform 0.25s ease;
+  }
+
+  .scr-kpi__card:hover {
+    border-color: rgba(79, 195, 247, 0.45);
+    transform: translateY(-2px);
   }
 
   .scr-kpi__icon {
@@ -740,9 +776,19 @@
     display: flex;
     flex-direction: column;
     padding: 12px 14px;
-    background: var(--scr-panel);
+    background:
+      linear-gradient(180deg, rgba(79, 195, 247, 0.055), transparent 34%),
+      var(--scr-panel);
     border: 1px solid var(--scr-line);
     border-radius: 12px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .scr-panel:hover {
+    border-color: rgba(79, 195, 247, 0.45);
+    box-shadow:
+      0 0 0 1px rgba(79, 195, 247, 0.12),
+      0 8px 24px -14px rgba(79, 195, 247, 0.35);
   }
 
   .scr-panel--grow {
@@ -769,12 +815,31 @@
   }
 
   .scr-panel__extra {
+    display: flex;
+    gap: 8px;
+    align-items: center;
     margin-left: auto;
     font-size: 10.5px;
     font-style: normal;
     font-weight: 400;
     letter-spacing: 0;
     color: var(--scr-mute);
+  }
+
+  /* 图例点（趋势面板 extra） */
+  .scr-legend i {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 4px;
+    vertical-align: -1px;
+    border-radius: 3px;
+  }
+
+  .scr-legend span {
+    margin-left: 6px;
+    padding-left: 10px;
+    border-left: 1px solid rgba(79, 195, 247, 0.2);
   }
 
   .scr-chart--trend {
@@ -863,6 +928,14 @@
     color: var(--scr-sub);
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    /* 没有群名时以 mono 小字展示群号，弱化存在感 */
+    &.is-plain {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--scr-mute);
+    }
   }
 
   .scr-rank__track {
@@ -1016,6 +1089,13 @@
     color: var(--scr-sub);
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    &.is-plain {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--scr-mute);
+    }
   }
 
   .scr-spark {
