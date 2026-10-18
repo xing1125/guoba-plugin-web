@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4">
+  <PageWrapper title="错误日志" content="运行时异常采集，用于排查前端报错；生产环境默认不采集" class="db-elog">
     <template v-for="src in imgList" :key="src">
       <img :src="src" v-show="false" alt="" />
     </template>
@@ -9,10 +9,10 @@
         <a-button @click="fireVueError" type="primary">
           {{ t('sys.errorLog.fireVueError') }}
         </a-button>
-        <a-button @click="fireResourceError" type="primary">
+        <a-button @click="fireResourceError" class="ml-2">
           {{ t('sys.errorLog.fireResourceError') }}
         </a-button>
-        <a-button @click="fireAjaxError" type="primary">
+        <a-button @click="fireAjaxError" class="ml-2">
           {{ t('sys.errorLog.fireAjaxError') }}
         </a-button>
       </template>
@@ -29,13 +29,14 @@
         </template>
       </template>
     </BasicTable>
-  </div>
+  </PageWrapper>
 </template>
 
 <script lang="ts" setup>
   import type { ErrorLogInfo } from '/#/store';
   import { watch, ref, nextTick } from 'vue';
   import DetailModal from './DetailModal.vue';
+  import { PageWrapper } from '/@/components/Page';
   import { BasicTable, useTable, TableAction } from '/@/components/Table/index';
   import { useModal } from '/@/components/Modal';
   import { useMessage } from '/@/hooks/web/useMessage';

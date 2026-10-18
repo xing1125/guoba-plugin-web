@@ -56,6 +56,23 @@
 登录页立绘 `yunzai-right.png` 自带不透明浅底，在暗色下会露出方块边界，因此用
 `mask-image: radial-gradient(closest-side ...)` 把四角淡出（浅暗两套各一档半径）。
 
+### 框架边界页
+
+| 位置 | 文件 | 说明 |
+|---|---|---|
+| 异常页 403/404/500 | `sys/exception/Exception.vue` | 弃用 antd `Result`（暗色下标题近乎不可见），改为「渐变状态码 + 标题 + 描述 + 操作」单卡；无数据 / 网络错误仍走插图分支 |
+| 锁屏 | `sys/lock/LockPage.vue` | 纯黑底改深色极光 + 毛玻璃时钟砖；解锁面板卡片化，头像/密码/进入/返回/重新登录 |
+| 内嵌页 | `sys/iframe/index.vue` | iframe 从 `@component-background` 硬编码改为令牌 + 圆角边框卡片 |
+| 错误日志 | `sys/error-log/index.vue` | 套 `PageWrapper`（标题 + 描述），工具栏 primary 只留第一个 |
+
+两处结构性坑：
+
+1. `.guoba-layout-content` 被 vben 自己的 `index3.css` 写了 `min-height: 0`，
+   短页面（404、错误日志）内容区只有几百像素高，渐变背景画一半，下沿出现一条纯黑硬边。
+   必须在 `html[data-theme='…'] .guoba-layout-content` 里用 `min-height: calc(100vh - 56px) !important` 压住。
+2. antd 的 `.ant-card-head` / `.ant-card-body` 各自带一层 `@component-background`，
+   只改 `.ant-card` 背景会被盖回去，暗色下卡片仍是中性灰；两者都要设 `background: transparent`。
+
 暗色主题下还统一接管了浮层组件（`guoba-admin.less`）：`.ant-modal-*`、`.ant-popover-*`、
 `.ant-drawer-*`、`.ant-dropdown-menu`、`.ant-select-dropdown`、`.ant-pagination-*`，
 否则 antd 默认仍会留下浅底。

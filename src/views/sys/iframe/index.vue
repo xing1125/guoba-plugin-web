@@ -77,8 +77,10 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: @component-background;
-      border: 0;
+      background-color: var(--g-card-bg);
+      border: 1px solid var(--g-card-border);
+      border-radius: 12px;
+      box-shadow: var(--g-card-shadow);
       box-sizing: border-box;
     }
   }

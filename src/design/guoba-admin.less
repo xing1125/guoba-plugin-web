@@ -74,10 +74,22 @@ html {
 /* 荷花的玻璃感「底料」：大面积柔光晕，深浅各按 abyss/crystal 的 BG 色场移植 */
 
 .guoba-layout-content {
+  /* 短页面（404 / 错误日志）也要撑满一屏，否则渐变背景只画一半，下沿出现硬边 */
+  min-height: calc(100vh - 56px);
   transition: background 0.3s ease;
 }
 
+/*
+ * 内容区高度不足一屏时（404、错误日志这类短页面），下方会露出 .ant-layout 的默认底色
+ * （暗色下接近纯黑），与内容区渐变形成硬边。这里让 layout 根节点也用同一套底色。
+ */
+.guoba-layout {
+  background-color: var(--g-page-bg);
+}
+
 html[data-theme='dark'] .guoba-layout-content {
+  /* vben 自己的 index3.css 给 .guoba-layout-content 写了 min-height:0，这里要用更高优先级压住 */
+  min-height: calc(100vh - 56px) !important;
   background:
     radial-gradient(640px 420px at 8% 0%, rgb(46 63 143 / 38%), transparent 70%),
     radial-gradient(560px 400px at 94% 14%, rgb(91 74 158 / 32%), transparent 70%),
@@ -87,6 +99,7 @@ html[data-theme='dark'] .guoba-layout-content {
 }
 
 html[data-theme='light'] .guoba-layout-content {
+  min-height: calc(100vh - 56px) !important;
   background:
     radial-gradient(640px 440px at 6% 2%, rgb(143 204 242 / 42%), transparent 70%),
     radial-gradient(560px 400px at 96% 22%, rgb(195 178 255 / 34%), transparent 70%),
@@ -556,6 +569,16 @@ html {
   transition: background-color 0.3s ease;
 }
 
+/*
+ * 内容不足一屏时（404 页、错误日志这类短页面），露出的 html/body 底色也要跟随主题，
+ * 否则暗色下会在内容区下沿露出一条纯黑的 body 背景。
+ */
+html,
+body,
+#app {
+  background-color: var(--g-page-bg);
+}
+
 /* 头部深浅色开关间距（覆盖组件内的 margin-left:auto） */
 .guoba-dark-switch {
   margin: 0 8px 0 10px !important;
@@ -573,6 +596,18 @@ html {
 html[data-theme='dark'] {
   .ant-card {
     background: var(--g-card-bg);
+    border-color: var(--g-card-border);
+  }
+
+  /* antd 的 card-head / card-body 默认各带一层 @component-background，会把卡片底色盖回去 */
+  .ant-card-head {
+    color: var(--g-text);
+    background: transparent;
+    border-color: var(--g-card-border);
+  }
+
+  .ant-card-body {
+    background: transparent;
   }
 
   .ant-table {
