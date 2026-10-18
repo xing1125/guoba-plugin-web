@@ -300,7 +300,18 @@
         const { labelCol, wrapperCol } = unref(itemLabelWidthProp);
         const { colon } = props.formProps;
 
-        if (component === 'Divider') {
+        if (component === 'SOFT_GROUP_BEGIN') {
+          // 软分组标记：渲染为通栏分区标题条（金蓝竖条 + 标题 + 渐隐线），
+          // 此前无对应组件会落到「未知的组件」，只剩一行孤零零的 label
+          // 注意：外层还有 baseColProps 的 Col 包裹，这里不能再嵌 Col，通栏由下方 return 处 span=24 保证
+          return (
+            <div class="cfg-sec">
+              <span class="cfg-sec__bar"></span>
+              <span class="cfg-sec__txt">{renderLabelHelpMessage()}</span>
+              <span class="cfg-sec__line"></span>
+            </div>
+          );
+        } else if (component === 'Divider') {
           return (
             <Col span={24}>
               <Divider {...unref(getComponentsProps)}>{renderLabelHelpMessage()}</Divider>
@@ -349,9 +360,14 @@
           return colSlot ? getSlot(slots, colSlot, values) : renderColContent ? renderColContent(values) : renderItem();
         };
 
+        // 软分组标题条必须通栏：span 与所有响应式断点全部强制 24，否则 md/lg 等仍会拆半栏
+        const isSoftGroupHead = props.schema.component === 'SOFT_GROUP_BEGIN';
+        const finalColProps = isSoftGroupHead
+          ? { ...realColProps, span: 24, xs: 24, sm: 24, md: 24, lg: 24, xl: 24, xxl: 24 }
+          : realColProps;
         return (
           isIfShow && (
-            <Col {...realColProps} v-show={isShow}>
+            <Col {...finalColProps} v-show={isShow}>
               {getContent()}
             </Col>
           )

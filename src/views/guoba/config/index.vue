@@ -57,8 +57,15 @@
           </div>
         </div>
 
-        <ConfigForm :key="activeTab.key" :cards="activeTab.cards" />
+        <ConfigForm ref="configFormRef" :key="activeTab.key" :cards="activeTab.cards" />
       </div>
+    </div>
+
+    <!-- 全局悬浮保存：fixed 右下角，不随内容滚动 -->
+    <div v-if="activeTab" class="cfg-fab" :class="{ 'is-busy': fabSaving }" @click="onSaveAll">
+      <Icon :icon="fabSaving ? 'ant-design:loading' : 'ant-design:save'" :size="15" :spin="fabSaving" />
+      <span>{{ fabSaving ? '保存中…' : '保存全部' }}</span>
+      <span class="cfg-fab__cnt">{{ activeTab.cards.length }} 块</span>
     </div>
   </PageWrapper>
 </template>
@@ -86,6 +93,18 @@
       const pageLoading = ref(true);
       const configTabs = ref<ConfigTabs>([]);
       const activeKey = ref('');
+      const configFormRef = ref<any>(null);
+      const fabSaving = ref(false);
+
+      async function onSaveAll() {
+        if (fabSaving.value) return;
+        fabSaving.value = true;
+        try {
+          await configFormRef.value?.saveAll();
+        } finally {
+          fabSaving.value = false;
+        }
+      }
 
       // 折叠信号：CardForm 通过 inject 读取，实现「收起/展开全部」
       const foldSignal = reactive({ mode: 'expand' as 'expand' | 'collapse', tick: 0 });
@@ -154,6 +173,9 @@
         pad,
         toggleAll,
         reloadConfig,
+        configFormRef,
+        fabSaving,
+        onSaveAll,
       };
     },
   });
@@ -176,5 +198,53 @@
   .fade-enter,
   .fade-leave-to {
     opacity: 0;
+  }
+
+  /* 全局悬浮保存胶囊：fixed 右下角，与插件配置页 .pd-save 同一视觉语言 */
+  .cfg-fab {
+    position: fixed;
+    right: 30px;
+    bottom: 34px;
+    z-index: 90;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 0 20px;
+    height: 42px;
+    font-size: 13.5px;
+    font-weight: 650;
+    color: #fff;
+    cursor: pointer;
+    user-select: none;
+    background: linear-gradient(135deg, var(--g-blue), #2f86d8);
+    border-radius: 999px;
+    box-shadow:
+      0 10px 26px -8px rgb(47 134 196 / 55%),
+      0 2px 8px rgb(0 0 0 / 18%);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      filter 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 14px 30px -8px rgb(47 134 196 / 65%),
+        0 4px 12px rgb(0 0 0 / 22%);
+    }
+
+    &.is-busy {
+      cursor: wait;
+      filter: saturate(0.7);
+    }
+
+    .cfg-fab__cnt {
+      padding: 1px 9px;
+      font-size: 10.5px;
+      font-weight: 500;
+      color: rgb(255 255 255 / 88%);
+      background: rgb(255 255 255 / 18%);
+      border-radius: 20px;
+    }
   }
 </style>

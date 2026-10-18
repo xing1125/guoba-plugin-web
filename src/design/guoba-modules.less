@@ -1279,6 +1279,45 @@ html[data-theme='light'] .db-hero::before {
   color: var(--g-text-sub);
 }
 
+/* -------- SOFT_GROUP 分区标题条（Form/src/components/FormItem.tsx 渲染） -------- */
+/* 把「一团」配置拆成清晰小节：金蓝竖条 + 加粗标题 + 渐隐分隔线 */
+.cfg-sec {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 7px 12px;
+  margin: 4px 0 16px;
+  background: linear-gradient(90deg, var(--g-chip-bg), transparent 78%);
+  border: 1px solid var(--g-card-border);
+  border-radius: 9px;
+}
+
+.cfg-sec__bar {
+  flex: none;
+  width: 3px;
+  height: 13px;
+  background: linear-gradient(180deg, var(--g-gold), var(--g-blue));
+  border-radius: 2px;
+}
+
+.cfg-sec__txt {
+  flex: none;
+  max-width: 70%;
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--g-text);
+  letter-spacing: 0.3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cfg-sec__line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--g-card-border), transparent);
+}
+
 /* -------- 喵喵帮助预览画布 -------- */
 /* 承载 miao-plugin / miao-plugin-v1 的帮助卡 1:1 预览，面板化后居中显示 */
 .mh-canvas {

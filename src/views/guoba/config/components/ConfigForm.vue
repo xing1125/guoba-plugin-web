@@ -172,7 +172,7 @@
         }
       }
 
-      async function onSubmit(form: FormType) {
+      async function onSubmit(form: FormType, silent?: boolean) {
         try {
           form.loading = true;
           let values = await form.actions?.validate();
@@ -198,10 +198,49 @@
             values = { [form.fieldKey]: values };
           }
           await saveConfigData(configKey, values);
-          createMessage.success('保存成功~');
+          if (silent !== true) {
+            createMessage.success('保存成功~');
+          }
           await onRedo(form);
         } finally {
           form.loading = false;
+        }
+      }
+
+      // 「保存全部」：把当前分组下所有配置块（含 keyForm / arrayForm）逐块静默保存，汇总一条提示
+      const savingAll = ref(false);
+      async function saveAll() {
+        if (savingAll.value) return;
+        savingAll.value = true;
+        try {
+          let tasks: FormType[] = [];
+          for (const f of forms.value) {
+            if (f.isKeyForm) {
+              tasks = tasks.concat(keyForms.value[f.key] ?? []);
+            } else {
+              tasks.push(f);
+            }
+          }
+          let ok = 0;
+          let fail = 0;
+          for (const t of tasks) {
+            try {
+              if (t.loading) continue;
+              await onSubmit(t, true);
+              ok++;
+            } catch (e) {
+              fail++;
+            }
+          }
+          if (fail > 0) {
+            createMessage.warning(`已保存 ${ok} 个配置块，${fail} 个保存失败，请检查填写后重试`);
+          } else if (ok > 0) {
+            createMessage.success(`已保存全部 ${ok} 个配置块~`);
+          } else {
+            createMessage.info('当前没有可保存的配置块');
+          }
+        } finally {
+          savingAll.value = false;
         }
       }
 
@@ -240,10 +279,12 @@
         forms,
         keyForms,
         arrayForms,
+        savingAll,
         onRedo,
         onSubmit,
         onAddCard,
         onDelCard,
+        saveAll,
       };
     },
   });

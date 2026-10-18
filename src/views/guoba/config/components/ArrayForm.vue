@@ -69,6 +69,11 @@
       const innerValue = ref<any[]>(props.value);
       const addBtnText = computed(() => props.card?.addBtnText ?? '新增条目');
 
+      // validate 在挂载时即挂到 form.actions，供「保存全部」批量校验取值使用
+      if (!props.form?.actions) {
+        props.form!.actions = { validate } as any;
+      }
+
       const limitText = computed(() => {
         const { lengthMin, lengthMax } = props.card ?? {};
         if (lengthMin != null && lengthMax != null) return `允许 ${lengthMin} ~ ${lengthMax} 项`;

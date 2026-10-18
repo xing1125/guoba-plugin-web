@@ -8,6 +8,7 @@ dist.old-*
 
 # 本地预览工具（含真实账号样例数据，不入库）
 preview-server.mjs
+preview-server.log
 build/preview/
 
 tests/server/static
