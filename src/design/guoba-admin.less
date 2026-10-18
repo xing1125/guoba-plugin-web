@@ -579,3 +579,99 @@ html[data-theme='dark'] {
     background: transparent;
   }
 }
+
+/* ------------------------------ 浮层组件 ------------------------------ */
+/*
+ * 弹窗、气泡、抽屉、下拉在暗色主题下 antd 默认仍会留下浅底，
+ * 这里统一用设计令牌接管，保证任何浮层都跟页面同一套深浅色。
+ */
+html[data-theme='dark'] {
+  .ant-modal-content {
+    background: var(--g-card-bg);
+    border: 1px solid var(--g-card-border);
+    box-shadow: var(--g-card-shadow);
+  }
+
+  .ant-modal-header,
+  .ant-modal-footer {
+    background: transparent;
+    border-color: var(--g-card-border);
+  }
+
+  .ant-modal-title,
+  .ant-modal-confirm-title {
+    color: var(--g-text);
+  }
+
+  .ant-modal-confirm-content,
+  .ant-modal-confirm-paragraph,
+  .ant-modal-body {
+    color: var(--g-text-sub);
+  }
+
+  .ant-modal-close {
+    color: var(--g-text-mute);
+  }
+
+  .ant-modal-close:hover {
+    color: var(--g-text);
+    background: var(--g-hover);
+  }
+
+  .ant-popover-inner {
+    background: var(--g-card-bg);
+    box-shadow: var(--g-card-shadow);
+  }
+
+  .ant-popover-arrow-content {
+    background: var(--g-card-bg);
+  }
+
+  .ant-popover-inner-content,
+  .ant-popconfirm-message-title,
+  .ant-popconfirm-description {
+    color: var(--g-text);
+  }
+
+  .ant-drawer-content,
+  .ant-drawer-header {
+    background: var(--g-card-bg);
+  }
+
+  .ant-drawer-title,
+  .ant-drawer-body {
+    color: var(--g-text);
+  }
+
+  .ant-drawer-header {
+    border-bottom-color: var(--g-card-border);
+  }
+
+  .ant-dropdown-menu,
+  .ant-select-dropdown {
+    background: var(--g-card-bg);
+    box-shadow: var(--g-card-shadow);
+  }
+
+  .ant-select-item {
+    color: var(--g-text-sub);
+  }
+
+  .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+    background: var(--g-hover);
+  }
+
+  .ant-pagination-item,
+  .ant-pagination-prev .ant-pagination-item-link,
+  .ant-pagination-next .ant-pagination-item-link,
+  .ant-pagination-options .ant-select-selector {
+    background: var(--g-card-bg-soft);
+    border-color: var(--g-card-border);
+  }
+
+  .ant-pagination-item a,
+  .ant-pagination-prev,
+  .ant-pagination-next {
+    color: var(--g-text-sub);
+  }
+}

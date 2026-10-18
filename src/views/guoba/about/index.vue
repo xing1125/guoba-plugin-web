@@ -146,4 +146,60 @@
   .db-hero__desc a {
     color: var(--g-blue);
   }
+
+  /* 让 vben 的 Description 卡片跟随设计令牌（尤其暗色主题） */
+  .db-about :deep(.ant-descriptions) {
+    margin-bottom: 16px;
+  }
+
+  .db-about :deep(.ant-descriptions-title) {
+    margin-bottom: 10px;
+    font-size: 13.5px;
+    font-weight: 650;
+    color: var(--g-text);
+    letter-spacing: 0.2px;
+  }
+
+  .db-about :deep(.ant-descriptions-view) {
+    overflow: hidden;
+    background: var(--g-card-bg);
+    border: 1px solid var(--g-card-border);
+    border-radius: 12px;
+    box-shadow: var(--g-card-shadow);
+  }
+
+  .db-about :deep(.ant-descriptions-bordered .ant-descriptions-view) {
+    border-color: var(--g-card-border);
+  }
+
+  .db-about :deep(.ant-descriptions-row > th),
+  .db-about :deep(.ant-descriptions-row > td) {
+    border-color: var(--g-card-border);
+  }
+
+  .db-about :deep(.ant-descriptions-item-label) {
+    font-size: 12px;
+    color: var(--g-text-mute);
+    background: var(--g-card-bg-soft);
+  }
+
+  .db-about :deep(.ant-descriptions-item-content) {
+    font-size: 12.5px;
+    color: var(--g-text-sub);
+  }
+
+  .db-about :deep(.ant-descriptions-item-content .ant-tag) {
+    padding: 0 7px;
+    font-size: 11px;
+    font-weight: 550;
+    line-height: 17px;
+    color: var(--g-blue);
+    background: rgb(98 168 234 / 15%);
+    border: none;
+    border-radius: 5px;
+  }
+
+  .db-about :deep(.ant-descriptions-item-content a) {
+    color: var(--g-blue);
+  }
 </style>

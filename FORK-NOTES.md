@@ -43,6 +43,18 @@
 页头抽成共享组件 `plugins/extra-config/_shared/MiaoHero.vue`（props: eyebrow/title/desc/chips/showTheme），
 原来的 `components/MiaoHeader.vue`（v1/v2 各一份）已删除。
 
+### 浮层与边角页面
+
+| 位置 | 文件 | 说明 |
+|---|---|---|
+| 插件详情弹窗 | `components/Guoba/src/GPluginModal.vue` | 身份条（图标/标题/包名/状态胶囊）+ Tabs + 键值行 + 双端 footer（左危险操作+提示，右关闭/保存）；替换原 `Description` 描述列表 |
+| 关于页 | `about/index.vue` | vben `Description` 卡片用 `:deep()` 接设计令牌（暗色不再黑块）、版本标签改胶囊 |
+| 迁移页 | `v2/index.vue` | 硬编码 `#f5f5f5` 改为令牌背景 + 卡片化；**修复卡片塌陷成 2px**（容器高度 0 时 flex 压缩子项，加 `min-height` 参照与 `flex-shrink: 0`） |
+
+暗色主题下还统一接管了浮层组件（`guoba-admin.less`）：`.ant-modal-*`、`.ant-popover-*`、
+`.ant-drawer-*`、`.ant-dropdown-menu`、`.ant-select-dropdown`、`.ant-pagination-*`，
+否则 antd 默认仍会留下浅底。
+
 配置块组件 `config/components/{CardForm,ArrayForm}.vue` 统一使用设计层的 `.db-card` 面板语言，
 折叠由页面 `provide('cfgFoldSignal')` 总控，`ConfigForm.vue` 的表单为宽屏两列网格（`baseColProps` md/lg/xl = 12）。
 

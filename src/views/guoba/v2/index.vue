@@ -50,6 +50,12 @@
       height: 100%;
     }
 
+    /* 没有这个高度参照，绝对定位的容器会塌陷，卡片会被 flex 压成 2px */
+    & > .ant-spin-container {
+      position: relative;
+      min-height: calc(100vh - 148px);
+    }
+
     .transfer-container {
       position: absolute;
       top: 0;
@@ -60,12 +66,33 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background-color: #f5f5f5;
+      background:
+        radial-gradient(640px 420px at 12% 0%, rgb(98 168 234 / 12%), transparent 70%),
+        radial-gradient(560px 400px at 88% 90%, rgb(157 141 240 / 12%), transparent 70%),
+        var(--g-page-bg);
     }
 
     .box-card {
+      flex-shrink: 0;
       width: 100%;
       max-width: 800px;
+      overflow: hidden;
+      background: var(--g-card-bg);
+      border: 1px solid var(--g-card-border);
+      border-radius: 14px;
+      box-shadow: var(--g-card-shadow);
+
+      .ant-card-head {
+        background: transparent;
+        border-bottom-color: var(--g-card-border);
+      }
+
+      .ant-card-head-title {
+        font-size: 13.5px;
+        font-weight: 650;
+        color: var(--g-text);
+        letter-spacing: 0.2px;
+      }
 
       .ant-card-body {
         padding: 0;
@@ -82,7 +109,7 @@
 
       .s-tip {
         font-size: 12px;
-        color: #666666;
+        color: var(--g-text-mute);
       }
 
       .lite-form {
