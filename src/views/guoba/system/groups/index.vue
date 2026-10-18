@@ -220,7 +220,7 @@
     </div>
 
     <!-- 群详情抽屉 -->
-    <Drawer :visible="drawer.visible" :title="drawerTitle" width="640" @close="drawer.visible = false">
+    <GModal v-model:visible="drawer.visible" eyebrow="GROUP DETAIL" title="群详情" :subtitle="drawerTitle" size="lg" body-height="60vh">
       <template v-if="detail">
         <div class="detail-stats">
           <div v-for="s in detailStats" :key="s.label" class="detail-stat">
@@ -321,10 +321,13 @@
           <div v-else class="g-empty" style="height: 100px">该群暂无群管活跃榜数据</div>
         </div>
       </template>
-    </Drawer>
+      <template #footer>
+        <Button @click="drawer.visible = false">关闭</Button>
+      </template>
+    </GModal>
 
     <!-- 无效群检测抽屉（标准 antd 风格） -->
-    <Drawer :visible="invalidDrawer.visible" title="无效群检测" width="680" @close="invalidDrawer.visible = false">
+    <GModal v-model:visible="invalidDrawer.visible" eyebrow="GROUP HEALTH" title="无效群检测" subtitle="已退群 / 零活跃 / 低活跃群汇总" size="lg" body-height="62vh">
       <template v-if="invalidDrawer.data">
         <p class="inv-line">
           共跟踪 <b>{{ invalidDrawer.data.trackedCount }}</b> 个群，Bot 当前在群
@@ -394,7 +397,10 @@
         </div>
       </template>
       <div v-else class="gm-skeleton" style="height: 300px" />
-    </Drawer>
+      <template #footer>
+        <Button @click="invalidDrawer.visible = false">关闭</Button>
+      </template>
+    </GModal>
 
     <!-- 退群确认 -->
     <GConfirmModal
@@ -453,11 +459,12 @@
 
 <script setup lang="ts">
   import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
-  import { Button, Checkbox, Drawer, Input, message, Select, Switch, Table, Tabs, Tag } from 'ant-design-vue';
+  import { Button, Checkbox, Input, message, Select, Switch, Table, Tabs, Tag } from 'ant-design-vue';
 
   const TabPane = Tabs.TabPane;
   import { CloseOutlined, InfoCircleOutlined } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
+  import GModal from '../_shared/dialog/GModal.vue';
   import { downloadCsv } from '/@/utils/export/csv';
   import { Icon } from '/@/components/Icon';
   import { useECharts } from '/@/hooks/web/useECharts';

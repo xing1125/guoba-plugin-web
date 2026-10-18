@@ -235,7 +235,7 @@
     </div>
 
     <!-- ============================ 某天明细抽屉 ============================ -->
-    <Drawer :visible="dayDrawer.visible" :title="`${dayDrawer.date} 签到明细`" width="780" @close="dayDrawer.visible = false">
+    <GModal v-model:visible="dayDrawer.visible" eyebrow="SIGN DETAIL" title="签到明细" :subtitle="dayDrawer.date" size="xl" body-height="62vh">
       <template v-if="dayData">
         <div class="drawer-tabs">
           <span class="gm-seg">
@@ -300,7 +300,10 @@
         </template>
       </template>
       <div v-else class="gm-skeleton" style="height: 240px" />
-    </Drawer>
+      <template #footer>
+        <Button @click="dayDrawer.visible = false">关闭</Button>
+      </template>
+    </GModal>
 
     <!-- 单条流水详情 -->
     <Modal
@@ -329,7 +332,6 @@
   import {
     Button,
     Descriptions,
-    Drawer,
     Input,
     Modal,
     Select,
@@ -344,6 +346,7 @@
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import GEmpty from '../_shared/GEmpty.vue';
+  import GModal from '../_shared/dialog/GModal.vue';
   import type { SignDay, SignOverview, SignRecord } from './api';
   import { signApi } from './api';
   import {

@@ -297,7 +297,7 @@
     />
 
     <!-- 删除记录 / 恢复 -->
-    <Drawer :visible="binDrawer.visible" title="删除记录（可恢复）" width="560" @close="binDrawer.visible = false">
+    <GModal v-model:visible="binDrawer.visible" eyebrow="DELETED ACCOUNTS" title="删除记录（可恢复）" subtitle="最近 100 条，删除前自动备份" size="lg" body-height="58vh">
       <div class="bin-tip">删除账号前会把整行备份到后台库；这里是最近 100 条记录。</div>
       <Table
         row-key="id"
@@ -313,18 +313,22 @@
           </template>
         </template>
       </Table>
-    </Drawer>
+      <template #footer>
+        <Button @click="binDrawer.visible = false">关闭</Button>
+      </template>
+    </GModal>
   </PageWrapper>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, watch } from 'vue';
   import { useRoute } from 'vue-router';
-  import { Button, Drawer, Input, Table, Tag, message } from 'ant-design-vue';
+  import { Button, Input, Table, Tag, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import { downloadCsv } from '/@/utils/export/csv';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
+  import GModal from '../_shared/dialog/GModal.vue';
   import GEmpty from '../_shared/GEmpty.vue';
   import GameIcon from '../_shared/GameIcon.vue';
   import { fmtNum } from '../_shared/stats';

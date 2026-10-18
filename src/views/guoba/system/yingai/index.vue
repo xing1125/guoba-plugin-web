@@ -131,11 +131,13 @@
       </div>
 
       <!-- 聊天记录抽屉 -->
-      <Drawer
-        :visible="chat.visible"
-        :title="`${chat.user?.name || ''} · 聊天记录`"
-        width="720"
-        @close="chat.visible = false"
+      <GModal
+        v-model:visible="chat.visible"
+        eyebrow="CHAT LOG"
+        title="聊天记录"
+        :subtitle="chat.user?.name || ''"
+        size="xl"
+        body-height="64vh"
       >
         <div v-if="chat.user" class="ya-chat__meta">
           <Tag>{{ stageLabel(chat.user.stage) }}</Tag>
@@ -163,15 +165,16 @@
           <span>{{ chat.page }} / {{ chat.pages }}</span>
           <Button size="small" :disabled="chat.page <= 1" @click="loadMessages(chat.page - 1)">更新</Button>
         </div>
-      </Drawer>
+      </GModal>
     </div>
   </PageWrapper>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue';
-  import { Button, Drawer, Input, Switch, Table, Tag, message } from 'ant-design-vue';
+  import { Button, Input, Switch, Table, Tag, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
+  import GModal from '../_shared/dialog/GModal.vue';
   import { Icon } from '/@/components/Icon';
   import type { YingInsights, YingMessage, YingOverview, YingUserRow } from './api';
   import { yingaiApi } from './api';

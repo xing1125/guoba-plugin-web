@@ -279,7 +279,7 @@
     </div>
 
     <!-- ============================ Redis 值抽屉 ============================ -->
-    <Drawer :visible="keyDrawer.visible" title="键详情" width="760" @close="keyDrawer.visible = false">
+    <GModal v-model:visible="keyDrawer.visible" eyebrow="REDIS KEY" title="键详情" :subtitle="keyDetail?.key || ''" size="xl" body-height="64vh">
       <template v-if="keyDetail">
         <div class="dm-meta">
           <div class="dm-meta__row">
@@ -314,7 +314,11 @@
           />
         </div>
 
-        <div class="dm-actions">
+      </template>
+      <div v-else class="gm-skeleton" style="height: 240px" />
+
+      <template #footer>
+        <div v-if="keyDetail" class="dm-actions">
           <div class="dm-actions__left">
             <InputNumber v-model:value="keyDrawer.ttl" :min="-1" style="width: 130px" addon-after="秒" />
             <Button size="small" @click="applyTtl">设置 TTL</Button>
@@ -327,11 +331,10 @@
           </div>
         </div>
       </template>
-      <div v-else class="gm-skeleton" style="height: 240px" />
-    </Drawer>
+    </GModal>
 
     <!-- ============================ 文件编辑抽屉 ============================ -->
-    <Drawer :visible="fileDrawer.visible" :title="fileDrawer.path" width="820" @close="fileDrawer.visible = false">
+    <GModal v-model:visible="fileDrawer.visible" eyebrow="PLUGIN FILE" title="文件预览" :subtitle="fileDrawer.path" size="xl" body-height="64vh">
       <template v-if="fileContent">
         <div class="dm-meta">
           <div class="dm-meta__row">
@@ -344,17 +347,6 @@
           </div>
         </div>
         <Input.TextArea v-model:value="fileDrawer.text" :rows="20" class="mono dm-editor__area" />
-        <div class="dm-actions">
-          <div class="dm-actions__left">
-            <Button size="small" :loading="fileDrawer.loadingBackups" @click="loadFileBackups">
-              备份记录（{{ fileBackups.length }}）
-            </Button>
-          </div>
-          <div class="dm-actions__right">
-            <Button :disabled="!fileBackups.length" @click="restoreLatestFile">恢复上一版</Button>
-            <Button type="primary" :loading="fileDrawer.saving" @click="saveFile">保存修改</Button>
-          </div>
-        </div>
         <div v-if="fileBackups.length" class="dm-backups">
           <div v-for="b in fileBackups.slice(0, 8)" :key="b.name" class="dm-backups__row">
             <span class="mono fs-12">{{ b.name }}</span>
@@ -363,7 +355,21 @@
           </div>
         </div>
       </template>
-    </Drawer>
+
+      <template #footer>
+        <div class="dm-actions">
+          <div class="dm-actions__left">
+            <Button size="small" :loading="fileDrawer.loadingBackups" @click="loadFileBackups">
+              备份记录（{{ fileBackups.length }}）
+            </Button>
+          </div>
+          <div class="dm-actions__right">
+            <Button :disabled="!fileBackups.length" @click="restoreLatestFile">恢复上一版</Button>
+            <Button type="primary" :loading="fileDrawer.saving" @click="saveFile">保存修改</Button>
+          </div>
+        </div>
+      </template>
+    </GModal>
 
     <!-- ============================ 危险确认 ============================ -->
     <GConfirmModal
@@ -389,7 +395,7 @@
     />
 
     <!-- ============================ 备份记录抽屉 ============================ -->
-    <Drawer :visible="backupDrawer.visible" title="Redis 备份记录" width="720" @close="backupDrawer.visible = false">
+    <GModal v-model:visible="backupDrawer.visible" eyebrow="REDIS BACKUP" title="Redis 备份记录" subtitle="最近 100 条修改/删除前的旧值" size="xl" body-height="62vh">
       <div class="dm-note">每次修改 / 删除 Redis 键前都会备份旧值；这里是最近 100 条。</div>
       <Table
         row-key="id"
@@ -405,14 +411,18 @@
           </template>
         </template>
       </Table>
-    </Drawer>
+      <template #footer>
+        <Button @click="backupDrawer.visible = false">关闭</Button>
+      </template>
+    </GModal>
   </PageWrapper>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, unref } from 'vue';
-  import { Button, Drawer, Input, InputNumber, Table, message } from 'ant-design-vue';
+  import { Button, Input, InputNumber, Table, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
+  import GModal from '../_shared/dialog/GModal.vue';
   import { Icon } from '/@/components/Icon';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import GameIcon from '../_shared/GameIcon.vue';

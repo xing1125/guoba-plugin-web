@@ -1,6 +1,7 @@
 <template>
   <Modal
     :visible="visible"
+    centered
     :title="title"
     :width="width"
     :confirm-loading="loading"

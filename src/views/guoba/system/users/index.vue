@@ -295,45 +295,65 @@
       </div>
     </div>
 
-    <!-- 用户详情抽屉 -->
-    <Drawer :visible="drawer.visible" :title="drawerTitle" width="640" @close="drawer.visible = false">
-      <template v-if="detail">
-        <div class="dm-user">
-          <span class="dm-user__avatar" :style="avatarStyle(drawer.uid || '')">
-            {{ drawerName ? drawerName.slice(0, 1) : '?' }}
-          </span>
-          <div class="dm-user__body">
-            <div class="dm-user__name">{{ drawerName || '未命名用户' }}</div>
-            <div class="dm-user__id">{{ drawer.uid }}</div>
+    <!-- 用户详情弹窗（统一居中弹窗，规范见 docs/design-spec.md） -->
+    <GModal
+      v-model:visible="drawer.visible"
+      eyebrow="USER PROFILE"
+      title="用户详情"
+      :subtitle="drawer.uid"
+      size="xl"
+      body-height="64vh"
+    >
+      <div v-if="detail" class="dm">
+        <aside class="dm__side">
+          <div class="dm-user">
+            <span class="dm-user__avatar" :style="avatarStyle(drawer.uid || '')">
+              {{ drawerName ? drawerName.slice(0, 1) : '?' }}
+            </span>
+            <div class="dm-user__body">
+              <div class="dm-user__name">{{ drawerName || '未命名用户' }}</div>
+              <div class="dm-user__id">{{ drawer.uid }}</div>
+            </div>
+          </div>
+
+          <div class="detail-stats detail-stats--side">
+            <div v-for="s in detailStats" :key="s.label" class="detail-stat">
+              <div class="g-muted">{{ s.label }}</div>
+              <div class="detail-stat__value">{{ s.value }}</div>
+            </div>
+          </div>
+
+          <div class="dm-hint">
+            数据来自 <span class="g-mono">Yz:count:*:msg:user:*</span> 日计数键，
+            昵称取自 Bot 运行时好友列表。
+          </div>
+        </aside>
+
+        <div class="dm__main">
+          <div class="drawer-block">
+            <div class="block-title">近 30 天消息量</div>
+            <div v-if="detail.daily?.length" ref="detailRef" class="g-chart g-chart--sm" />
+            <GEmpty v-else title="无逐日数据" desc="该用户近期没有日级计数键" :size="64" />
+          </div>
+
+          <div v-if="detail.monthly?.length" class="drawer-block">
+            <div class="block-title">月度分布（近 12 个月）</div>
+            <div ref="monthRef" class="g-chart g-chart--sm" />
           </div>
         </div>
+      </div>
 
-        <div class="detail-stats">
-          <div v-for="s in detailStats" :key="s.label" class="detail-stat">
-            <div class="g-muted">{{ s.label }}</div>
-            <div class="detail-stat__value">{{ s.value }}</div>
-          </div>
-        </div>
-
-        <div class="drawer-block">
-          <div class="block-title">近 30 天消息量</div>
-          <div v-if="detail.daily?.length" ref="detailRef" class="g-chart g-chart--sm" />
-          <GEmpty v-else title="无逐日数据" desc="该用户近期没有日级计数键" :size="64" />
-        </div>
-
-        <div class="drawer-block" v-if="detail.monthly?.length">
-          <div class="block-title">月度分布（近 12 个月）</div>
-          <div ref="monthRef" class="g-chart g-chart--sm" />
-        </div>
+      <template #footer>
+        <Button @click="drawer.visible = false">关闭</Button>
       </template>
-    </Drawer>
+    </GModal>
   </PageWrapper>
 </template>
 
 <script setup lang="ts">
   import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
   import { useRouter } from 'vue-router';
-  import { Button, Drawer, Input, Select, Table } from 'ant-design-vue';
+  import { Button, Input, Select, Table } from 'ant-design-vue';
   import { InfoCircleOutlined } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
@@ -341,6 +361,7 @@
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import GEmpty from '../_shared/GEmpty.vue';
+  import GModal from '../_shared/dialog/GModal.vue';
   import GameIcon from '../_shared/GameIcon.vue';
   import type {
     TrendPoint,
@@ -697,7 +718,7 @@
     await nextTick();
     renderDetail();
     // 抽屉有展开动画，容器高度可能仍为 0，延迟补一次渲染
-    setTimeout(() => renderDetail(), 320);
+    setTimeout(() => renderDetail(), 420);
   }
 
   function renderDetail() {
@@ -1379,6 +1400,48 @@
     border: 1px solid var(--g-card-border);
     border-radius: 12px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* 详情弹窗两栏：左身份与指标，右图表 */
+  .dm {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 300px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .dm__side {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .dm__main {
+    min-width: 0;
+
+    .drawer-block:first-child {
+      margin-top: 0;
+    }
+  }
+
+  .detail-stats--side {
+    gap: 12px 10px;
+    padding: 12px 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dm-hint {
+    padding: 2px 2px 0;
+    font-size: 11px;
+    line-height: 1.75;
+    color: var(--g-text-mute);
+  }
+
+  @media (max-width: 900px) {
+    .dm {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   .detail-stat__value {
