@@ -64,17 +64,17 @@
               消息趋势
             </div>
             <div class="gm-panel__extra">
-              <span class="gm-seg">
-                <span
-                  v-for="d in [7, 14, 30]"
-                  :key="d"
-                  class="gm-seg__item"
-                  :class="{ 'is-active': trendDays === d }"
-                  @click="setTrendDays(d)"
-                >
-                  {{ d }} 天
-                </span>
-              </span>
+              <GSegmented
+                :model-value="trendDays"
+                :options="[
+                  { value: 7, label: '7 天' },
+                  { value: 14, label: '14 天' },
+                  { value: 30, label: '30 天' },
+                ]"
+                size="sm"
+                label="趋势区间"
+                @update:model-value="setTrendDays($event as number)"
+              />
             </div>
           </div>
           <div v-show="!booting" ref="trendRef" class="hm-chart" />
@@ -236,6 +236,7 @@
   import { ThemeEnum } from '/@/enums/appEnum';
   import { sysApi } from '/@/api/guoba';
   import GEmpty from '../system/_shared/GEmpty.vue';
+  import GSegmented from '../system/_shared/form/GSegmented.vue';
   import { adminApi } from '../system/account/api';
   import type { OverviewCards, TrendPoint } from '../system/_shared/stats';
   import {

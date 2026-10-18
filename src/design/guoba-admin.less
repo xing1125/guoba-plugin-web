@@ -875,42 +875,8 @@ html[data-theme='dark'] ::selection {
   border-radius: 10px;
 }
 
-/* ------------------------------ 表单控件（暗色） ------------------------------ */
+/* ------------------------------ 表单控件 ------------------------------ */
 /*
- * antd 的 Input / Select 在暗色下仍会用默认的浅底与近乎看不见的描边，
- * 这里统一接管，保证「后台用户」「审计日志」等新页面的表单与筛选条可辨识。
+ * 输入框 / 选择器 / 数字 / 文本域 / 日期的统一外观已迁到 design/guoba-controls.less，
+ * 由 --g-* 变量驱动，light / dark 共用一套规则，此处不再单独覆盖暗色。
  */
-html[data-theme='dark'] {
-  .ant-input,
-  .ant-input-affix-wrapper,
-  .ant-input-number,
-  .ant-select:not(.ant-select-customize-input) .ant-select-selector {
-    color: var(--g-text);
-    background-color: var(--g-card-bg-soft);
-    border-color: var(--g-card-border);
-  }
-
-  .ant-input::placeholder,
-  .ant-select-selection-placeholder {
-    color: var(--g-text-mute);
-  }
-
-  .ant-input:hover,
-  .ant-input-affix-wrapper:hover,
-  .ant-select:not(.ant-select-disabled):hover .ant-select-selector {
-    border-color: var(--g-card-border-strong);
-  }
-
-  .ant-input-affix-wrapper .ant-input {
-    background: transparent;
-  }
-
-  .ant-select-selection-item,
-  .ant-select-arrow {
-    color: var(--g-text-sub);
-  }
-
-  .ant-form-item-label > label {
-    color: var(--g-text-sub);
-  }
-}

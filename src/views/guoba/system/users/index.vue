@@ -219,19 +219,15 @@
             用户列表
             <span class="gm-panel__extra" style="margin-left: 8px">共 {{ pager.total }} 人</span>
           </div>
-          <div class="toolbar">
-            <Input
-              v-model:value="query.keyword"
-              class="w-220"
-              placeholder="搜索用户 ID / 昵称"
-              allow-clear
-              @press-enter="handleSearch"
-            />
-            <Select v-model:value="query.sort" class="w-150" :options="sortOptions" @change="handleSearch" />
-            <Select v-model:value="query.order" class="w-110" :options="orderOptions" @change="handleSearch" />
-            <Button type="primary" @click="handleSearch">查询</Button>
-            <Button :loading="loading" @click="loadAll">刷新</Button>
-          </div>
+          <GToolbar>
+            <GSearch v-model="query.keyword" placeholder="搜索用户 ID / 昵称" width="230px" @search="handleSearch" />
+            <GSelect v-model="query.sort" :options="sortOptions" width="150px" @change="handleSearch" />
+            <GSelect v-model="query.order" :options="orderOptions" width="110px" @change="handleSearch" />
+            <template #right>
+              <Button type="primary" @click="handleSearch">查询</Button>
+              <Button :loading="loading" @click="loadAll">刷新</Button>
+            </template>
+          </GToolbar>
         </div>
 
         <Table
@@ -360,7 +356,7 @@
 <script setup lang="ts">
   import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
   import { useRouter } from 'vue-router';
-  import { Button, Input, Select, Table } from 'ant-design-vue';
+  import { Button, Table } from 'ant-design-vue';
   import { InfoCircleOutlined } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
@@ -368,6 +364,9 @@
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import GEmpty from '../_shared/GEmpty.vue';
+  import GSearch from '../_shared/form/GSearch.vue';
+  import GSelect from '../_shared/form/GSelect.vue';
+  import GToolbar from '../_shared/form/GToolbar.vue';
   import GModal from '../_shared/dialog/GModal.vue';
   import GameIcon from '../_shared/GameIcon.vue';
   import type {
@@ -806,12 +805,6 @@
 
 <style scoped lang="less">
   @import '../_shared/dialog/dm.less';
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
 
   .w-220 {
     width: 220px;

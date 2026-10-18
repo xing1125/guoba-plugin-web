@@ -48,35 +48,15 @@
         @refresh="loadAll"
       >
         <template #filters>
-          <Input
-            v-model:value="q.actor"
+          <GSearch v-model="q.actor" size="small" width="130px" placeholder="操作人" @search="page = 1; load()" />
+          <GSelect v-model="q.action" size="small" width="190px" :options="actionOptions" @change="page = 1; load()" />
+          <GSelect v-model="q.range" size="small" width="110px" :options="rangeOptions" @change="page = 1; load()" />
+          <GSearch
+            v-model="q.keyword"
             size="small"
-            placeholder="操作人"
-            style="width: 120px"
-            allow-clear
-            @pressEnter="page = 1; load()"
-          />
-          <Select
-            v-model:value="q.action"
-            size="small"
-            style="width: 190px"
-            :options="actionOptions"
-            @change="page = 1; load()"
-          />
-          <Select
-            v-model:value="q.range"
-            size="small"
-            style="width: 110px"
-            :options="rangeOptions"
-            @change="page = 1; load()"
-          />
-          <Input
-            v-model:value="q.keyword"
-            size="small"
+            width="190px"
             placeholder="目标 / 详情关键词"
-            style="width: 180px"
-            allow-clear
-            @pressEnter="page = 1; load()"
+            @search="page = 1; load()"
           />
         </template>
         <template #bodyCell="{ column, record }">
@@ -101,11 +81,13 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue';
-  import { Button, Input, Select, Tag } from 'ant-design-vue';
+  import { Button, Tag } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import { useMessage } from '/@/hooks/web/useMessage';
   import GTablePage from '../_shared/GTablePage.vue';
+  import GSearch from '../_shared/form/GSearch.vue';
+  import GSelect from '../_shared/form/GSelect.vue';
   import { auditApi, type AuditRow } from '../sys-users/api';
 
   defineOptions({ name: 'AuditLog' });

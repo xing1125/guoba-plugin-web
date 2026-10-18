@@ -3,6 +3,8 @@ node_modules
 dist
 dist.prev-*
 dist.old-*
+dist.tmp-*
+dist.stale-*
 .npmrc
 .cache
 

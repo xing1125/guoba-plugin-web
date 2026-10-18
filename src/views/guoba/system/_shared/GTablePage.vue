@@ -21,21 +21,14 @@
 
     <!-- 筛选条 -->
     <div v-if="searchable || $slots.filters" class="gtp__bar">
-      <Input
+      <GSearch
         v-if="searchable"
-        :value="searchValue"
+        v-model="searchModel"
         :placeholder="searchPlaceholder"
-        allow-clear
         size="small"
-        class="gtp__search"
-        @update:value="$emit('update:searchValue', $event)"
-        @pressEnter="$emit('search')"
-        @change="(e) => !e.target.value && $emit('search')"
-      >
-        <template #prefix>
-          <Icon icon="ant-design:search-outlined" :size="13" />
-        </template>
-      </Input>
+        width="240px"
+        @search="$emit('search')"
+      />
       <slot name="filters" />
       <Button v-if="searchable" size="small" type="primary" ghost @click="$emit('search')">查询</Button>
     </div>
@@ -84,8 +77,9 @@
 
 <script setup lang="ts">
   import { computed } from 'vue';
-  import { Table, Input, Button, Pagination, Select } from 'ant-design-vue';
+  import { Table, Button, Pagination, Select } from 'ant-design-vue';
   import GEmpty from './GEmpty.vue';
+  import GSearch from './form/GSearch.vue';
   import { downloadCsv, type CsvColumn } from '/@/utils/export/csv';
 
   /**
@@ -160,6 +154,12 @@
     { label: '50', value: 50 },
     { label: '100', value: 100 },
   ];
+
+  /** 搜索框双向绑定：对外仍是 v-model:search-value */
+  const searchModel = computed({
+    get: () => props.searchValue ?? '',
+    set: (v: string) => emit('update:searchValue', v),
+  });
 
   const total = computed(() => props.total || 0);
 
@@ -247,23 +247,7 @@
     background: var(--g-hover);
   }
 
-  /* 深色主题下 antd 输入框/选择器会退回白底，统一用卡片色覆盖 */
-  :deep(.ant-input),
-  :deep(.ant-input-affix-wrapper),
-  :deep(.ant-select:not(.ant-select-customize-input) .ant-select-selector) {
-    color: var(--g-text);
-    background: var(--g-card-bg-soft);
-    border-color: var(--g-card-border);
-  }
-
-  :deep(.ant-input::placeholder) {
-    color: var(--g-text-mute);
-  }
-
-  :deep(.ant-select-selection-item),
-  :deep(.ant-select-arrow) {
-    color: var(--g-text-sub);
-  }
+  /* 输入类控件的底色/描边统一由 design/guoba-controls.less 接管，这里不再重复覆盖 */
 
   :deep(.ant-pagination-item) {
     background: var(--g-card-bg-soft);

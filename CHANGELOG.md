@@ -10,6 +10,45 @@
 
 ---
 
+## [2.2.0] - 2026-10-19
+
+控件体系补齐：输入框/选择器不再是 antd 默认样，全后台一套度量与交互。
+
+### 新增
+
+- **`src/design/guoba-controls.less`**：控件样式层（10 个分区，约 500 行），
+  统一度量 **sm 28 / 默认 32 / lg 38**、圆角 **10（sm 8）**、底色 `--g-card-bg-soft`
+  - 交互态：hover 描边 `--g-card-border-strong`、聚焦 `--g-blue` + `0 0 0 3px --g-blue-soft` 软环、
+    禁用退 `--g-hover`、错误 `--g-red` + 金环
+  - 下拉面板：`padding 6 / 圆角 12 / 双层阴影`，选项 32 高、选中项主色 + 600 字重，
+    分组标题 11px、空态居中灰字、多选 tag 22×6、滚动条收细
+  - 数字输入的步进按钮默认透明，hover / focus 才显形（不再一直占着视线）
+  - 日期面板、文本域（行高 1.7）、搜索框（`--g-input-search`）各自单独收口
+  - 收编 `guoba-admin.less` 的暗色控件覆盖段与 `guoba-modules.less` 的旧 `.gm-seg`
+- **5 个表单组件**（`_shared/form/`）
+  - `GSearch`：前缀搜索图标 / loading 转圈 / 清除即回收结果 / 回车触发
+  - `GSelect`：默认 allowClear、`width` 一次说清、中文空态（「暂无可选项」+ 收件箱图标）、
+    支持 `searchable` / `optionFilterProp` / `filterOption` / `mode` / `status`
+  - `GField`：label（必填星号 + 右侧 extra）+ 控件 + hint / error 三段式
+  - `GToolbar`：筛选条左右分栏（`#right` 插槽），窄屏自动换行
+  - `GSegmented`：分段切换，支持 count / disabled / 键盘聚焦 / `aria-selected`
+
+### 调整
+
+- **列表骨架 `GTablePage`** 搜索框换 `GSearch`，空态与清空联动
+- **用户统计 / 审计 / 系统账号**：筛选条统一 `GSearch` + `GSelect`，`GTablePage`
+  不再各自写 w-150 / style 宽度；系统账号三个弹窗表单全部改 `GField`
+- **群数据 / 游戏签到 / 数据管理 / UID 管理 / 游戏账号 / 系统插件 / 首页 / 关于**
+  的搜索框、选择器、分段控件逐个换新组件（共 12 个页面）
+- UID 编辑弹窗：手写 label + 控件改 `GField`，账号下拉改 `GSelect`（保留自定义匹配）
+- `docs/design-spec.md` §2.5 重写为「表单与控件」，补控件度量表与组件表
+
+### 修复
+
+- `GField` 与父容器 flex gap 叠加导致行距 26px：组件不再自带 `margin-top`，行距交给容器
+
+---
+
 ## [2.1.2] - 2026-10-19
 
 弹窗细节打磨：内容排版类统一、深色图表修复、可访问性补齐。

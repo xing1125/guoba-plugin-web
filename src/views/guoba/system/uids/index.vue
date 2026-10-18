@@ -47,13 +47,7 @@
           </div>
           <div class="toolbar">
             <Button type="primary" @click="openEdit()">添加 UID</Button>
-            <Input
-              v-model:value="q"
-              class="w-240"
-              placeholder="搜索 UID / ltuid"
-              allow-clear
-              @press-enter="handleSearch"
-            />
+            <GSearch v-model="q" placeholder="搜索 UID / ltuid" width="240px" @search="handleSearch" />
             <Button type="primary" ghost @click="handleSearch">查询</Button>
             <Button @click="handleReset">重置</Button>
             <Button :loading="loading" @click="loadData">刷新</Button>
@@ -144,25 +138,22 @@
             {{ edit.origin ? `将把 ${edit.origin} 改为新 UID；` : '' }}只能为已存在的米游社账号维护 UID，保存后立即生效并写入审计日志。
           </span>
         </div>
-        <div class="edit-form__item">
-          <label>归属账号 ltuid</label>
-          <Select
-            v-model:value="edit.ltuid"
-            show-search
+        <GField label="归属账号 ltuid" required>
+          <GSelect
+            v-model="edit.ltuid"
             :options="accountOptions"
             :filter-option="filterAccount"
             :disabled="!!edit.origin"
             placeholder="选择米游社账号"
+            searchable
           />
-        </div>
-        <div class="edit-form__item">
-          <label>游戏</label>
-          <Select v-model:value="edit.game" :options="gameOptions" :disabled="!!edit.origin" />
-        </div>
-        <div class="edit-form__item">
-          <label>UID</label>
+        </GField>
+        <GField label="游戏" required>
+          <GSelect v-model="edit.game" :options="gameOptions" :disabled="!!edit.origin" />
+        </GField>
+        <GField label="UID" required hint="4~20 位纯数字">
           <Input v-model:value="edit.uid" placeholder="4~20 位纯数字" allow-clear />
-        </div>
+        </GField>
       </div>
     </Modal>
   </PageWrapper>
@@ -170,7 +161,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, unref } from 'vue';
-  import { Button, Input, Modal, Select, Table, Tag, message } from 'ant-design-vue';
+  import { Button, Input, Modal, Table, Tag, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
@@ -180,6 +171,9 @@
   import { GAME_TABS, MOCK_UIDS } from './data';
   import GameIcon from '../_shared/GameIcon.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
+  import GSearch from '../_shared/form/GSearch.vue';
+  import GSelect from '../_shared/form/GSelect.vue';
+  import GField from '../_shared/form/GField.vue';
   import { adminApi } from '../account/api';
 
   defineOptions({ name: 'Uids' });
@@ -419,12 +413,6 @@
 </script>
 
 <style scoped lang="less">
-  .toolbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
 
   .flex-1 {
     flex: 1;

@@ -37,30 +37,29 @@
       <!-- 工具栏 -->
       <div class="pf-bar">
         <div class="pf-bar__filters">
-          <a-input
-            v-model:value="keyword"
-            class="pf-search"
+          <GSearch
+            v-model="keyword"
+            width="300px"
             placeholder="搜索插件标题 / 名称 / 说明，支持正则"
-            allow-clear
-            @pressEnter="applyKeyword"
-          >
-            <template #prefix>
-              <Icon icon="ant-design:search-outlined" :size="13" />
-            </template>
-          </a-input>
-          <a-select
-            v-model:value="authorFilter"
-            class="pf-authors"
+            @search="applyKeyword"
+          />
+          <GSelect
+            v-model="authorFilter"
+            width="200px"
             mode="multiple"
             placeholder="插件作者"
             :options="authorOptions"
-            :max-tag-count="1"
-            allow-clear
           />
-          <span class="gm-seg">
-            <span class="gm-seg__item" :class="{ 'is-active': pluginStatus === 1 }" @click="pluginStatus = 1">已安装</span>
-            <span class="gm-seg__item" :class="{ 'is-active': pluginStatus === 0 }" @click="pluginStatus = 0">未安装</span>
-          </span>
+          <GSegmented
+            :model-value="pluginStatus"
+            :options="[
+              { value: 1, label: '已安装' },
+              { value: 0, label: '未安装' },
+            ]"
+            size="sm"
+            label="安装状态"
+            @update:model-value="pluginStatus = $event as any"
+          />
         </div>
         <div class="pf-bar__ops">
           <span class="pf-count">共 {{ filteredPlugins.length }} 个</span>
@@ -188,6 +187,9 @@
   import { useMessage } from '/@/hooks/web/useMessage';
   import { sleep } from '/@/utils/common';
   import GPluginModal from '/@/components/Guoba/src/GPluginModal.vue';
+  import GSegmented from '/@/views/guoba/system/_shared/form/GSegmented.vue';
+  import GSearch from '/@/views/guoba/system/_shared/form/GSearch.vue';
+  import GSelect from '/@/views/guoba/system/_shared/form/GSelect.vue';
   import PluginIcon from '/@/components/Guoba/src/components/PluginIcon.vue';
 
   const guobaStore = useGuobaStore();

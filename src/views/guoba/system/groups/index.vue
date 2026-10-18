@@ -58,14 +58,8 @@
             <span class="gm-panel__extra" style="margin-left: 8px">共 {{ pager.total }} 个群</span>
           </div>
           <div class="toolbar">
-            <Input
-              v-model:value="query.keyword"
-              class="w-200"
-              placeholder="搜索群号 / 群名"
-              allow-clear
-              @press-enter="handleSearch"
-            />
-            <Select v-model:value="query.sort" class="w-140" :options="sortOptions" @change="handleSearch" />
+            <GSearch v-model="query.keyword" placeholder="搜索群号 / 群名" width="200px" @search="handleSearch" />
+            <GSelect v-model="query.sort" width="140px" :options="sortOptions" @change="handleSearch" />
             <Button class="order-btn" :title="query.order === 'desc' ? '当前降序' : '当前升序'" @click="toggleOrder">
               <Icon :icon="query.order === 'desc' ? 'ant-design:arrow-down-outlined' : 'ant-design:arrow-up-outlined'" :size="13" />
             </Button>
@@ -461,7 +455,7 @@
 
 <script setup lang="ts">
   import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
-  import { Button, Checkbox, Input, message, Select, Switch, Table, Tabs, Tag } from 'ant-design-vue';
+  import { Button, Checkbox, message, Switch, Table, Tabs, Tag } from 'ant-design-vue';
 
   const TabPane = Tabs.TabPane;
   import { CloseOutlined, InfoCircleOutlined } from '@ant-design/icons-vue';
@@ -473,6 +467,8 @@
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import GEmpty from '../_shared/GEmpty.vue';
+  import GSearch from '../_shared/form/GSearch.vue';
+  import GSelect from '../_shared/form/GSelect.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import GFormModal from '../_shared/dialog/GFormModal.vue';
   import type { GroupDetailResult, GroupRow, GroupSummary, InvalidGroupItem, InvalidGroupsResult, TrendPoint } from '../_shared/stats';
@@ -1257,12 +1253,6 @@
     align-items: center;
   }
 
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
 
   .batch-bar {
     display: flex;

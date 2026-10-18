@@ -12,17 +12,16 @@
           </div>
         </div>
         <div class="db-hero__side">
-          <span class="gm-seg">
-            <span
-              v-for="d in [7, 14, 30]"
-              :key="d"
-              class="gm-seg__item"
-              :class="{ 'is-active': trendDays === d }"
-              @click="setDays(d)"
-            >
-              {{ d }} 天
-            </span>
-          </span>
+          <GSegmented
+            :model-value="trendDays"
+            :options="[
+              { value: 7, label: '7 天' },
+              { value: 14, label: '14 天' },
+              { value: 30, label: '30 天' },
+            ]"
+            label="趋势区间"
+            @update:model-value="setDays($event as number)"
+          />
           <Button size="small" :loading="loading" @click="loadAll">刷新</Button>
         </div>
       </section>
@@ -193,6 +192,7 @@
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import GEmpty from '../_shared/GEmpty.vue';
+  import GSegmented from '../_shared/form/GSegmented.vue';
   import type { GameSlice, GroupRow, OverviewCards, TrendPoint } from '../_shared/stats';
   import {
     activeText,

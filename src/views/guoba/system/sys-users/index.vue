@@ -11,17 +11,12 @@
           </div>
         </div>
         <div class="db-hero__side">
-          <span class="gm-seg">
-            <span
-              v-for="t in tabs"
-              :key="t.key"
-              class="gm-seg__item"
-              :class="{ 'is-active': tab === t.key }"
-              @click="switchTab(t.key)"
-            >
-              {{ t.name }}
-            </span>
-          </span>
+          <GSegmented
+            :model-value="tab"
+            :options="tabs.map((t) => ({ value: t.key, label: t.name }))"
+            label="RBAC 视图"
+            @update:model-value="switchTab($event as any)"
+          />
         </div>
       </section>
 
@@ -156,10 +151,10 @@
         @refresh="loadLog"
       >
         <template #filters>
-          <Select
-            v-model:value="logSuccess"
+          <GSelect
+            v-model="logSuccess"
             size="small"
-            style="width: 108px"
+            width="108px"
             :options="[
               { label: '全部结果', value: '' },
               { label: '成功', value: 'true' },
@@ -190,32 +185,30 @@
       @ok="saveUser"
     >
       <div class="gu-form">
-        <div class="gu-form__row">
-          <label>用户名</label>
-          <Input v-model:value="userModal.username" :disabled="!!userModal.id" placeholder="3-32 位字母/数字/下划线" />
-        </div>
-        <div class="gu-form__row">
-          <label>昵称</label>
-          <Input v-model:value="userModal.nickname" placeholder="显示名称（可选）" />
-        </div>
-        <div class="gu-form__row">
-          <label>角色</label>
-          <Select
-            v-model:value="userModal.role"
-            style="width: 100%"
+        <GField label="用户名" required hint="3-32 位字母 / 数字 / 下划线，创建后不可修改">
+          <Input v-model:value="userModal.username" :disabled="!!userModal.id" placeholder="如 yunzai_ops" />
+        </GField>
+        <GField label="昵称" hint="仅用于后台展示，可留空">
+          <Input v-model:value="userModal.nickname" placeholder="如 运维小王" />
+        </GField>
+        <GField label="角色" required hint="决定可见菜单与可执行操作">
+          <GSelect
+            v-model="userModal.role"
             :options="roles.map((r) => ({ label: `${r.name}（${r.role}）`, value: r.role }))"
             :disabled="userModal.username === 'admin'"
           />
-        </div>
-        <div class="gu-form__row">
-          <label>{{ userModal.id ? '新密码' : '密码' }}</label>
+        </GField>
+        <GField
+          :label="userModal.id ? '新密码' : '密码'"
+          :required="!userModal.id"
+          :hint="userModal.id ? '留空则保持当前密码不变' : '6 位以上；首次登录会提示改密'"
+        >
           <Input.Password
             v-model:value="userModal.password"
-            :placeholder="userModal.id ? '留空则不修改' : '至少 6 位'"
+            :placeholder="userModal.id ? '不修改请留空' : '设置初始密码'"
           />
-        </div>
-        <div class="gu-form__row">
-          <label>状态</label>
+        </GField>
+        <GField label="状态" hint="停用后该账号无法登录后台，权限保留">
           <Switch
             :checked="userModal.status === 'active'"
             :disabled="userModal.username === 'admin'"
@@ -223,7 +216,7 @@
             un-checked-children="停用"
             @change="(v) => (userModal.status = v ? 'active' : 'disabled')"
           />
-        </div>
+        </GField>
       </div>
     </Modal>
 
@@ -237,10 +230,9 @@
       @ok="saveReset"
     >
       <div class="gu-form">
-        <div class="gu-form__row">
-          <label>新密码</label>
+        <GField label="新密码" required hint="至少 6 位；保存后旧密码立即失效">
           <Input.Password v-model:value="resetModal.password" placeholder="至少 6 位" />
-        </div>
+        </GField>
       </div>
     </Modal>
 
@@ -254,16 +246,13 @@
       @ok="saveRole"
     >
       <div class="gu-form">
-        <div class="gu-form__row">
-          <label>标识</label>
-          <Input v-model:value="roleModal.role" :disabled="!roleModal.isNew" placeholder="2-32 位字母/数字/下划线" />
-        </div>
-        <div class="gu-form__row">
-          <label>名称</label>
-          <Input v-model:value="roleModal.name" placeholder="显示名称" />
-        </div>
-        <div class="gu-form__row gu-form__row--block">
-          <label>可见菜单</label>
+        <GField label="标识" required hint="2-32 位字母 / 数字 / 下划线，创建后不可修改">
+          <Input v-model:value="roleModal.role" :disabled="!roleModal.isNew" placeholder="如 audit_viewer" />
+        </GField>
+        <GField label="名称" required hint="展示在账号列表与权限下拉里">
+          <Input v-model:value="roleModal.name" placeholder="如 只读审计员" />
+        </GField>
+        <GField label="可见菜单" hint="不勾选的菜单不会出现在侧边栏（接口层面仍按操作权限拦截）">
           <div class="gu-check">
             <Checkbox
               v-for="m in catalogue.menus"
@@ -274,9 +263,8 @@
               {{ m.name }}
             </Checkbox>
           </div>
-        </div>
-        <div class="gu-form__row gu-form__row--block">
-          <label>可执行操作</label>
+        </GField>
+        <GField label="可执行操作" hint="未勾选的操作在写接口处一律 403">
           <div v-for="g in catalogue.ops" :key="g.group" class="gu-check-group">
             <div class="gu-check-group__title">{{ g.group }}</div>
             <div class="gu-check">
@@ -291,7 +279,7 @@
               </Checkbox>
             </div>
           </div>
-        </div>
+        </GField>
       </div>
     </Modal>
 
@@ -308,12 +296,15 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue';
-  import { Button, Checkbox, Input, Modal, Select, Switch, Tag } from 'ant-design-vue';
+  import { Button, Checkbox, Input, Modal, Switch, Tag } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { usePermissionStore } from '/@/store/modules/permission';
   import GTablePage from '../_shared/GTablePage.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
+  import GField from '../_shared/form/GField.vue';
+  import GSelect from '../_shared/form/GSelect.vue';
+  import GSegmented from '../_shared/form/GSegmented.vue';
   import { authApi, type AdminRole, type AdminUser, type Catalogue, type LoginLogRow } from './api';
 
   defineOptions({ name: 'SysUsers' });
@@ -704,29 +695,7 @@
   .gu-form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-  }
-
-  .gu-form__row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-
-    label {
-      flex: none;
-      width: 72px;
-      font-size: 12.5px;
-      color: var(--g-text-sub);
-    }
-  }
-
-  .gu-form__row--block {
-    flex-direction: column;
-    align-items: stretch;
-
-    label {
-      width: auto;
-    }
+    gap: 16px;
   }
 
   .gu-check {

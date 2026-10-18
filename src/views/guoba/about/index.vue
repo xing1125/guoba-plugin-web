@@ -12,17 +12,12 @@
         </div>
       </div>
       <div class="db-hero__side">
-        <span class="gm-seg">
-          <span
-            v-for="tab in tabPanes"
-            :key="tab.key"
-            class="gm-seg__item"
-            :class="{ 'is-active': activeKey === tab.key }"
-            @click="activeKey = tab.key"
-          >
-            {{ tab.title }}
-          </span>
-        </span>
+        <GSegmented
+          :model-value="activeKey"
+          :options="tabPanes.map((t) => ({ value: t.key, label: t.title }))"
+          label="关于页视图"
+          @update:model-value="activeKey = $event as any"
+        />
       </div>
     </section>
 
@@ -45,6 +40,7 @@
   import { GITHUB_URL, SITE_URL, DOC_URL, GITEE_URL } from '/@/settings/siteSetting';
   // import LoadGist from './LoadGist.vue';
   import LoadGitee from './LoadGitee.vue';
+  import GSegmented from '../system/_shared/form/GSegmented.vue';
 
   import { pkg, lastBuildTime } from '/@/utils/appInfo';
 

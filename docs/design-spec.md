@@ -93,11 +93,45 @@
 - 默认 pageSize 20，可选 10/20/50/100；显示总数文案。
 - 页码数控制在 5 个以内（antd 默认行为），不额外定制。
 
-### 2.5 表单
+### 2.5 表单与控件
 
-- 弹窗内字段少 → 上下结构（label 在上，宽 100%）；页面内宽表单 → 左右结构（label 右对齐，宽 120）。
+**控件不再直接用 antd 默认样式**，统一由 `design/guoba-controls.less` 接管（light / dark 一套变量）。
+
+| 项 | 规范 |
+| --- | --- |
+| 高度 | `sm 28` / 默认 `32` / `lg 38` |
+| 圆角 | 默认 10，`sm` 8 |
+| 底色 | `--g-card-bg-soft`；聚焦时 `--g-card-bg` |
+| 描边 | 常态 `--g-card-border`，hover `--g-card-border-strong`，聚焦 `--g-blue` + `0 0 0 3px --g-blue-soft` |
+| 占位符 | `--g-text-mute`，别写「请输入」这类空话，直接说搜索什么 |
+| 前缀图标 | 常态 mute，聚焦转 `--g-blue` |
+| 清除按钮 | 圆形 15px，底 `--g-chip-bg`，hover 加深 |
+| 禁用 | 底 `--g-hover`，文字 mute，`cursor: not-allowed` |
+| 错误 | 描边 `--g-red`，聚焦环 `--g-gold-soft`；错误文案紧贴控件下方 |
+| 下拉面板 | 圆角 12、内边距 6、双层阴影；选项高 32 / 圆角 8；选中项主色文字 + `--g-blue-soft` 底 |
+| 空态 | 不出现英文 `No Data`，统一「暂无可选项 / 没有匹配项」+ 图标 |
+
+**组件（`_shared/form/`）**
+
+| 组件 | 用途 | 要点 |
+| --- | --- | --- |
+| `GSearch` | 列表页搜索框 | 前缀搜索图标、清除即回收结果、回车触发、`loading` 转圈 |
+| `GSelect` | 选择器 | 默认 allowClear + 中文空态；`width` 一次说清，不再写 `style="width"` |
+| `GField` | 表单行 | label + 必填星号 + 右侧 `extra` + `hint` / `error` 三段式 |
+| `GToolbar` | 筛选条 | 左筛选右操作，8px 节奏，窄屏自动换行 |
+| `GSegmented` | 分段切换 | 收编 `.gm-seg`；`options` 带 `count` / `disabled`，有 `aria-selected` |
+
+- 弹窗内字段少 → `GField` 上下结构；页面内宽表单 → 左右结构（label 宽 120，右对齐）。
 - 必填标记、错误提示紧贴字段下方；提交失败在字段处标红，不用全局 toast 顶替。
-- 输入框深色模式必须由 `--g-card-bg-soft` 接管底色（已在 `guoba-admin.less` 全局处理）。
+- 筛选控件放在面板头 `.gm-panel__head` 右侧时用 `.toolbar`（全局类，组内 8px 节奏）；
+  页面级独立筛选条用 `<GToolbar>`（左右分栏）。
+
+> **权重约定（改样式前必读）**：ant-design-vue 3.x 用 cssinjs 在运行时注入 `<style>`，
+> 位置在静态 CSS 之后；深色还多一份被 vite-plugin-theme 抽出的 antd 暗色表，
+> 选择器带 `html[data-theme='dark']` 前缀（0,2,1）。因此 `guoba-controls.less` 里所有规则
+> 统一挂在 `:root:root` 下（单类规则变成 0,3,0），否则会静默退回 antd 默认圆角 2 / 2px 聚焦环。
+> 新增控件规则请一并放进这个 `:root:root` 块，不要另起顶层选择器。
+
 
 ### 2.6 气泡卡片 / 警告提示
 

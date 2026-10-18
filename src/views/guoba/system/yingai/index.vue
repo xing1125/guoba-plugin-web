@@ -32,24 +32,20 @@
         <div class="ya-panel__head">
           <div class="ya-panel__title"><Icon icon="mdi:account-multiple-outline" :size="15" /> 用户表</div>
           <div class="ya-panel__tools">
-            <Input
-              v-model:value="query.q"
+            <GSearch
+              v-model="query.q"
               size="small"
-              allow-clear
+              width="200px"
               placeholder="搜索昵称 / uid"
-              style="width: 200px"
-              @press-enter="reloadUsers"
-              @change="onSearchChange"
+              @update:model-value="onSearchChange"
             />
-            <span class="ya-seg">
-              <span
-                v-for="s in enabledOptions"
-                :key="s.value"
-                class="ya-seg__item"
-                :class="{ 'is-active': query.enabled === s.value }"
-                @click="setEnabledFilter(s.value)"
-              >{{ s.label }}</span>
-            </span>
+            <GSegmented
+              :model-value="query.enabled"
+              :options="enabledOptions"
+              size="sm"
+              label="开启状态筛选"
+              @update:model-value="setEnabledFilter($event as string)"
+            />
           </div>
         </div>
         <Table
@@ -217,9 +213,11 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue';
-  import { Button, Input, Switch, Table, Tag, message } from 'ant-design-vue';
+  import { Button, Switch, Table, Tag, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import GModal from '../_shared/dialog/GModal.vue';
+  import GSearch from '../_shared/form/GSearch.vue';
+  import GSegmented from '../_shared/form/GSegmented.vue';
   import { Icon } from '/@/components/Icon';
   import type { YingCompare, YingCompareRow, YingInsights, YingMessage, YingOverview, YingUserRow } from './api';
   import { yingaiApi } from './api';

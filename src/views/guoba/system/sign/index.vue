@@ -14,17 +14,16 @@
           </div>
         </div>
         <div class="db-hero__side">
-          <span class="gm-seg">
-            <span
-              v-for="d in [7, 14, 30]"
-              :key="d"
-              class="gm-seg__item"
-              :class="{ 'is-active': days === d }"
-              @click="setDays(d)"
-            >
-              {{ d }} 天
-            </span>
-          </span>
+          <GSegmented
+            :model-value="days"
+            :options="[
+              { value: 7, label: '7 天' },
+              { value: 14, label: '14 天' },
+              { value: 30, label: '30 天' },
+            ]"
+            label="统计区间"
+            @update:model-value="setDays($event as number)"
+          />
           <Button size="small" :loading="loading" @click="loadAll">刷新</Button>
         </div>
       </section>
@@ -164,9 +163,9 @@
             <span class="gm-panel__extra" style="margin-left: 8px">共 {{ pager.total }} 条</span>
           </div>
           <div class="toolbar">
-            <Input v-model:value="query.q" class="w-200" placeholder="搜索账号 / 内容" allow-clear @press-enter="search" />
-            <Select v-model:value="query.ok" class="w-120" :options="okOptions" placeholder="结果" allow-clear @change="search" />
-            <Select v-model:value="query.game" class="w-160" :options="gameOptions" placeholder="游戏" allow-clear @change="search" />
+            <GSearch v-model="query.q" placeholder="搜索账号 / 内容" width="200px" @search="search" />
+            <GSelect v-model="query.ok" width="120px" :options="okOptions" placeholder="结果" @change="search" />
+            <GSelect v-model="query.game" width="160px" :options="gameOptions" placeholder="游戏" @change="search" />
             <Button type="primary" @click="search">查询</Button>
           </div>
         </div>
@@ -238,14 +237,14 @@
     <GModal v-model:visible="dayDrawer.visible" eyebrow="SIGN DETAIL" title="签到明细" :subtitle="dayDrawer.date" size="xl" body-height="62vh">
       <template v-if="dayData">
         <div class="dm-tabs">
-          <span class="gm-seg">
-            <span class="gm-seg__item" :class="{ 'is-active': dayTab === 'overview' }" @click="dayTab = 'overview'">
-              当日概览
-            </span>
-            <span class="gm-seg__item" :class="{ 'is-active': dayTab === 'users' }" @click="dayTab = 'users'">
-              账号明细 · {{ dayData.userList.length }}
-            </span>
-          </span>
+          <GSegmented
+            v-model="dayTab"
+            :options="[
+              { value: 'overview', label: '当日概览' },
+              { value: 'users', label: '账号明细', count: dayData.userList.length },
+            ]"
+            label="签到数据视图"
+          />
         </div>
 
         <template v-if="dayTab === 'overview'">
@@ -336,9 +335,7 @@
   import {
     Button,
     Descriptions,
-    Input,
     Modal,
-    Select,
     Table,
     message,
   } from 'ant-design-vue';
@@ -350,6 +347,9 @@
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import GEmpty from '../_shared/GEmpty.vue';
+  import GSearch from '../_shared/form/GSearch.vue';
+  import GSelect from '../_shared/form/GSelect.vue';
+  import GSegmented from '../_shared/form/GSegmented.vue';
   import GModal from '../_shared/dialog/GModal.vue';
   import type { SignDay, SignOverview, SignRecord } from './api';
   import { signApi } from './api';
@@ -669,7 +669,7 @@
 
   const dayDrawer = reactive({ visible: false, date: '' });
   const dayData = ref<SignDay | null>(null);
-  const dayTab = ref<'overview' | 'users'>('overview');
+  const dayTab = ref('overview');
 
   async function openDay(date: string) {
     dayDrawer.visible = true;
@@ -743,12 +743,6 @@
 </script>
 
 <style scoped lang="less">
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
 
   .w-120 {
     width: 120px;

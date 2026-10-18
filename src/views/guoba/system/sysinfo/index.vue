@@ -12,17 +12,16 @@
           </div>
         </div>
         <div class="db-hero__side">
-          <span class="gm-seg">
-            <span
-              v-for="s in [0, 15, 60]"
-              :key="s"
-              class="gm-seg__item"
-              :class="{ 'is-active': autoSec === s }"
-              @click="setAuto(s)"
-            >
-              {{ s === 0 ? '手动' : `${s}s` }}
-            </span>
-          </span>
+          <GSegmented
+            :model-value="autoSec"
+            :options="[
+              { value: 0, label: '手动' },
+              { value: 15, label: '15s' },
+              { value: 60, label: '60s' },
+            ]"
+            label="自动刷新间隔"
+            @update:model-value="setAuto($event as number)"
+          />
           <Button size="small" :loading="loading" @click="load">刷新</Button>
         </div>
       </section>
@@ -179,6 +178,7 @@
   import { Button } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
+  import GSegmented from '../_shared/form/GSegmented.vue';
   import { defHttp } from '/@/utils/http/axios';
 
   interface GpuInfo {

@@ -85,10 +85,16 @@
                 <i><Icon icon="ant-design:thunderbolt-outlined" :size="13" /></i>
                 游戏维度分布
               </div>
-              <RadioGroup v-model:value="gameMode" size="small" button-style="solid">
-                <RadioButton value="cache">接口缓存</RadioButton>
-                <RadioButton value="profile">玩家档案</RadioButton>
-              </RadioGroup>
+              <GSegmented
+                :model-value="gameMode"
+                :options="[
+                  { value: 'cache', label: '接口缓存' },
+                  { value: 'profile', label: '玩家档案' },
+                ]"
+                size="sm"
+                label="游戏维度来源"
+                @update:model-value="gameMode = $event as any"
+              />
             </div>
             <div v-if="currentGames.length" class="game-bars">
               <div v-for="(g, i) in currentGames" :key="g.game" class="game-bar">
@@ -125,7 +131,7 @@
             命名空间明细
           </div>
           <div class="toolbar">
-            <Input v-model:value="keyword" class="w-200" placeholder="搜索命名空间 / 插件名" allow-clear />
+            <GSearch v-model="keyword" placeholder="搜索命名空间 / 插件名" width="200px" />
             <Checkbox v-model:checked="onlyKnown">只看已识别</Checkbox>
             <Button :loading="loading" @click="load(true)">重新扫描</Button>
           </div>
@@ -188,9 +194,6 @@
     Button,
     Checkbox,
     Col,
-    Input,
-    RadioButton,
-    RadioGroup,
     Row,
   } from 'ant-design-vue';
   import { InfoCircleOutlined } from '@ant-design/icons-vue';
@@ -199,6 +202,8 @@
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import GEmpty from '../_shared/GEmpty.vue';
+  import GSearch from '../_shared/form/GSearch.vue';
+  import GSegmented from '../_shared/form/GSegmented.vue';
   import type { GameSlice, HistogramResult, NsBucket } from '../_shared/stats';
   import {
     chartColors,
@@ -326,12 +331,6 @@
 
 <style scoped lang="less">
 
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-  }
 
   .w-200 {
     width: 200px;

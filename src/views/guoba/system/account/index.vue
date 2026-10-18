@@ -80,29 +80,24 @@
                 <span class="gm-panel__extra" style="margin-left: 8px">共 {{ total }} 个</span>
               </div>
               <div class="toolbar">
-                <Input
-                  v-model:value="keyword"
-                  class="w-220"
+                <GSearch
+                  v-model="keyword"
+                  width="220px"
                   :placeholder="isMys ? '搜索 ltuid / 绑定标识 / UID' : '搜索 QQ / 角色名 / UID'"
-                  allow-clear
-                  @press-enter="loadAccounts()"
+                  @search="loadAccounts()"
                 />
                 <Button type="primary" @click="loadAccounts()">查询</Button>
                 <Button :disabled="!list.length" @click="exportCsv">导出 CSV</Button>
               </div>
             </div>
 
-            <div class="gm-seg ac-seg">
-              <span
-                v-for="t in tabList"
-                :key="t.key"
-                class="gm-seg__item"
-                :class="{ 'is-active': tab === t.key }"
-                @click="switchTab(t.key)"
-              >
-                {{ t.name }}
-              </span>
-            </div>
+            <GSegmented
+              class="ac-seg"
+              :model-value="tab"
+              :options="tabList.map((t) => ({ value: t.key, label: t.name }))"
+              label="账号视图"
+              @update:model-value="switchTab($event as any)"
+            />
 
             <!-- UID 绑定 -->
             <template v-if="tab === 'uids'">
@@ -331,13 +326,15 @@
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, watch } from 'vue';
   import { useRoute } from 'vue-router';
-  import { Button, Input, Table, Tag, message } from 'ant-design-vue';
+  import { Button, Table, Tag, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import { downloadCsv } from '/@/utils/export/csv';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import GModal from '../_shared/dialog/GModal.vue';
   import GEmpty from '../_shared/GEmpty.vue';
+  import GSearch from '../_shared/form/GSearch.vue';
+  import GSegmented from '../_shared/form/GSegmented.vue';
   import GameIcon from '../_shared/GameIcon.vue';
   import { fmtNum } from '../_shared/stats';
   import type { CkStatus, VerifyResult } from './api';
@@ -661,12 +658,6 @@
 </script>
 
 <style scoped lang="less">
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
 
   .w-220 {
     width: 220px;

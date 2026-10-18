@@ -12,17 +12,12 @@
           </div>
         </div>
         <div class="db-hero__side">
-          <span class="gm-seg">
-            <span
-              v-for="t in tabs"
-              :key="t.key"
-              class="gm-seg__item"
-              :class="{ 'is-active': tab === t.key }"
-              @click="switchTab(t.key)"
-            >
-              {{ t.label }}
-            </span>
-          </span>
+          <GSegmented
+            :model-value="tab"
+            :options="tabs.map((t) => ({ value: t.key, label: t.label }))"
+            label="数据视图"
+            @update:model-value="switchTab($event as any)"
+          />
           <Button size="small" :loading="loading" @click="loadDomains(true)">重新扫描</Button>
           <Button size="small" @click="openRedisBackups">备份记录</Button>
         </div>
@@ -157,13 +152,7 @@
                 </span>
               </div>
               <div class="toolbar">
-                <Input
-                  v-model:value="keyQuery.q"
-                  class="w-240"
-                  placeholder="搜索键名（支持模糊）"
-                  allow-clear
-                  @press-enter="searchKeys"
-                />
+                <GSearch v-model="keyQuery.q" placeholder="搜索键名（支持模糊）" width="240px" @search="searchKeys" />
                 <Button type="primary" @click="searchKeys">查询</Button>
                 <Button danger :disabled="!prefix" @click="openDeletePrefix">清空此前缀</Button>
               </div>
@@ -367,15 +356,15 @@
       </template>
 
       <template #footer>
-        <div class="dm-actions">
-          <div class="dm-actions__left">
-            <Button size="small" :loading="fileDrawer.loadingBackups" @click="loadFileBackups">
-              备份记录（{{ fileBackups.length }}）
-            </Button>
-          </div>
-          <div class="dm-actions__right">
-            <Button :disabled="!fileBackups.length" @click="restoreLatestFile">恢复上一版</Button>
-            <Button type="primary" :loading="fileDrawer.saving" @click="saveFile">保存修改</Button>
+        <div class="dm-actions">
+          <div class="dm-actions__left">
+            <Button size="small" :loading="fileDrawer.loadingBackups" @click="loadFileBackups">
+              备份记录（{{ fileBackups.length }}）
+            </Button>
+          </div>
+          <div class="dm-actions__right">
+            <Button :disabled="!fileBackups.length" @click="restoreLatestFile">恢复上一版</Button>
+            <Button type="primary" :loading="fileDrawer.saving" @click="saveFile">保存修改</Button>
           </div>
         </div>
       </template>
@@ -435,6 +424,8 @@
   import GModal from '../_shared/dialog/GModal.vue';
   import { Icon } from '/@/components/Icon';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
+  import GSearch from '../_shared/form/GSearch.vue';
+  import GSegmented from '../_shared/form/GSegmented.vue';
   import GameIcon from '../_shared/GameIcon.vue';
   import type { DomainMeta, DomainsResult, FileContent, FileItem, FilePlugin, KeyDetail, KeyPage } from './api';
   import { dataApi } from './api';
@@ -970,12 +961,6 @@
 </script>
 
 <style scoped lang="less">
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
 
   .w-240 {
     width: 240px;

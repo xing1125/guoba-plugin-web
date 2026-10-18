@@ -12,6 +12,8 @@ export const MENU_ICONS = [
   'ant-design:dashboard-outlined',
   'ant-design:fund-projection-screen-outlined',
   'ant-design:desktop-outlined',
+  'ant-design:folder-open-outlined',
+  'ant-design:picture-outlined',
   'mdi:account-group-outline',
   'mdi:account-multiple-outline',
   'mdi:puzzle-outline',
