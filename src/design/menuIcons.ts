@@ -11,6 +11,7 @@ export const MENU_ICONS = [
   'bx:bx-home',
   'ant-design:dashboard-outlined',
   'ant-design:fund-projection-screen-outlined',
+  'ant-design:desktop-outlined',
   'mdi:account-group-outline',
   'mdi:account-multiple-outline',
   'mdi:puzzle-outline',
