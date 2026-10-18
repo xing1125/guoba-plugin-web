@@ -25,6 +25,9 @@
 
       <FullScreen v-if="getShowFullScreen" :class="`${prefixCls}-action__item fullscreen-item`" />
 
+      <!-- 深浅色主题切换 -->
+      <AppDarkModeToggle v-if="getShowDarkModeToggle" :class="`${prefixCls}-action__item darkmode-item`" />
+
       <!--      <AppLocalePicker-->
       <!--        v-if="getShowLocalePicker"-->
       <!--        :reload="true"-->
@@ -49,6 +52,7 @@
   import LayoutTrigger from '../trigger/index.vue';
 
   import { AppSearch } from '/@/components/Application';
+  import { AppDarkModeToggle } from '/@/components/Application';
 
   import { useHeaderSetting } from '/@/hooks/setting/useHeaderSetting';
   import { useMenuSetting } from '/@/hooks/setting/useMenuSetting';
@@ -85,6 +89,7 @@
       // Notify,
       AppSearch,
       ErrorAction,
+      AppDarkModeToggle,
       // SettingDrawer: createAsyncComponent(() => import('/@/layouts/default/setting/index.vue'), {
       //   loading: true,
       // }),
@@ -95,7 +100,7 @@
     setup(props) {
       const { prefixCls } = useDesign('layout-header');
       const { getShowTopMenu, getShowHeaderTrigger, getSplit, getIsMixMode, getMenuWidth, getIsMixSidebar } = useMenuSetting();
-      const { getUseErrorHandle, getShowSettingButton, getSettingButtonPosition } = useRootSetting();
+      const { getUseErrorHandle, getShowSettingButton, getSettingButtonPosition, getShowDarkModeToggle } = useRootSetting();
 
       const { getHeaderTheme, getShowFullScreen, getShowNotice, getShowContent, getShowBread, getShowHeaderLogo, getShowHeader, getShowSearch } = useHeaderSetting();
 
@@ -165,6 +170,7 @@
         getShowSettingButton,
         getShowSetting,
         getShowSearch,
+        getShowDarkModeToggle,
       };
     },
   });

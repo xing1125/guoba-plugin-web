@@ -1,8 +1,14 @@
 node_modules
 .DS_Store
 dist
+dist.prev-*
+dist.old-*
 .npmrc
 .cache
+
+# 本地预览工具（含真实账号样例数据，不入库）
+preview-server.mjs
+build/preview/
 
 tests/server/static
 tests/server/static/upload

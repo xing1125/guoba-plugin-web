@@ -28,6 +28,8 @@ export function initAppConfigStore() {
   const appStore = useAppStore();
   let projCfg: ProjectConfig = Persistent.getLocal(PROJ_CFG_KEY) as ProjectConfig;
   projCfg = deepMerge(projectSetting, projCfg || {});
+  // 强制开启深浅色切换按钮：老版本 localStorage 里缓存的 false 会覆盖默认值
+  projCfg.showDarkModeToggle = true;
   const darkMode = appStore.getDarkMode;
   const {
     colorWeak,

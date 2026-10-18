@@ -5,27 +5,19 @@
       <Exception :status="errorRef.status" :title="errorRef.title" :subTitle="errorRef.message" btnText="返回插件管理" goPath="/plugins" />
     </div>
     <PageWrapper v-else :loading="loading" sticky stickyTop="-50px">
-      <template #title>
-        <div class="plugin-title">
-          <PluginIcon :plugin="plugin!" :size="24" />
-          <a class="title-name" @click="onOpenPluginModal">{{ plugin!.title }}</a>
-          <a :href="plugin!.link" target="_blank" style="margin-left: 4px">
-            <Icon icon="bx:link" style="font-size: 20px" />
-          </a>
+      <section class="db-hero">
+        <div class="db-hero__main">
+          <div class="db-hero__eyebrow">PLUGIN CONFIG</div>
+          <div class="db-hero__title">
+            <PluginIcon :plugin="plugin!" :size="22" />
+            <a class="title-name" @click="onOpenPluginModal">{{ plugin!.title }}</a>
+            <a :href="plugin!.link" target="_blank" class="plugin-link">
+              <Icon icon="bx:link" :size="16" />
+            </a>
+          </div>
+          <div class="db-hero__desc">{{ plugin!.description }}</div>
         </div>
-      </template>
-
-      <template #headerContent>
-        <div class="plugin-content">
-          <div class="content-desc ellipsis">{{ plugin!.description }}</div>
-          <!--          <div style="margin-top: 12px">-->
-          <!--            <template v-for="(author, idx) of authorList">-->
-          <!--              <a :href="author.link" target="_blank">{{ author.name }}</a>-->
-          <!--              <a-divider v-if="idx !== authorList.length - 1" type="vertical" />-->
-          <!--            </template>-->
-          <!--          </div>-->
-        </div>
-      </template>
+      </section>
 
       <template #footer>
         <a-row>

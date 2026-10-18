@@ -11,7 +11,7 @@ const setting: ProjectConfig = {
   showSettingButton: false,
 
   // Whether to show the theme switch button
-  showDarkModeToggle: false,
+  showDarkModeToggle: true,
 
   // `Settings` button position
   settingButtonPosition: SettingButtonPositionEnum.AUTO,

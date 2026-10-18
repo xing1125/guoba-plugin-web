@@ -1,7 +1,7 @@
 import { PluginOption } from 'vite';
 import vueJsx from '@vitejs/plugin-vue-jsx';
 import legacy from '@vitejs/plugin-legacy';
-import purgeIcons from 'vite-plugin-purge-icons';
+import { purgeIconsOffline } from './purgeIconsOffline';
 import windiCSS from 'vite-plugin-windicss';
 import VitePluginCertificate from 'vite-plugin-mkcert';
 import vueSetupExtend from 'vite-plugin-vue-setup-extend';
@@ -42,8 +42,8 @@ export function createVitePlugins(viteEnv: ViteEnv, isBuild: boolean) {
   // vite-plugin-svg-icons
   vitePlugins.push(configSvgIconsPlugin(isBuild));
 
-  // vite-plugin-purge-icons
-  vitePlugins.push(purgeIcons());
+  // vite-plugin-purge-icons（离线版：本地 @iconify/json，不访问远程）
+  vitePlugins.push(purgeIconsOffline());
 
   // vite-plugin-style-import
   vitePlugins.push(configStyleImportPlugin(isBuild));

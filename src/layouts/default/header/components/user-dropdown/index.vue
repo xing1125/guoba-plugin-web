@@ -22,8 +22,8 @@
         <MenuItem v-if="getUseLockPage" key="lock" :text="t('layout.header.tooltipLock')" icon="ion:lock-closed-outline" />
         <MenuItem key="logout" :text="t('layout.header.dropdownItemLoginOut')" icon="ion:power-outline" />
         <MenuDivider />
-        <MenuItem key="restart-guoba" text="重启Guoba" icon="solar:restart-bold" />
-        <MenuItem key="restart-bot" text="重启Bot" icon="solar:restart-bold" />
+        <MenuItem key="restart-guoba" text="重启Guoba" icon="mdi:restart" />
+        <MenuItem key="restart-bot" text="重启Bot" icon="mdi:restart" />
       </Menu>
     </template>
   </Dropdown>

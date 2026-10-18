@@ -1,16 +1,27 @@
 <template>
-  <PageWrapper title="插件管理" :loading="loading">
-    <template #headerContent>
-      插件列表来源：
-      <a href="https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index" target="_blank"> Yunzai-Bot插件索引 </a>
-    </template>
-    <template #footer>
-      <a-tabs v-model:activeKey="pluginStatusRef">
-        <a-tab-pane :key="1" tab="已安装" />
-        <a-tab-pane :key="0" tab="未安装" />
-      </a-tabs>
-    </template>
+  <PageWrapper title="" :loading="loading">
+    <section class="db-hero">
+      <div class="db-hero__main">
+        <div class="db-hero__eyebrow">PLUGINS</div>
+        <div class="db-hero__title">插件管理</div>
+        <div class="db-hero__desc">
+          安装、卸载与配置云崽插件；列表来源
+          <a href="https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index" target="_blank">Yunzai-Bot 插件索引</a>
+        </div>
+      </div>
+      <div class="db-hero__side">
+        <span class="gm-seg">
+          <span class="gm-seg__item" :class="{ 'is-active': pluginStatusRef === 1 }" @click="pluginStatusRef = 1">
+            已安装
+          </span>
+          <span class="gm-seg__item" :class="{ 'is-active': pluginStatusRef === 0 }" @click="pluginStatusRef = 0">
+            未安装
+          </span>
+        </span>
+      </div>
+    </section>
 
+    <div class="db-plugins">
     <BasicTable @register="registerTable" :searchInfo="searchInfo" :rowSelection="rowSelection">
       <template #formAdvanceAfter>
         <a-button type="primary" preIcon="ant-design:plus" @click="onInstall">
@@ -34,6 +45,7 @@
         <a @click.stop="() => handleView(record)">{{ record.title }}</a>
       </template>
     </BasicTable>
+    </div>
     <GPluginModal @register="registerModal" @success="handleSuccess" />
   </PageWrapper>
 </template>
@@ -326,4 +338,11 @@
 </script>
 
 <style scoped>
+  .db-plugins {
+    margin-top: 14px;
+  }
+
+  .db-hero__desc a {
+    color: var(--g-blue);
+  }
 </style>

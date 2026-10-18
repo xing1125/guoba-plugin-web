@@ -1,13 +1,28 @@
 <template>
   <Skeleton v-if="pageLoading" active />
-  <PageWrapper v-else title="配置管理" content="在这里可以配置机器人的基础设置以及原神相关设置" :loading="loading" sticky>
-    <template #footer>
-      <Tabs v-model:activeKey="activeKey">
+  <PageWrapper v-else title="" :loading="loading">
+    <section class="db-hero">
+      <div class="db-hero__main">
+        <div class="db-hero__eyebrow">CONFIGURATION</div>
+        <div class="db-hero__title">配置管理</div>
+        <div class="db-hero__desc">机器人基础设置、消息策略与各插件配置项，改完即时写入配置文件</div>
+      </div>
+    </section>
+
+    <div class="db-config">
+      <Tabs v-model:activeKey="activeKey" class="db-config__tabs">
         <template v-for="tab in configTabs" :key="tab.key">
           <TabPane :tab="tab.title" />
         </template>
       </Tabs>
-    </template>
+    </div>
+
+    <div v-if="!loading && !configTabs.length" class="g-card db-tip" style="margin-top: 14px">
+      <div>
+        <b>没有读到配置项</b>
+        <div class="g-muted">请确认 Bot 的 config 目录可读，或刷新页面重试。</div>
+      </div>
+    </div>
 
     <a-row :class="[prefixCls]" justify="center">
       <a-col :xxl="16" :xl="18" :lg="20" :md="22" :sm="24" :xs="24">
@@ -50,8 +65,8 @@
       async function loadConfig() {
         loading.value = true;
         try {
-          configTabs.value = await queryConfigTabs();
-          activeKey.value = configTabs.value[0].key;
+          configTabs.value = (await queryConfigTabs()) || [];
+          activeKey.value = configTabs.value[0]?.key ?? '';
         } finally {
           loading.value = false;
           pageLoading.value = false;
@@ -76,6 +91,19 @@
   @prefix-cls: ~'@{ns}-system-config';
 
   .@{prefix-cls} {
+  }
+
+  .db-config {
+    padding: 4px 18px 0;
+    margin-top: 14px;
+    background: var(--g-card-bg);
+    border: 1px solid var(--g-card-border);
+    border-radius: 14px;
+    box-shadow: var(--g-card-shadow);
+  }
+
+  .db-config__tabs {
+    margin-bottom: 0;
   }
   .fade-enter-active,
   .fade-leave-active {

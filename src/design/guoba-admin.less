@@ -1,0 +1,581 @@
+/**
+ * 云崽管理后台 —— 扩展页面设计层
+ *
+ * 配色取自荷花插件（Lotus-Plugin core/render/theme.js）的主题真源：
+ *   深色 = abyss（深境螺旋 · 深蓝金）：#07091B 底 + 香金 #D3BC8D + 蓝紫光晕
+ *   浅色 = crystal（清透冰雾）：冰蓝/薰衣草/薄荷光场 + 冰川蓝主视觉
+ * 主题由 html[data-theme='dark'|'light'] 驱动（vben 内置 AppDarkModeToggle）。
+ */
+
+/* ------------------------------ 设计令牌 ------------------------------ */
+
+html[data-theme='light'] {
+  --g-page-bg: #eff5fb;
+  --g-card-bg: #ffffff;
+  --g-card-bg-soft: #f5f8fc;
+  --g-card-border: rgb(120 150 180 / 22%);
+  --g-card-border-strong: rgb(120 150 180 / 36%);
+  --g-card-shadow: 0 10px 32px -12px rgb(66 103 132 / 16%), 0 2px 9px rgb(66 103 132 / 6%);
+  --g-text: #1b2430;
+  --g-text-sub: #4b5563;
+  --g-text-mute: #8296a6;
+  --g-hover: rgb(38 55 70 / 4%);
+  --g-grid: rgb(38 55 70 / 10%);
+  --g-track: rgb(38 55 70 / 10%);
+  --g-chip-bg: rgb(38 55 70 / 5%);
+  --g-sheen: rgb(255 255 255 / 60%);
+}
+
+html[data-theme='dark'] {
+  --g-page-bg: #07091b;
+  --g-card-bg: #1c1b3d;
+  --g-card-bg-soft: #232252;
+  --g-card-border: rgb(255 255 255 / 14%);
+  --g-card-border-strong: rgb(255 255 255 / 26%);
+  --g-card-shadow: 0 6px 20px rgb(0 0 0 / 38%), 0 2px 8px rgb(0 0 0 / 38%);
+  --g-text: #e6ebff;
+  --g-text-sub: #aab4df;
+  --g-text-mute: #8f9bc7;
+  --g-hover: rgb(255 255 255 / 7%);
+  --g-grid: rgb(255 255 255 / 12%);
+  --g-track: rgb(255 255 255 / 14%);
+  --g-chip-bg: rgb(255 255 255 / 10%);
+  --g-sheen: rgb(255 255 255 / 6%);
+}
+
+/* 强调色（ abyss / crystal 各出一套，语义一致） */
+html {
+  --g-blue: #2f86c4;
+  --g-cyan: #4fa8d8;
+  --g-green: #2e7a58;
+  --g-amber: #a8813f;
+  --g-violet: #8d83e8;
+  --g-rose: #a9496b;
+  --g-gold: #a8813f;
+}
+
+html[data-theme='dark'] {
+  --g-blue: #62a8ea;
+  --g-cyan: #4fc3d9;
+  --g-green: #45b97c;
+  --g-amber: #d3bc8d;
+  --g-violet: #9d8df0;
+  --g-rose: #ff8a65;
+  --g-gold: #d3bc8d;
+}
+
+html {
+  --g-red: #e05656;
+  --g-gold-soft: rgb(211 188 141 / 30%);
+  --g-blue-soft: rgb(98 168 234 / 30%);
+}
+
+/* ------------------------------ 页面底料 ------------------------------ */
+/* 荷花的玻璃感「底料」：大面积柔光晕，深浅各按 abyss/crystal 的 BG 色场移植 */
+
+.guoba-layout-content {
+  transition: background 0.3s ease;
+}
+
+html[data-theme='dark'] .guoba-layout-content {
+  background:
+    radial-gradient(640px 420px at 8% 0%, rgb(46 63 143 / 38%), transparent 70%),
+    radial-gradient(560px 400px at 94% 14%, rgb(91 74 158 / 32%), transparent 70%),
+    radial-gradient(520px 380px at 82% 98%, rgb(211 188 141 / 14%), transparent 70%),
+    radial-gradient(540px 400px at 28% 96%, rgb(28 27 61 / 55%), transparent 72%),
+    #07091b !important;
+}
+
+html[data-theme='light'] .guoba-layout-content {
+  background:
+    radial-gradient(640px 440px at 6% 2%, rgb(143 204 242 / 42%), transparent 70%),
+    radial-gradient(560px 400px at 96% 22%, rgb(195 178 255 / 34%), transparent 70%),
+    radial-gradient(520px 400px at 74% 100%, rgb(163 226 198 / 36%), transparent 70%),
+    linear-gradient(160deg, #eff5fb 0%, #e7eff8 55%, #dde8f3 100%) !important;
+}
+
+/* ------------------------------ 页面容器 ------------------------------ */
+
+.g-page {
+  padding: 0 0 8px;
+}
+
+.g-section {
+  margin-top: 16px;
+}
+
+/* 卡片与指标卡进场：轻量 fade-up，逐个延迟形成节奏 */
+@keyframes g-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.g-card,
+.g-stat {
+  animation: g-fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ------------------------------ 卡片 ------------------------------ */
+
+.g-card {
+  position: relative;
+  padding: 18px 20px;
+  background: var(--g-card-bg);
+  border: 1px solid var(--g-card-border);
+  border-radius: 14px;
+  box-shadow: var(--g-card-shadow);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+
+/* 顶部高光「玻璃棱线」（荷花的 RIM_LIGHT/SHEEN 等价物） */
+.g-card::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, transparent, var(--g-sheen) 18%, var(--g-sheen) 82%, transparent);
+  pointer-events: none;
+}
+
+.g-card--hover:hover {
+  border-color: var(--g-card-border-strong);
+  box-shadow: 0 16px 40px -18px rgb(0 0 0 / 50%);
+  transform: translateY(-1px);
+}
+
+.g-card__head {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.g-card__title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--g-text);
+  letter-spacing: 0.2px;
+}
+
+.g-card__title::before {
+  width: 3px;
+  height: 14px;
+  content: '';
+  background: linear-gradient(180deg, var(--g-gold), var(--g-blue));
+  border-radius: 2px;
+}
+
+.g-card__sub {
+  font-size: 12px;
+  color: var(--g-text-mute);
+}
+
+/* ------------------------------ 指标卡 ------------------------------ */
+
+.g-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px 16px;
+  overflow: hidden;
+  background: var(--g-card-bg);
+  border: 1px solid var(--g-card-border);
+  border-radius: 14px;
+  box-shadow: var(--g-card-shadow);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.g-stat::after {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 130px;
+  height: 130px;
+  content: '';
+  background: radial-gradient(circle, var(--g-accent, var(--g-blue)) 0%, transparent 68%);
+  border-radius: 50%;
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.g-stat:hover {
+  border-color: var(--g-accent-soft);
+  box-shadow: 0 3px 6px rgb(0 0 0 / 8%), 0 18px 40px -20px var(--g-accent);
+  transform: translateY(-2px);
+}
+
+.g-stat__label {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--g-text-sub);
+  letter-spacing: 0.3px;
+}
+
+.g-stat__dot {
+  width: 7px;
+  height: 7px;
+  background: var(--g-accent, var(--g-blue));
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--g-accent-soft);
+}
+
+.g-stat__value {
+  font-size: 27px;
+  font-weight: 650;
+  line-height: 1.15;
+  color: var(--g-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.4px;
+}
+
+.g-stat__unit {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--g-text-mute);
+}
+
+.g-stat__foot {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--g-text-mute);
+}
+
+.g-stat--blue {
+  --g-accent: var(--g-blue);
+  --g-accent-soft: rgb(98 168 234 / 30%);
+}
+
+.g-stat--cyan {
+  --g-accent: var(--g-cyan);
+  --g-accent-soft: rgb(79 195 217 / 30%);
+}
+
+.g-stat--green {
+  --g-accent: var(--g-green);
+  --g-accent-soft: rgb(69 185 124 / 30%);
+}
+
+.g-stat--amber {
+  --g-accent: var(--g-amber);
+  --g-accent-soft: var(--g-gold-soft);
+}
+
+.g-stat--violet {
+  --g-accent: var(--g-violet);
+  --g-accent-soft: rgb(157 141 240 / 30%);
+}
+
+.g-stat--rose {
+  --g-accent: var(--g-rose);
+  --g-accent-soft: rgb(255 138 101 / 30%);
+}
+
+/* ------------------------------ 通用小组件 ------------------------------ */
+
+.g-chip {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 1px 8px;
+  font-size: 11.5px;
+  color: var(--g-text-sub);
+  background: var(--g-chip-bg);
+  border-radius: 20px;
+}
+
+.g-mono {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, monospace;
+  font-size: 12px;
+}
+
+.g-muted {
+  font-size: 12px;
+  color: var(--g-text-mute);
+}
+
+.g-strong {
+  font-weight: 600;
+}
+
+.g-link {
+  color: var(--g-blue);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.g-link:hover {
+  opacity: 0.75;
+}
+
+/* 进度条 */
+.g-bar {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  background: var(--g-track);
+  border-radius: 4px;
+}
+
+.g-bar__inner {
+  height: 100%;
+  background: linear-gradient(90deg, var(--g-gold), var(--g-blue));
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.g-bar__inner--green {
+  background: linear-gradient(90deg, var(--g-green), var(--g-cyan));
+}
+
+.g-bar__inner--amber {
+  background: linear-gradient(90deg, var(--g-amber), var(--g-rose));
+}
+
+/* 迷你趋势条 */
+.g-spark {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 30px;
+}
+
+.g-spark__bar {
+  flex: 1;
+  min-width: 3px;
+  background: var(--g-blue);
+  border-radius: 2px 2px 0 0;
+  opacity: 0.45;
+  transition: opacity 0.2s;
+}
+
+.g-spark__bar:hover {
+  opacity: 1;
+}
+
+/* 图例 */
+.g-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.g-legend__item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--g-text-sub);
+}
+
+.g-legend__swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* 图表容器 */
+.g-chart {
+  width: 100%;
+  height: 280px;
+}
+
+.g-chart--sm {
+  height: 220px;
+}
+
+.g-chart--lg {
+  height: 320px;
+}
+
+/* ------------------------------ 骨架屏 ------------------------------ */
+
+@keyframes g-shimmer {
+  from {
+    background-position: -400px 0;
+  }
+
+  to {
+    background-position: 400px 0;
+  }
+}
+
+.g-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--g-hover);
+  border-radius: 10px;
+  animation: g-shimmer 1.4s ease-in-out infinite;
+}
+
+.g-skeleton::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(90deg, transparent, var(--g-sheen), transparent);
+  background-size: 400px 100%;
+  animation: g-shimmer 1.4s ease-in-out infinite;
+}
+
+.g-skeleton--chart {
+  height: 100%;
+  min-height: 220px;
+}
+
+.g-skeleton--text {
+  height: 12px;
+  width: 60%;
+}
+
+.g-skeleton--stat {
+  height: 84px;
+  border-radius: 14px;
+}
+
+/* ------------------------------ 空态 ------------------------------ */
+
+.g-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  color: var(--g-text-mute);
+}
+
+.g-empty__art {
+  margin-bottom: 10px;
+  color: var(--g-blue);
+  opacity: 0.55;
+}
+
+.g-empty__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--g-text-sub);
+}
+
+.g-empty__desc {
+  max-width: 420px;
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* 排行列表 */
+.g-rank {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.g-rank__row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: 9px;
+  transition: background 0.18s;
+}
+
+.g-rank__row:hover {
+  background: var(--g-hover);
+}
+
+.g-rank__idx {
+  width: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--g-text-mute);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.g-rank__idx--top {
+  color: var(--g-gold);
+}
+
+.g-rank__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.g-rank__name {
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--g-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-rank__meta {
+  margin-top: 5px;
+}
+
+.g-rank__val {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--g-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 插件命名空间卡内的样例键 */
+.g-sample {
+  padding: 6px 9px;
+  overflow: hidden;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11.5px;
+  color: var(--g-text-sub);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--g-card-bg-soft);
+  border: 1px dashed var(--g-card-border);
+  border-radius: 7px;
+}
+
+/* 深浅切换时给页面一个柔和过渡 */
+html {
+  transition: background-color 0.3s ease;
+}
+
+/* 头部深浅色开关间距（覆盖组件内的 margin-left:auto） */
+.guoba-dark-switch {
+  margin: 0 8px 0 10px !important;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 6%);
+}
+
+.guoba-dark-switch svg {
+  position: relative;
+  z-index: 2;
+  color: rgb(255 255 255 / 55%);
+  transition: color 0.3s;
+}
+
+/* antd 表格/卡片在暗色下的轻微调校 */
+html[data-theme='dark'] {
+  .ant-card {
+    background: var(--g-card-bg);
+  }
+
+  .ant-table {
+    background: transparent;
+  }
+}

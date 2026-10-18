@@ -1,30 +1,37 @@
 <template>
-  <PageWrapper title="关于" sticky dense>
-    <template #headerContent>
-      <div class="flex items-center justify-between">
-        <span class="flex-1">
+  <PageWrapper title="" dense>
+    <section class="db-hero">
+      <div class="db-hero__main">
+        <div class="db-hero__eyebrow">ABOUT</div>
+        <div class="db-hero__title">关于</div>
+        <div class="db-hero__desc">
           <a :href="GITHUB_URL" target="_blank">Guoba-Plugin</a>
-          是一个
+          是
           <a href="https://github.com/Le-niao/Yunzai-Bot" target="_blank">Yunzai-Bot</a>
-          的插件，主要用于提供后台管理界面。 基于Vue-VBen-Admin、Vue3.0、Vite、Ant-Design-Vue、TypeScript开发。
+          的后台管理插件，基于 Vue-Vben-Admin / Vue3 / Vite / Ant-Design-Vue / TypeScript 构建。
+        </div>
+      </div>
+      <div class="db-hero__side">
+        <span class="gm-seg">
+          <span
+            v-for="tab in tabPanes"
+            :key="tab.key"
+            class="gm-seg__item"
+            :class="{ 'is-active': activeKey === tab.key }"
+            @click="activeKey = tab.key"
+          >
+            {{ tab.title }}
+          </span>
         </span>
       </div>
-    </template>
+    </section>
 
-    <template #footer>
-      <a-tabs v-model:activeKey="activeKey">
-        <template v-for="tab in tabPanes" :key="tab.key">
-          <a-tab-pane :tab="tab.title" />
-        </template>
-      </a-tabs>
-    </template>
-
-    <div v-show="activeKey === 'about'" key="about" class="p-4">
+    <div v-show="activeKey === 'about'" key="about" class="db-about">
       <Description @register="infoRegister" class="enter-y" />
       <Description @register="register" class="my-4 enter-y" />
       <Description @register="registerDev" class="enter-y" />
     </div>
-    <div v-show="activeKey === 'todo'" key="todo" class="p-4 bg-white">
+    <div v-show="activeKey === 'todo'" key="todo" class="db-about">
       <LoadGitee />
     </div>
   </PageWrapper>
@@ -130,3 +137,13 @@
     column: 2,
   });
 </script>
+
+<style scoped>
+  .db-about {
+    padding: 14px 4px 0;
+  }
+
+  .db-hero__desc a {
+    color: var(--g-blue);
+  }
+</style>
