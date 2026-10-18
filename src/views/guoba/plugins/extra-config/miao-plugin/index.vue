@@ -1,27 +1,49 @@
 <template>
-  <PageWrapper :class="[prefixCls]" title="编辑喵喵帮助" dense sticky stickyTop="-14px" :loading="loading">
-    <template #headerContent>
-      <EditMiaoHeader @save="saveData" @rollback="onRollback" @backup="onBackup" @theme="onOpenTheme" />
-    </template>
-    <div class="flex justify-center md:pt-4 my-4">
-      <Transition name="scroll-y-reverse-transition">
-        <HelpPanel
-          v-if="!pageLoading"
-          :cacheVer="cacheVer"
-          :versions="versions"
-          :themeNames="themeNames"
-          v-model:helpCfg="helpCfg"
-          v-model:helpList="helpList"
-          v-model:bgB64="bgB64"
-          v-model:mainB64="mainB64"
-          v-model:iconB64List="iconB64List"
-          v-model:modelData="modelData"
-          v-model:themeStyle="themeStyle"
-          v-model:themeName="themeName"
-          @openSetting="onOpenSetting"
-        />
-      </Transition>
-    </div>
+  <PageWrapper :class="[prefixCls]" title="" :loading="loading">
+    <MiaoHero
+      eyebrow="MIAO · HELP EDITOR"
+      title="喵喵帮助配置"
+      desc="所见即所得地编辑 miao-plugin 的帮助卡片：标题、分组、条目、图标与皮肤"
+      :chips="heroChips"
+      @save="saveData"
+      @rollback="onRollback"
+      @backup="onBackup"
+      @theme="onOpenTheme"
+    />
+
+    <section class="g-card mh-canvas">
+      <header class="db-card__head">
+        <span class="db-card__mark"></span>
+        <div class="db-card__title-wrap">
+          <div class="db-card__title">帮助卡预览</div>
+          <div class="db-card__desc">点击标题或任意条目可直接编辑；右上角齿轮可调整列数、宽度与主题色</div>
+        </div>
+        <div class="db-card__meta">
+          <span class="db-card__cnt">{{ colCount }} 列</span>
+          <span class="db-card__cnt">{{ themeName || 'default' }}</span>
+        </div>
+      </header>
+      <div class="mh-canvas__body">
+        <Transition name="scroll-y-reverse-transition">
+          <HelpPanel
+            v-if="!pageLoading"
+            :cacheVer="cacheVer"
+            :versions="versions"
+            :themeNames="themeNames"
+            v-model:helpCfg="helpCfg"
+            v-model:helpList="helpList"
+            v-model:bgB64="bgB64"
+            v-model:mainB64="mainB64"
+            v-model:iconB64List="iconB64List"
+            v-model:modelData="modelData"
+            v-model:themeStyle="themeStyle"
+            v-model:themeName="themeName"
+            @openSetting="onOpenSetting"
+          />
+        </Transition>
+      </div>
+    </section>
+
     <ThemeDrawer v-model:themeNames="themeNames" @register="registerThemeDrawer" />
     <BackupDrawer @register="registerBackupDrawer" @reload="loadData" />
     <SettingDrawer
@@ -38,11 +60,11 @@
 
 <script lang="ts">
   import type { helpCfgType, helpListType, modelDataType } from './types';
-  import { defineComponent, reactive, ref, watch } from 'vue';
+  import { computed, defineComponent, reactive, ref, watch } from 'vue';
   import lodash from 'lodash-es';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { PageWrapper } from '/@/components/Page';
-  import EditMiaoHeader from './components/MiaoHeader.vue';
+  import MiaoHero from '../_shared/MiaoHero.vue';
   import HelpPanel from './components/HelpPanel.vue';
   import ThemeDrawer from './components/ThemeDrawer.vue';
   import BackupDrawer from './components/BackupDrawer.vue';
@@ -55,7 +77,7 @@
     name: 'MiaoPluginExtra',
     components: {
       HelpPanel,
-      EditMiaoHeader,
+      MiaoHero,
       PageWrapper,
       ThemeDrawer,
       BackupDrawer,
@@ -69,6 +91,15 @@
       const cacheVer = ref<number>(0);
       const helpCfg = ref<Nullable<helpCfgType>>(null);
       const helpList = ref<Nullable<helpListType>>(null);
+
+      // 预览面板与页头用的派生信息
+      const colCount = computed(() => {
+        const n = parseInt(helpCfg.value?.colCount as any);
+        return Math.min(5, Math.max(Number.isNaN(n) ? 3 : n, 2));
+      });
+      const itemCount = computed(() =>
+        (helpList.value ?? []).reduce((sum: number, group: any) => sum + (group?.list?.length ?? 0), 0),
+      );
       const bgB64 = ref<Nullable<string>>(null);
       const mainB64 = ref<Nullable<string>>(null);
       const iconB64List = ref<Nullable<string[]>>(null);
@@ -191,6 +222,17 @@
         settingDrawer.openDrawer();
       }
 
+      // 页头状态胶囊
+      const heroChips = computed(() => {
+        const chips: { text: string; tone?: string }[] = [];
+        chips.push({ text: themeName.value || 'default', tone: 'info' });
+        chips.push({ text: `${colCount.value} 列`, tone: 'muted' });
+        chips.push({ text: `${helpList.value?.length ?? 0} 组 / ${itemCount.value} 条`, tone: 'ok' });
+        chips.push({ text: `miao ${versions.miao}`, tone: 'mono' });
+        chips.push({ text: `yunzai ${versions.yunzai}`, tone: 'mono' });
+        return chips;
+      });
+
       return {
         prefixCls,
         loading,
@@ -207,6 +249,9 @@
         cacheVer,
         versions,
         modelData,
+        colCount,
+        itemCount,
+        heroChips,
         onBackup,
         onOpenTheme,
         onRollback,

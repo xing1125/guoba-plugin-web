@@ -37,6 +37,11 @@
 | 插件管理 | `/plugins` | `plugins/index.vue` | 4 张可点击 KPI（已安装/未安装/可配置/已失效）+ 工具栏（正则搜索、作者多选、口径分段）+ 结构化行（图标/标题/包名、作者胶囊、状态徽标、行内「配置 / 详情」）+ 批量卸载 + 自定义分页 |
 | 插件配置 | `/plugin/@/:name` | `plugins/plugin-detail/index.vue` | 页头（图标/标题/仓库链接/状态胶囊）+ 左侧软分组导航（带字段数）+ 吸顶操作条（保存配置）+ 双列表单 |
 | 配置管理 | `/config` | `config/index.vue` | 「左分组导航 + 右工作区」双栏；吸顶条含分组名、字段数、展开/收起全部、重载；配置块为统一面板（标题/描述/项数/折叠/底部操作条） |
+| 喵喵帮助 | `/plugin/extra/miao-plugin` | `plugins/extra-config/miao-plugin/index.vue` | 页头（状态胶囊：皮肤/列数/组条数/双版本 + 回滚/皮肤/备份/保存）+ `.mh-canvas` 预览面板承载 1:1 帮助卡 |
+| 喵喵帮助 V1 | `/plugin/extra/miao-plugin-v1` | `plugins/extra-config/miao-plugin-v1/index.vue` | 同上，无皮肤抽屉（v1 不支持） |
+
+页头抽成共享组件 `plugins/extra-config/_shared/MiaoHero.vue`（props: eyebrow/title/desc/chips/showTheme），
+原来的 `components/MiaoHeader.vue`（v1/v2 各一份）已删除。
 
 配置块组件 `config/components/{CardForm,ArrayForm}.vue` 统一使用设计层的 `.db-card` 面板语言，
 折叠由页面 `provide('cfgFoldSignal')` 总控，`ConfigForm.vue` 的表单为宽屏两列网格（`baseColProps` md/lg/xl = 12）。

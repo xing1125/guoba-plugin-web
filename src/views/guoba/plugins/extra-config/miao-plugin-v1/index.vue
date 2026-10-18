@@ -1,34 +1,55 @@
 <template>
-  <PageWrapper :class="[prefixCls]" title="编辑喵喵帮助" dense sticky stickyTop="-14px" :loading="loading">
-    <template #headerContent>
-      <EditMiaoHeader @save="saveData" @rollback="onRollback" @backup="onBackup" />
-    </template>
-    <div class="flex justify-center md:pt-4 my-4">
-      <Transition name="scroll-y-reverse-transition">
-        <HelpPanel
-          v-if="!pageLoading"
-          :cacheVer="cacheVer"
-          :versions="versions"
-          v-model:helpCfg="helpCfg"
-          v-model:helpList="helpList"
-          v-model:bgB64="bgB64"
-          v-model:mainB64="mainB64"
-          v-model:iconB64List="iconB64List"
-          v-model:modelData="modelData"
-        />
-      </Transition>
-    </div>
+  <PageWrapper :class="[prefixCls]" title="" :loading="loading">
+    <MiaoHero
+      eyebrow="MIAO V1 · HELP EDITOR"
+      title="喵喵帮助配置"
+      desc="编辑 miao-plugin 1.x 的帮助卡片：标题、分组、条目与背景图，改动实时预览"
+      :chips="heroChips"
+      :showTheme="false"
+      @save="saveData"
+      @rollback="onRollback"
+      @backup="onBackup"
+    />
+
+    <section class="g-card mh-canvas">
+      <header class="db-card__head">
+        <span class="db-card__mark"></span>
+        <div class="db-card__title-wrap">
+          <div class="db-card__title">帮助卡预览</div>
+          <div class="db-card__desc">点击标题或任意条目可直接编辑；右上角按钮可更换背景与图标</div>
+        </div>
+        <div class="db-card__meta">
+          <span class="db-card__cnt">{{ helpList?.length ?? 0 }} 组</span>
+        </div>
+      </header>
+      <div class="mh-canvas__body">
+        <Transition name="scroll-y-reverse-transition">
+          <HelpPanel
+            v-if="!pageLoading"
+            :cacheVer="cacheVer"
+            :versions="versions"
+            v-model:helpCfg="helpCfg"
+            v-model:helpList="helpList"
+            v-model:bgB64="bgB64"
+            v-model:mainB64="mainB64"
+            v-model:iconB64List="iconB64List"
+            v-model:modelData="modelData"
+          />
+        </Transition>
+      </div>
+    </section>
+
     <BackupDrawer @register="registerDrawer" @reload="loadData" />
   </PageWrapper>
 </template>
 
 <script lang="ts">
-  import { defineComponent, reactive, ref } from 'vue';
+  import { computed, defineComponent, reactive, ref } from 'vue';
   import type { helpCfgType, helpListType, modelDataType } from './types';
 
   import { useMessage } from '/@/hooks/web/useMessage';
   import { PageWrapper } from '/@/components/Page';
-  import EditMiaoHeader from './components/MiaoHeader.vue';
+  import MiaoHero from '../_shared/MiaoHero.vue';
   import HelpPanel from './components/HelpPanel.vue';
   import BackupDrawer from './components/BackupDrawer.vue';
   import { useDesign } from '/@/hooks/web/useDesign';
@@ -37,7 +58,7 @@
 
   export default defineComponent({
     name: 'MiaoPluginExtra',
-    components: { HelpPanel, EditMiaoHeader, PageWrapper, BackupDrawer },
+    components: { HelpPanel, MiaoHero, PageWrapper, BackupDrawer },
     setup() {
       const { prefixCls } = useDesign('edit-miao-help');
       const { createMessage: $message, createConfirm } = useMessage();
@@ -61,6 +82,17 @@
         groupIndex: null,
       });
       const [registerDrawer, { openDrawer }] = useDrawer();
+
+      // 页头状态胶囊
+      const heroChips = computed(() => {
+        const groups = helpList.value?.length ?? 0;
+        const items = (helpList.value ?? []).reduce((sum: number, g: any) => sum + (g?.list?.length ?? 0), 0);
+        return [
+          { text: `${groups} 组 / ${items} 条`, tone: 'ok' },
+          { text: `miao ${versions.miao}`, tone: 'mono' },
+          { text: `yunzai ${versions.yunzai}`, tone: 'mono' },
+        ];
+      });
 
       const saveData = async () => {
         try {
@@ -121,6 +153,7 @@
         cacheVer,
         versions,
         modelData,
+        heroChips,
         onBackup,
         onRollback,
         loadData,

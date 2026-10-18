@@ -1249,6 +1249,43 @@ html[data-theme='dark'] .db-hero {
   color: var(--g-text-sub);
 }
 
+/* -------- 喵喵帮助预览画布 -------- */
+/* 承载 miao-plugin / miao-plugin-v1 的帮助卡 1:1 预览，面板化后居中显示 */
+.mh-canvas {
+  padding: 0;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.mh-canvas__body {
+  display: flex;
+  justify-content: center;
+  min-height: 360px;
+  padding: 20px 18px 26px;
+  overflow-x: auto;
+  background:
+    radial-gradient(520px 280px at 50% 0%, rgb(98 168 234 / 8%), transparent 70%),
+    var(--g-card-bg-soft);
+}
+
+/* 皮肤抽屉里的 JSON 预览跟随主题 */
+.guoba-miao-plugin-theme-drawer pre {
+  padding: 8px 10px;
+  margin: 0;
+  max-height: 160px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--g-text-sub);
+  background: var(--g-card-bg-soft);
+  border: 1px solid var(--g-card-border);
+  border-radius: 8px;
+}
+
+.guoba-miao-plugin-theme-drawer .ant-list-bordered {
+  border-color: var(--g-card-border);
+}
+
 /* -------- 响应式：窄屏把导航压成横向滚动条 -------- */
 @media (max-width: 1180px) {
   .db-grid--8-4,
