@@ -43,12 +43,38 @@
           <div class="g-card">
             <div class="gm-panel__head">
               <div class="gm-panel__title">
-                <i><Icon icon="ant-design:pie-chart-outlined" :size="13" /></i>
-                命名空间占比
+                <i><Icon icon="ant-design:bar-chart-outlined" :size="13" /></i>
+                命名空间占用 TOP 8
               </div>
               <span class="gm-panel__extra">TOP 8 + 其他</span>
             </div>
-            <div ref="pieRef" class="g-chart" />
+            <div v-if="nsTop.length" class="ns-bars">
+              <div v-for="(b, i) in nsTop" :key="b.ns" class="ns-bar">
+                <span class="ns-bar__no" :class="`is-${['gold', 'silver', 'bronze'][i] ?? 'plain'}`">{{ i + 1 }}</span>
+                <div class="ns-bar__info">
+                  <div class="ns-bar__name">
+                    <b :title="`${b.label}（${b.owner}）`">{{ b.label }}</b>
+                    <span class="g-mono">{{ b.ns }}</span>
+                  </div>
+                  <div class="ns-bar__track">
+                    <i :style="{ width: nsPct(b.keys) }" />
+                  </div>
+                </div>
+                <div class="ns-bar__val">
+                  <b>{{ thousands(b.keys) }}</b>
+                  <span>{{ b.ratio }}%</span>
+                </div>
+              </div>
+              <div v-if="restCount > 0" class="ns-bar ns-bar--rest">
+                <span class="ns-bar__no">…</span>
+                <div class="ns-bar__info">
+                  <div class="ns-bar__name"><b>其他 {{ restN }} 个命名空间</b></div>
+                  <div class="ns-bar__track"><i style="width: 100%; opacity: 0.25" /></div>
+                </div>
+                <div class="ns-bar__val"><b>{{ thousands(restCount) }}</b></div>
+              </div>
+            </div>
+            <GEmpty v-else-if="!loading" title="暂无命名空间数据" desc="执行一次扫描后即可看到占比" />
           </div>
         </Col>
 
@@ -157,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, onMounted, ref, unref, watch } from 'vue';
+  import { computed, onMounted, ref, unref } from 'vue';
   import {
     Button,
     Checkbox,
@@ -170,16 +196,13 @@
   import { InfoCircleOutlined } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
-  import { useECharts } from '/@/hooks/web/useECharts';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import GEmpty from '../_shared/GEmpty.vue';
   import type { GameSlice, HistogramResult, NsBucket } from '../_shared/stats';
   import {
-    chartBase,
     chartColors,
     fmtNum,
-    hexToRgba,
     kpiPalette,
     statsApi,
     thousands,
@@ -268,59 +291,16 @@
     return `${Math.max(1, (b.keys / max) * 100)}%`;
   }
 
-  /* ------------------------------ 图表 ------------------------------ */
+  /* ------------------------------ 命名空间 TOP 榜 ------------------------------ */
 
-  const pieRef = ref<HTMLDivElement | null>(null);
-  const pieChart = useECharts(pieRef);
+  const nsBuckets = computed(() => data.value?.buckets ?? []);
+  const nsTop = computed(() => nsBuckets.value.slice(0, 8));
+  const restN = computed(() => Math.max(0, nsBuckets.value.length - 8));
+  const restCount = computed(() => nsBuckets.value.slice(8).reduce((s, b) => s + b.keys, 0));
 
-  function renderPie() {
-    const base = chartBase(isDark.value);
-    const colors = palette.value;
-    const buckets = data.value?.buckets ?? [];
-    const top = buckets.slice(0, 8);
-    const rest = buckets.slice(8).reduce((s, b) => s + b.keys, 0);
-    const series = top.map((b, i) => ({
-      name: `${b.label}（${b.owner}）`,
-      value: b.keys,
-      itemStyle: { color: colors[i % colors.length] },
-    }));
-    if (rest > 0) {
-      series.push({
-        name: '其他',
-        value: rest,
-        itemStyle: { color: hexToRgba(isDark.value ? '#ffffff' : '#000000', 0.22) },
-      } as any);
-    }
-
-    pieChart.setOptions({
-      tooltip: {
-        ...base.tooltip,
-        trigger: 'item',
-        formatter: '{b}<br/>{c} 个键 · {d}%',
-      },
-      legend: {
-        type: 'scroll',
-        orient: 'vertical',
-        right: 0,
-        top: 'center',
-        itemWidth: 9,
-        itemHeight: 9,
-        icon: 'roundRect',
-        textStyle: { color: base.text, fontSize: 11.5 },
-      },
-      series: [
-        {
-          type: 'pie',
-          radius: ['46%', '72%'],
-          center: ['32%', '50%'],
-          avoidLabelOverlap: true,
-          itemStyle: { borderColor: 'transparent', borderWidth: 2, borderRadius: 4 },
-          label: { show: false },
-          labelLine: { show: false },
-          data: series,
-        },
-      ],
-    });
+  function nsPct(keys: number) {
+    const max = nsBuckets.value[0]?.keys || 1;
+    return `${Math.max(3, (keys / max) * 100)}%`;
   }
 
   /* ------------------------------ 数据 ------------------------------ */
@@ -338,12 +318,8 @@
       available.value = false;
     } finally {
       loading.value = false;
-      await nextTick();
-      renderPie();
     }
   }
-
-  watch(isDark, () => nextTick(() => renderPie()));
 
   onMounted(() => load(false));
 </script>
@@ -359,6 +335,131 @@
 
   .w-200 {
     width: 200px;
+  }
+
+  /* 命名空间 TOP 榜 */
+  .ns-bars {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 7px;
+    height: 340px;
+    padding-top: 4px;
+  }
+
+  .ns-bar {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 96px;
+    gap: 12px;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 10px;
+    transition: background 0.18s;
+  }
+
+  .ns-bar:hover {
+    background: var(--g-hover);
+  }
+
+  .ns-bar__no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--g-text-mute);
+    background: var(--g-chip-bg);
+    border-radius: 7px;
+  }
+
+  .ns-bar__no.is-gold {
+    color: #6b4d00;
+    background: linear-gradient(135deg, #f5dd9a, #dcae4e);
+  }
+
+  .ns-bar__no.is-silver {
+    color: #45535f;
+    background: linear-gradient(135deg, #dfe7ee, #a9b9c6);
+  }
+
+  .ns-bar__no.is-bronze {
+    color: #5e3a1c;
+    background: linear-gradient(135deg, #eec9a8, #c98a58);
+  }
+
+  .ns-bar__info {
+    min-width: 0;
+  }
+
+  .ns-bar__name {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    min-width: 0;
+    margin-bottom: 5px;
+  }
+
+  .ns-bar__name b {
+    overflow: hidden;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--g-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ns-bar__name span {
+    overflow: hidden;
+    font-size: 10.5px;
+    color: var(--g-text-mute);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ns-bar__track {
+    height: 6px;
+    overflow: hidden;
+    background: var(--g-track);
+    border-radius: 4px;
+  }
+
+  .ns-bar__track i {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--g-blue), var(--g-cyan));
+    border-radius: 4px;
+    transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .ns-bar:nth-child(1) .ns-bar__track i {
+    background: linear-gradient(90deg, #dcae4e, #f0d491);
+  }
+
+  .ns-bar:nth-child(2) .ns-bar__track i {
+    background: linear-gradient(90deg, #94a9bb, #c6d3de);
+  }
+
+  .ns-bar:nth-child(3) .ns-bar__track i {
+    background: linear-gradient(90deg, #c98a58, #e3b48b);
+  }
+
+  .ns-bar__val {
+    text-align: right;
+  }
+
+  .ns-bar__val b {
+    display: block;
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ns-bar__val span {
+    font-size: 11px;
+    color: var(--g-text-mute);
   }
 
   /* 游戏分布条 */
@@ -386,15 +487,16 @@
 
   .game-bar__track {
     flex: 1;
-    height: 9px;
+    height: 6px;
     overflow: hidden;
     background: var(--g-track);
-    border-radius: 5px;
+    border-radius: 4px;
   }
 
   .game-bar__fill {
     height: 100%;
-    border-radius: 5px;
+    border-radius: 4px;
+    opacity: 0.9;
     transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   }
 

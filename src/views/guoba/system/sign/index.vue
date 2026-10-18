@@ -235,38 +235,50 @@
     </div>
 
     <!-- ============================ 某天明细抽屉 ============================ -->
-    <Drawer :visible="dayDrawer.visible" :title="`${dayDrawer.date} 签到明细`" width="720" @close="dayDrawer.visible = false">
+    <Drawer :visible="dayDrawer.visible" :title="`${dayDrawer.date} 签到明细`" width="780" @close="dayDrawer.visible = false">
       <template v-if="dayData">
-        <div class="day-stats">
-          <div v-for="s in dayStats" :key="s.label" class="day-stat">
-            <div class="g-muted">{{ s.label }}</div>
-            <div class="day-stat__value">{{ s.value }}</div>
-          </div>
+        <div class="drawer-tabs">
+          <span class="gm-seg">
+            <span class="gm-seg__item" :class="{ 'is-active': dayTab === 'overview' }" @click="dayTab = 'overview'">
+              当日概览
+            </span>
+            <span class="gm-seg__item" :class="{ 'is-active': dayTab === 'users' }" @click="dayTab = 'users'">
+              账号明细 · {{ dayData.userList.length }}
+            </span>
+          </span>
         </div>
 
-        <div class="drawer-block">
-          <div class="block-title">各游戏签到人数</div>
-          <div class="sign-games">
-            <div v-for="g in dayGames" :key="g.key" class="sign-game">
-              <div class="sign-game__top">
-                <span class="sign-game__name"><i :style="{ background: g.color }" />{{ g.label }}</span>
-                <span class="sign-game__val"><b>{{ g.signed }}</b><em>已签</em></span>
-              </div>
-              <div class="sign-game__track">
-                <div class="sign-game__fill" :style="{ width: `${g.rate}%`, background: g.color }" />
+        <template v-if="dayTab === 'overview'">
+          <div class="day-stats">
+            <div v-for="s in dayStats" :key="s.label" class="day-stat">
+              <div class="g-muted">{{ s.label }}</div>
+              <div class="day-stat__value" :class="s.cls">{{ s.value }}</div>
+            </div>
+          </div>
+
+          <div class="drawer-block">
+            <div class="block-title">各游戏签到人数</div>
+            <div class="sign-games">
+              <div v-for="g in dayGames" :key="g.key" class="sign-game">
+                <div class="sign-game__top">
+                  <span class="sign-game__name"><i :style="{ background: g.color }" />{{ g.label }}</span>
+                  <span class="sign-game__val"><b>{{ g.signed }}</b><em>已签</em></span>
+                </div>
+                <div class="sign-game__track">
+                  <div class="sign-game__fill" :style="{ width: `${g.rate}%`, background: g.color }" />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </template>
 
-        <div class="drawer-block">
-          <div class="block-title">账号明细（{{ dayData.userList.length }} 人）</div>
+        <template v-else>
           <Table
             row-key="qq"
             size="small"
             :columns="dayUserColumns"
             :data-source="dayData.userList"
-            :pagination="{ pageSize: 10, size: 'small' }"
+            :pagination="{ pageSize: 12, size: 'small' }"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'qq'">
@@ -285,7 +297,7 @@
               </template>
             </template>
           </Table>
-        </div>
+        </template>
       </template>
       <div v-else class="gm-skeleton" style="height: 240px" />
     </Drawer>
@@ -650,11 +662,13 @@
 
   const dayDrawer = reactive({ visible: false, date: '' });
   const dayData = ref<SignDay | null>(null);
+  const dayTab = ref<'overview' | 'users'>('overview');
 
   async function openDay(date: string) {
     dayDrawer.visible = true;
     dayDrawer.date = date;
     dayData.value = null;
+    dayTab.value = 'overview';
     try {
       dayData.value = await signApi.getDay(date);
     } catch {
@@ -669,10 +683,10 @@
     }
     return [
       { label: '签到人次', value: d.total },
-      { label: '成功', value: d.ok },
-      { label: '失败', value: d.fail },
+      { label: '成功', value: d.ok, cls: 'is-ok' },
+      { label: '失败', value: d.fail, cls: d.fail ? 'is-fail' : '' },
       { label: '覆盖人数', value: d.users },
-      { label: '成功率', value: `${d.rate}%` },
+      { label: '成功率', value: `${d.rate}%`, cls: 'is-ok' },
       { label: '人均米游币', value: thousands(d.coinAvg) },
     ];
   });
@@ -908,6 +922,14 @@
   }
 
   /* 抽屉 */
+  .drawer-tabs {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 14px;
+    margin-bottom: 4px;
+    border-bottom: 1px dashed var(--g-card-border);
+  }
+
   .day-stats {
     display: grid;
     gap: 10px;
@@ -925,6 +947,14 @@
     font-weight: 650;
     color: var(--g-text);
     font-variant-numeric: tabular-nums;
+  }
+
+  .day-stat__value.is-ok {
+    color: var(--g-green);
+  }
+
+  .day-stat__value.is-fail {
+    color: #e0664a;
   }
 
   .drawer-block {

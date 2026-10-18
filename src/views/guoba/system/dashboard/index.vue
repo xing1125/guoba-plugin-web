@@ -89,9 +89,27 @@
             </div>
             <span class="gm-panel__link" @click="go('/groups')">查看全部›</span>
           </div>
-          <div v-show="!booting && groups.length" ref="groupRef" class="db-chart db-chart--bar" />
-          <div v-if="booting" class="gm-skeleton db-chart db-chart--bar" />
-          <GEmpty v-if="!booting && !groups.length" title="暂无群消息数据" desc="群内产生消息后即可统计" />
+          <div v-if="topGroups.length" class="db-rank">
+            <div v-for="(g, i) in topGroups" :key="g.gid" class="db-rank__row">
+              <span class="db-rank__no" :class="`is-${['gold', 'silver', 'bronze'][i] ?? 'plain'}`">{{ i + 1 }}</span>
+              <div class="db-rank__info">
+                <div class="db-rank__name">
+                  <b>{{ g.name || shortGid(g.gid) }}</b>
+                  <span>{{ shortGid(g.gid) }}</span>
+                  <span class="db-rank__avg">日均 {{ fmtNum(g.avgDaily) }}</span>
+                </div>
+                <div class="db-rank__track">
+                  <i :style="{ width: barPct(g.total) }" />
+                </div>
+              </div>
+              <div class="db-rank__val">
+                <b>{{ fmtNum(g.total) }}</b>
+                <span>条</span>
+              </div>
+            </div>
+          </div>
+          <GEmpty v-else-if="!booting" title="暂无群消息数据" desc="群内产生消息后即可统计" />
+          <div v-else class="gm-skeleton" style="height: 288px" />
         </div>
 
         <div class="g-card">
@@ -177,7 +195,6 @@
   import GEmpty from '../_shared/GEmpty.vue';
   import type { GameSlice, GroupRow, OverviewCards, TrendPoint } from '../_shared/stats';
   import {
-    accentGradient,
     activeText,
     areaGradient,
     chartBase,
@@ -308,6 +325,14 @@
     [...groups.value].sort((a, b) => (a.lastDate < b.lastDate ? 1 : -1)).slice(0, 6),
   );
 
+  /** 消息量 TOP 8 排行榜 */
+  const topGroups = computed(() => [...groups.value].sort((a, b) => b.total - a.total).slice(0, 8));
+
+  function barPct(n: number) {
+    const max = topGroups.value[0]?.total || 1;
+    return `${Math.max(4, Math.round((n / max) * 100))}%`;
+  }
+
   const modules = computed(() => {
     const p = palette.value;
     return [
@@ -338,11 +363,9 @@
 
   const trendRef = ref<HTMLDivElement | null>(null);
   const gameRef = ref<HTMLDivElement | null>(null);
-  const groupRef = ref<HTMLDivElement | null>(null);
 
   const trendChart = useECharts(trendRef);
   const gameChart = useECharts(gameRef);
-  const groupChart = useECharts(groupRef);
 
   function renderTrend() {
     if (!trend.value.length) return;
@@ -434,51 +457,9 @@
     });
   }
 
-  function renderGroups() {
-    if (!groups.value.length) return;
-    const base = chartBase(isDark.value);
-    const top = [...groups.value].sort((a, b) => b.total - a.total).slice(0, 8).reverse();
-    groupChart.setOptions({
-      grid: { top: 8, right: 56, bottom: 8, left: 6, containLabel: true },
-      tooltip: {
-        ...base.tooltip,
-        trigger: 'axis',
-        axisPointer: { type: 'shadow', shadowStyle: { color: hexToRgba(primary.value, 0.08) } },
-        formatter: (p: any) => {
-          const it = Array.isArray(p) ? p[0] : p;
-          return `${it.name}<br/>消息 ${thousands(it.value)} 条`;
-        },
-      },
-      xAxis: { type: 'value', show: false },
-      yAxis: {
-        type: 'category',
-        data: top.map((g) => (g.name ? g.name.slice(0, 8) : shortGid(g.gid))),
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { ...base.axisLabel, fontSize: 11.5 },
-      },
-      series: [
-        {
-          type: 'bar',
-          data: top.map((g) => g.total),
-          barWidth: 13,
-          itemStyle: { borderRadius: [0, 7, 7, 0], color: accentGradient(groupChart.echarts, isDark.value) },
-          label: {
-            show: true,
-            position: 'right',
-            color: base.text,
-            fontSize: 11,
-            formatter: (p: any) => fmtNum(p.value),
-          },
-        },
-      ],
-    });
-  }
-
   function renderAll() {
     renderTrend();
     renderGames();
-    renderGroups();
   }
 
   function setDays(d: number) {
@@ -722,8 +703,134 @@
     height: 262px;
   }
 
-  .db-chart--bar {
+  /* ---------------- 群消息 TOP 榜 ---------------- */
+  .db-rank {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
     height: 288px;
+  }
+
+  .db-rank__row {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 86px;
+    gap: 12px;
+    align-items: center;
+    padding: 5px 8px;
+    border-radius: 10px;
+    transition: background 0.18s;
+  }
+
+  .db-rank__row:hover {
+    background: var(--g-hover);
+  }
+
+  .db-rank__no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--g-text-mute);
+    background: var(--g-chip-bg);
+    border-radius: 7px;
+  }
+
+  .db-rank__no.is-gold {
+    color: #6b4d00;
+    background: linear-gradient(135deg, #f5dd9a, #dcae4e);
+    box-shadow: 0 4px 10px -4px rgb(220 174 78 / 60%);
+  }
+
+  .db-rank__no.is-silver {
+    color: #45535f;
+    background: linear-gradient(135deg, #dfe7ee, #a9b9c6);
+    box-shadow: 0 4px 10px -4px rgb(169 185 198 / 55%);
+  }
+
+  .db-rank__no.is-bronze {
+    color: #5e3a1c;
+    background: linear-gradient(135deg, #eec9a8, #c98a58);
+    box-shadow: 0 4px 10px -4px rgb(201 138 88 / 55%);
+  }
+
+  .db-rank__info {
+    min-width: 0;
+  }
+
+  .db-rank__name {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    min-width: 0;
+    margin-bottom: 5px;
+  }
+
+  .db-rank__name b {
+    overflow: hidden;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--g-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .db-rank__name span {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--g-text-mute);
+  }
+
+  .db-rank__avg {
+    margin-left: auto;
+    color: var(--g-text-mute) !important;
+  }
+
+  .db-rank__track {
+    height: 6px;
+    overflow: hidden;
+    background: var(--g-track);
+    border-radius: 4px;
+  }
+
+  .db-rank__track i {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--g-blue), var(--g-cyan));
+    border-radius: 4px;
+    transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .db-rank__row:nth-child(1) .db-rank__track i {
+    background: linear-gradient(90deg, #dcae4e, #f0d491);
+  }
+
+  .db-rank__row:nth-child(2) .db-rank__track i {
+    background: linear-gradient(90deg, #94a9bb, #c6d3de);
+  }
+
+  .db-rank__row:nth-child(3) .db-rank__track i {
+    background: linear-gradient(90deg, #c98a58, #e3b48b);
+  }
+
+  .db-rank__val {
+    text-align: right;
+  }
+
+  .db-rank__val b {
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .db-rank__val span {
+    margin-left: 2px;
+    font-size: 11px;
+    color: var(--g-text-mute);
   }
 
   .db-dot {
