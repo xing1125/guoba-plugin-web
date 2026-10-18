@@ -159,11 +159,12 @@
               <b class="scr-recent__name" :class="{ 'is-plain': !g.name }" :title="g.name || g.gid">
                 {{ g.name || `群 ${shortGid(g.gid)}` }}
               </b>
-              <div class="scr-spark">
+              <div class="scr-heat">
                 <i
                   v-for="(d, di) in g.daily.slice(-14)"
                   :key="di"
-                  :style="{ height: sparkHeight(g, d.n) }"
+                  :style="{ background: heatColor(d.n, g) }"
+                  :class="{ 'is-today': di === g.daily.slice(-14).length - 1 }"
                   :title="`${d.date} · ${d.n} 条`"
                 />
               </div>
@@ -307,9 +308,13 @@
     return `${Math.max(4, Math.round((n / maxRank.value) * 100))}%`;
   }
 
-  function sparkHeight(g: GroupRow, n: number) {
+  /** 热力方块配色：当天消息量映射冰蓝深浅（0 = 近透明的空格） */
+  function heatColor(n: number, g: GroupRow) {
+    if (!n) return 'rgba(255, 255, 255, 0.055)';
     const max = Math.max(...g.daily.map((d) => d.n), 1);
-    return `${Math.max(3, Math.round((n / max) * 100))}%`;
+    const t = Math.min(1, n / max);
+    const alpha = (0.22 + t * 0.78).toFixed(2);
+    return `rgba(79, 195, 247, ${alpha})`;
   }
 
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
@@ -1077,9 +1082,34 @@
 
   .scr-recent__row {
     display: grid;
-    grid-template-columns: minmax(70px, 0.85fr) minmax(0, 1.1fr) 56px;
-    gap: 10px;
+    grid-template-columns: minmax(64px, 0.62fr) minmax(0, 1fr) 52px;
+    gap: 12px;
     align-items: center;
+  }
+
+  /* 14 天活跃热力点阵：7 列 × 2 行方块，颜色深浅 = 当日消息量 */
+  .scr-heat {
+    display: grid;
+    flex: 1 1 auto;
+    gap: 4px;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .scr-heat i {
+    aspect-ratio: 1 / 0.82;
+    background: rgba(255, 255, 255, 0.055);
+    border-radius: 2.5px;
+    transition: transform 0.15s ease;
+    cursor: default;
+  }
+
+  .scr-heat i:hover {
+    transform: scale(1.35);
+  }
+
+  /* 最新一天描边提示 */
+  .scr-heat i.is-today {
+    box-shadow: inset 0 0 0 1px rgba(79, 195, 247, 0.55);
   }
 
   .scr-recent__name {
@@ -1096,23 +1126,6 @@
       font-weight: 500;
       color: var(--scr-mute);
     }
-  }
-
-  .scr-spark {
-    display: flex;
-    gap: 2px;
-    align-items: flex-end;
-    justify-content: flex-end;
-    height: 26px;
-  }
-
-  .scr-spark i {
-    flex: 1 1 0;
-    min-width: 2px;
-    max-width: 6px;
-    background: linear-gradient(180deg, var(--scr-ice), rgba(79, 195, 247, 0.25));
-    border-radius: 2px;
-    opacity: 0.9;
   }
 
   .scr-recent__val {
