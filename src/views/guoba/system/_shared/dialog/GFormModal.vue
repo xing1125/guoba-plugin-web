@@ -11,6 +11,10 @@
     @cancel="handleCancel"
   >
     <Form ref="formRef" class="gfm-form" :label-col="{ span: 5 }" :wrapper-col="{ span: 17 }" :model="values">
+      <div v-if="hint" class="gfm-hint">
+        <Icon icon="ant-design:info-circle-outlined" :size="14" style="flex-shrink: 0; margin-top: 2px" />
+        <span>{{ hint }}</span>
+      </div>
       <FormItem
         v-for="f in schema"
         :key="f.field"
@@ -59,6 +63,7 @@
 <script setup lang="ts">
   import { reactive, ref, watch } from 'vue';
   import { Form, FormItem, Input, InputNumber, Modal, Select, Switch } from 'ant-design-vue';
+  import { Icon } from '/@/components/Icon';
   const Textarea = Input.TextArea;
 
   /**
@@ -95,6 +100,8 @@
     okText?: string;
     width?: number;
     values?: Record<string, any>;
+    /** 表单顶部说明条（浅蓝信息卡） */
+    hint?: string;
   }>();
 
   const emit = defineEmits(['ok', 'cancel', 'update:visible']);
@@ -141,10 +148,6 @@
 </script>
 
 <style scoped lang="less">
-  .gfm-form {
-    padding-top: 4px;
-  }
-
   .gfm-field-tip {
     margin-top: 4px;
     font-size: 12px;

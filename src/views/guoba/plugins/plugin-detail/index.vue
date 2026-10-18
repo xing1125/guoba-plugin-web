@@ -313,11 +313,30 @@
     }
 
     .pd-save {
-      display: flex;
-      justify-content: flex-end;
-      padding: 12px 0 14px;
-      margin-top: 6px;
-      border-top: 1px dashed var(--g-card-border);
+      position: fixed;
+      right: 30px;
+      bottom: 34px;
+      z-index: 80;
+
+      /* 悬浮保存胶囊：始终可见，滚到哪都能存 */
+      .ant-btn {
+        height: 42px;
+        padding: 0 22px;
+        font-size: 13.5px;
+        font-weight: 650;
+        border-radius: 999px;
+        box-shadow:
+          0 10px 26px -8px rgb(47 134 196 / 55%),
+          0 2px 8px rgb(0 0 0 / 18%);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow:
+            0 14px 30px -8px rgb(47 134 196 / 65%),
+            0 4px 12px rgb(0 0 0 / 22%);
+        }
+      }
     }
 
     /* 配置表单密度与输入框跟随主题 */

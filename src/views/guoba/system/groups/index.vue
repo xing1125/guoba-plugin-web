@@ -440,6 +440,7 @@
       :schema="roleModal.schema"
       :loading="roleModal.loading"
       ok-text="确认添加"
+      hint="名单按群存入 Redis，仅本群生效；群主可执行群管操作，管理员可执行群管增强的基础指令。"
       @ok="submitRole"
     />
   </PageWrapper>

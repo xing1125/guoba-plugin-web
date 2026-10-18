@@ -138,6 +138,12 @@
       @ok="doSave"
     >
       <div class="edit-form">
+        <div class="gfm-hint">
+          <Icon icon="ant-design:info-circle-outlined" :size="14" style="flex-shrink: 0; margin-top: 2px" />
+          <span>
+            {{ edit.origin ? `将把 ${edit.origin} 改为新 UID；` : '' }}只能为已存在的米游社账号维护 UID，保存后立即生效并写入审计日志。
+          </span>
+        </div>
         <div class="edit-form__item">
           <label>归属账号 ltuid</label>
           <Select
@@ -157,10 +163,6 @@
           <label>UID</label>
           <Input v-model:value="edit.uid" placeholder="4~20 位纯数字" allow-clear />
         </div>
-        <p class="edit-form__tip">
-          {{ edit.origin ? `将把 ${edit.origin} 改为新 UID；` : '' }}只能为已存在的米游社账号维护
-          UID，保存后立即生效并写入审计日志。
-        </p>
       </div>
     </Modal>
   </PageWrapper>
@@ -512,10 +514,4 @@
     }
   }
 
-  .edit-form__tip {
-    margin: 2px 0 0;
-    font-size: 11.5px;
-    line-height: 1.7;
-    color: var(--g-text-mute);
-  }
 </style>
