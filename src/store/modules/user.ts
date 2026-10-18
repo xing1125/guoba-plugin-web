@@ -60,6 +60,12 @@ export const useUserStore = defineStore({
     setToken(info: string | undefined) {
       this.token = info ? info : ''; // for null or undefined value
       setAuthCache(TOKEN_KEY, info);
+      // 明文镜像一份给同源的独立大屏（聊天诊断 /yingai-group 读 GDT_TOKEN）；
+      // 持久化缓存是加密的，大屏读不到，故此处直接写
+      try {
+        if (info) localStorage.setItem('GDT_TOKEN', info);
+        else localStorage.removeItem('GDT_TOKEN');
+      } catch {}
     },
     setRoleList(roleList: RoleEnum[]) {
       this.roleList = roleList;

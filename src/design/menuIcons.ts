@@ -15,6 +15,8 @@ export const MENU_ICONS = [
   'ant-design:folder-open-outlined',
   'ant-design:picture-outlined',
   'mdi:account-group-outline',
+  'mdi:sun-clock-outline',
+  'mdi:google-circles-extended',
   'mdi:account-multiple-outline',
   'mdi:puzzle-outline',
   'ion:settings-outline',
