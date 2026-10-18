@@ -1,4 +1,5 @@
 import { defHttp } from '/@/utils/http/axios';
+import { adaptTimeSchemasForTabs } from './timeAdapt';
 
 export enum Api {
   configTabs = '/config/tabs',
@@ -8,7 +9,7 @@ export enum Api {
 
 // 获取配置列表
 export function queryConfigTabs() {
-  return defHttp.get({ url: Api.configTabs });
+  return defHttp.get({ url: Api.configTabs }).then(adaptTimeSchemasForTabs);
 }
 
 /**

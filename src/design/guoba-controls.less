@@ -37,10 +37,7 @@
     background-color: var(--g-card-bg-soft);
     border-color: var(--g-card-border);
     border-radius: @ctl-radius;
-    transition:
-      border-color @ctl-dur ease,
-      box-shadow @ctl-dur ease,
-      background @ctl-dur ease;
+    transition: border-color @ctl-dur ease, box-shadow @ctl-dur ease, background @ctl-dur ease;
   }
 
   /* 单行输入统一高度（textarea 不参与） */
@@ -146,7 +143,20 @@
     color: var(--g-text-mute);
     background: var(--g-chip-bg);
     border-radius: 50%;
-    transition: color @ctl-dur ease, background @ctl-dur ease;
+    opacity: 0;
+    transition: color @ctl-dur ease, background @ctl-dur ease, opacity @ctl-dur ease;
+  }
+
+  /* 有值常显的灰点太脏：hover / 聚焦容器才浮现 */
+  .ant-input-affix-wrapper:hover .ant-input-clear-icon,
+  .ant-input-affix-wrapper-focused .ant-input-clear-icon,
+  .ant-input:hover ~ .ant-input-clear-icon,
+  .ant-select:hover .ant-select-clear,
+  .ant-select-focused .ant-select-clear,
+  .ant-select-open .ant-select-clear,
+  .ant-input-clear-icon:hover,
+  .ant-select-clear:hover {
+    opacity: 1;
   }
 
   .ant-input-clear-icon:hover,
@@ -190,9 +200,7 @@
     background: var(--g-card-bg);
     border: 1px solid var(--g-card-border);
     border-radius: 12px;
-    box-shadow:
-      0 24px 56px -24px rgb(12 30 52 / 38%),
-      0 2px 8px rgb(12 30 52 / 6%);
+    box-shadow: 0 24px 56px -24px rgb(12 30 52 / 38%), 0 2px 8px rgb(12 30 52 / 6%);
   }
 
   .ant-select-item {
@@ -311,9 +319,7 @@
     background: var(--g-card-bg);
     border: 1px solid var(--g-card-border);
     border-radius: 12px;
-    box-shadow:
-      0 24px 56px -24px rgb(12 30 52 / 38%),
-      0 2px 8px rgb(12 30 52 / 6%);
+    box-shadow: 0 24px 56px -24px rgb(12 30 52 / 38%), 0 2px 8px rgb(12 30 52 / 6%);
   }
 
   .ant-picker-header,
@@ -456,10 +462,7 @@
     background: transparent;
     border: 0;
     border-radius: 7px;
-    transition:
-      color @ctl-dur ease,
-      background @ctl-dur ease,
-      box-shadow @ctl-dur ease;
+    transition: color @ctl-dur ease, background @ctl-dur ease, box-shadow @ctl-dur ease;
   }
 
   .g-seg__item:hover,
@@ -519,10 +522,7 @@
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
     border-radius: @ctl-radius;
-    transition:
-      border-color @ctl-dur ease,
-      box-shadow @ctl-dur ease,
-      background @ctl-dur ease;
+    transition: border-color @ctl-dur ease, box-shadow @ctl-dur ease, background @ctl-dur ease;
   }
 
   .gc-sm.gc-input,
@@ -809,10 +809,7 @@
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border-strong);
     border-radius: 4px;
-    transition:
-      background @ctl-dur ease,
-      border-color @ctl-dur ease,
-      box-shadow @ctl-dur ease;
+    transition: background @ctl-dur ease, border-color @ctl-dur ease, box-shadow @ctl-dur ease;
   }
 
   .gc-check__box svg {
@@ -961,9 +958,7 @@
     background: var(--g-card-bg);
     border: 1px solid var(--g-card-border);
     border-radius: 12px;
-    box-shadow:
-      0 24px 56px -24px rgb(12 30 52 / 38%),
-      0 2px 8px rgb(12 30 52 / 6%);
+    box-shadow: 0 24px 56px -24px rgb(12 30 52 / 38%), 0 2px 8px rgb(12 30 52 / 6%);
     animation: gcPop 0.14s ease;
     transform-origin: top;
   }

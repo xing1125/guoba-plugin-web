@@ -1,6 +1,7 @@
 import type { ErrorMessageMode } from '/#/axios';
 import type { LoginParams } from '/@/api/sys/model/userModel';
 import { defHttp } from '/@/utils/http/axios';
+import { adaptTimeSchemasForPlugins } from '/@/views/guoba/config/timeAdapt';
 
 const enum SystemApi {
   login = '/login',
@@ -66,7 +67,8 @@ export const pluginApi = {
    * @param force 是否清空缓存强制刷新
    */
   async getPlugins(force = false) {
-    return await defHttp.get({ url: PluginApi.getPlugins, params: { force } });
+    const res = await defHttp.get({ url: PluginApi.getPlugins, params: { force } });
+    return adaptTimeSchemasForPlugins(res);
   },
   async getReadme(link: string, force = false) {
     return await defHttp.get({ url: PluginApi.getReadme, params: { link, force } });

@@ -6,19 +6,11 @@
         <div class="mi-hero__main">
           <div class="mi-hero__eyebrow">MIAO GALLERY</div>
           <div class="mi-hero__title">喵喵面板图</div>
-          <div class="mi-hero__desc">
-            在后台上传 / 管理 {{ kinds[0].label }} 与 {{ kinds[1].label }}，落盘目录与聊天指令完全一致
-          </div>
+          <div class="mi-hero__desc"> 在后台上传 / 管理面板图、立绘与写真，落盘目录与聊天指令完全一致 </div>
         </div>
         <div class="mi-hero__side">
           <span class="gm-seg">
-            <span
-              v-for="k in kinds"
-              :key="k.key"
-              class="gm-seg__item"
-              :class="{ 'is-active': kind === k.key }"
-              @click="switchKind(k.key)"
-            >
+            <span v-for="k in kinds" :key="k.key" class="gm-seg__item" :class="{ 'is-active': kind === k.key }" @click="switchKind(k.key)">
               {{ k.label }}
             </span>
           </span>
@@ -33,22 +25,12 @@
             <span class="mi-side__hint">{{ chars.length }} 个有图</span>
           </div>
           <div class="mi-side__new">
-            <Input
-              v-model:value="newChar"
-              size="small"
-              :placeholder="kind === 'profile' ? '输入角色名，如 芙宁娜' : '输入角色名'"
-              @pressEnter="pickNewChar"
-            />
+            <Input v-model:value="newChar" size="small" :placeholder="kind === 'profile' ? '输入角色名，如 芙宁娜' : '输入角色名'" @pressEnter="pickNewChar" />
             <Button size="small" type="primary" @click="pickNewChar">添加</Button>
+            <div v-if="char" class="mi-side__cur">当前：{{ char }}</div>
           </div>
           <div class="mi-side__list">
-            <div
-              v-for="c in chars"
-              :key="c.name"
-              class="mi-char"
-              :class="{ 'is-active': char === c.name }"
-              @click="pickChar(c.name)"
-            >
+            <div v-for="c in chars" :key="c.name" class="mi-char" :class="{ 'is-active': char === c.name }" @click="pickChar(c.name)">
               <span class="mi-char__name">{{ c.name }}</span>
               <span class="mi-char__count">{{ c.count }}</span>
             </div>
@@ -61,17 +43,8 @@
           <div class="mi-main__bar">
             <span class="mi-main__title">{{ char ? `${char} · ${label}` : '未选择角色' }}</span>
             <span class="mi-main__tools">
-              <Button size="small" :disabled="!char" :loading="uploading" @click="pickFiles">
-                上传图片
-              </Button>
-              <input
-                ref="fileRef"
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif"
-                multiple
-                style="display: none"
-                @change="onFiles"
-              />
+              <Button size="small" :disabled="!char" :loading="uploading" @click="pickFiles"> 上传图片 </Button>
+              <input ref="fileRef" type="file" :accept="accept" multiple style="display: none" @change="onFiles" />
               <Button size="small" :disabled="!char" @click="loadList">刷新</Button>
             </span>
           </div>
@@ -89,7 +62,9 @@
           <div v-else class="mi-main__empty">
             <div class="mi-main__empty-main">{{ char ? '该角色还没有图片' : '在左侧选择或添加角色' }}</div>
             <div class="mi-main__empty-sub">
-              {{ kind === 'profile' ? '面板图支持 png / jpg / webp（建议竖版立绘）' : '角色图片支持 png / jpg / webp / gif' }}
+              {{
+                kind === 'profile' ? '面板图支持 png / jpg / webp（建议竖版立绘）' : kind === 'art' ? '立绘支持 png / webp（卡面图库根目录，不含 upload / se 子层）' : '写真支持 png / jpg / webp / gif'
+              }}
             </div>
           </div>
         </main>
@@ -136,9 +111,17 @@
 
   const kinds = [
     { key: 'profile', label: '面板图' },
-    { key: 'character', label: '角色图片' },
+    { key: 'art', label: '立绘' },
+    { key: 'character', label: '写真' },
   ];
-  const label = computed(() => (kind.value === 'profile' ? '面板图' : '角色图片'));
+  const label = computed(() => kinds.find((k) => k.key === kind.value)?.label || '');
+  /** 后端 MiaoImgService kindsMap 的扩展名白名单 */
+  const KIND_EXTS: Record<string, string> = {
+    profile: 'image/png,image/jpeg,image/webp',
+    art: 'image/png,image/webp',
+    character: 'image/png,image/jpeg,image/webp,image/gif',
+  };
+  const accept = computed(() => KIND_EXTS[kind.value] || KIND_EXTS.character);
 
   const kind = ref('profile');
   const chars = ref<{ name: string; count: number }[]>([]);
@@ -177,11 +160,21 @@
 
   async function pickNewChar() {
     const name = newChar.value.trim();
-    if (!name) return;
+    if (!name) {
+      message.warning('先输入角色名');
+      return;
+    }
     newChar.value = '';
     char.value = name;
     imgs.value = [];
+    // 左侧列表只显示有图角色：新角色立即插入置顶并选中，避免"点了没反应"
+    if (!chars.value.some((c) => c.name === name)) {
+      chars.value = [{ name, count: 0 }, ...chars.value];
+    }
     await loadList().catch((e) => message.error(e?.message || '加载失败'));
+    if (!imgs.value.length) {
+      message.info(`已选中「${name}」，点右上角「上传图片」即可添加${label.value}`);
+    }
   }
 
   async function loadList() {
@@ -353,6 +346,18 @@
       gap: 6px;
       padding: 10px 12px;
       border-bottom: 1px solid var(--mi-line);
+      flex-wrap: wrap;
+
+      > .ant-input {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+    &__cur {
+      width: 100%;
+      font-size: 11px;
+      color: var(--mi-accent);
+      margin-top: 2px;
     }
     &__list {
       flex: 1;
