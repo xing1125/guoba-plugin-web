@@ -233,7 +233,7 @@ export const statsApi = {
   getUserDetail(uid: string) {
     return defHttp.get<UserDetailResult>({ url: `/admin/stats/user/${encodeURIComponent(uid)}` });
   },
-  batchClearGroups(gids: string[], scope: 'activity' | 'ext' | 'all') {
+  batchClearGroups(gids: string[], scope: 'activity' | 'ext' | 'all' | 'trace') {
     return defHttp.post<{ total: number; results: { gid: string; deleted: number }[] }>({
       url: '/admin/groups/batch-clear',
       data: { gids, scope },

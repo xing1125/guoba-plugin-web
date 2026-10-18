@@ -319,30 +319,27 @@
       </template>
     </Drawer>
 
-    <!-- 无效群检测抽屉 -->
-    <Drawer :visible="invalidDrawer.visible" title="无效群检测" width="700" @close="invalidDrawer.visible = false">
+    <!-- 无效群检测抽屉（标准 antd 风格） -->
+    <Drawer :visible="invalidDrawer.visible" title="无效群检测" width="680" @close="invalidDrawer.visible = false">
       <template v-if="invalidDrawer.data">
-        <div class="inv-summary">
-          跟踪 <b>{{ invalidDrawer.data.trackedCount }}</b> 个群 · Bot 当前在
-          <b>{{ invalidDrawer.data.botGroupCount }}</b> 个群 · 已退群
-          <b class="inv-warn">{{ invalidDrawer.data.left.length }}</b> · 零活跃
-          <b class="inv-warn">{{ invalidDrawer.data.idle.length }}</b> · 低活跃
+        <p class="inv-line">
+          共跟踪 <b>{{ invalidDrawer.data.trackedCount }}</b> 个群，Bot 当前在群
+          <b>{{ invalidDrawer.data.botGroupCount }}</b> 个；已退群
+          <b class="inv-num--warn">{{ invalidDrawer.data.left.length }}</b>、零活跃
+          <b class="inv-num--warn">{{ invalidDrawer.data.idle.length }}</b>、低活跃
           <b>{{ invalidDrawer.data.low.length }}</b>
-          <span class="inv-summary__time">检测于 {{ shortTime(invalidDrawer.data.updatedAt) }}</span>
-        </div>
+          <span class="inv-line__time">检测于 {{ shortTime(invalidDrawer.data.updatedAt) }}</span>
+        </p>
 
-        <div class="inv-tabs">
-          <span class="gm-seg">
-            <span
-              v-for="t in invTabs"
-              :key="t.key"
-              class="gm-seg__item"
-              :class="{ 'is-active': invalidDrawer.tab === t.key }"
-              @click="switchInvTab(t.key)"
-            >
-              {{ t.label }} · {{ (invalidDrawer.data[t.key] || []).length }}
-            </span>
-          </span>
+        <Tabs v-model:activeKey="invalidDrawer.tab" size="small" class="inv-tabs">
+          <TabPane
+            v-for="t in invTabs"
+            :key="t.key"
+            :tab="`${t.label} (${(invalidDrawer.data[t.key] || []).length})`"
+          />
+        </Tabs>
+
+        <div class="inv-toolbar">
           <Checkbox
             :checked="allCurrentChecked"
             :indeterminate="someCurrentChecked"
@@ -350,6 +347,9 @@
           >
             全选本组
           </Checkbox>
+          <span class="inv-toolbar__tip">
+            {{ invalidDrawer.tab === 'left' ? '已退群的群清除残留后将不再出现在检测结果中' : '低活跃群仅提醒，建议先观察再处理' }}
+          </span>
         </div>
 
         <div v-if="currentInvList.length" class="inv-list">
@@ -367,25 +367,26 @@
               <span>近14天 <b>{{ thousands(g.recent14) }}</b></span>
               <span>最后活跃 {{ g.lastDate ? g.lastDate.slice(5) : '—' }}</span>
             </div>
-            <span v-if="invalidDrawer.tab === 'left'" class="inv-chip inv-chip--warn">Bot 已退出</span>
-            <Button
-              v-else
-              type="link"
-              danger
-              size="small"
-              @click="openQuit(g)"
-            >
-              退群
-            </Button>
+            <Tag v-if="invalidDrawer.tab === 'left'" color="orange">Bot 已退出</Tag>
+            <Button v-else type="link" danger size="small" @click="openQuit(g)">退群</Button>
           </div>
         </div>
         <div v-else class="g-empty" style="padding: 30px 0">该分组没有检测到群 🎉</div>
 
-        <div class="inv-actions">
+        <div class="inv-foot">
           <span>已选 {{ invChecked.length }} 个群</span>
-          <Button danger :disabled="!invChecked.length" :loading="invClearModal.loading" @click="openInvClear">
-            清空选中群数据（活跃+拓展）
-          </Button>
+          <div class="inv-foot__btns">
+            <Button @click="invalidDrawer.visible = false">取消</Button>
+            <Button
+              type="primary"
+              danger
+              :disabled="!invChecked.length"
+              :loading="invClearModal.loading"
+              @click="openInvClear"
+            >
+              {{ invalidDrawer.tab === 'left' ? '清除残留数据' : '清空群数据' }}
+            </Button>
+          </div>
         </div>
       </template>
       <div v-else class="gm-skeleton" style="height: 300px" />
@@ -405,9 +406,9 @@
     <!-- 无效群批量清数据确认 -->
     <GConfirmModal
       v-model:visible="invClearModal.visible"
-      title="批量清空无效群数据"
+      title="清除无效群数据"
       :content="invClearModal.content"
-      hint="等同 #清活跃 + #清拓展，删除后不可恢复。"
+      :hint="invClearModal.hint"
       danger
       :loading="invClearModal.loading"
       @ok="doInvClear"
@@ -448,7 +449,9 @@
 
 <script setup lang="ts">
   import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
-  import { Button, Checkbox, Drawer, Input, message, Select, Switch, Table, Tag } from 'ant-design-vue';
+  import { Button, Checkbox, Drawer, Input, message, Select, Switch, Table, Tabs, Tag } from 'ant-design-vue';
+
+  const TabPane = Tabs.TabPane;
   import { CloseOutlined, InfoCircleOutlined } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
@@ -806,10 +809,6 @@
     return String(iso || '').replace('T', ' ').slice(5, 16);
   }
 
-  function switchInvTab(key: 'left' | 'idle' | 'low') {
-    invalidDrawer.tab = key;
-  }
-
   function toggleInv(gid: string, checked: boolean) {
     invChecked.value = checked ? [...invChecked.value, gid] : invChecked.value.filter((x) => x !== gid);
   }
@@ -843,18 +842,25 @@
     }
   }
 
-  const invClearModal = reactive({ visible: false, content: '', loading: false });
+  const invClearModal = reactive({ visible: false, content: '', hint: '', loading: false, scope: 'all' as 'all' | 'trace' });
 
   function openInvClear() {
     const n = invChecked.value.length;
-    invClearModal.content = `即将清空 ${n} 个群的活跃榜与拓展数据（签到/积分/复读/撤回/风控记录等）。`;
+    invClearModal.scope = invalidDrawer.tab === 'left' ? 'trace' : 'all';
+    if (invClearModal.scope === 'trace') {
+      invClearModal.content = `即将彻底清除 ${n} 个已退群的 Redis 残留数据：消息计数（Yz:count）、活跃榜、拓展记录、群主/群管名单等。`;
+      invClearModal.hint = '清除后这些群将不再出现在「已退群」检测结果中，操作不可恢复。';
+    } else {
+      invClearModal.content = `即将清空 ${n} 个群的活跃榜与拓展数据（签到/积分/复读/撤回/风控记录等）。`;
+      invClearModal.hint = '等同 #清活跃 + #清拓展，删除后不可恢复。';
+    }
     invClearModal.visible = true;
   }
 
   async function doInvClear() {
     invClearModal.loading = true;
     try {
-      const res = await statsApi.batchClearGroups(invChecked.value, 'all');
+      const res = await statsApi.batchClearGroups(invChecked.value, invClearModal.scope);
       message.success(`清理完成：${invChecked.value.length} 个群，共删除 ${res?.total ?? 0} 个键`);
       invClearModal.visible = false;
       invChecked.value = [];
@@ -1105,49 +1111,54 @@
 </script>
 
 <style scoped lang="less">
-  /* ---------------- 无效群检测抽屉 ---------------- */
-  .inv-summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 10px;
-    align-items: baseline;
-    padding: 10px 14px;
-    margin-bottom: 12px;
-    font-size: 12.5px;
+  /* ---------------- 无效群检测抽屉（标准 antd 风格） ---------------- */
+  .inv-line {
+    padding: 0 0 4px;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
     color: var(--g-text-sub);
-    background: var(--g-card-bg-soft);
-    border: 1px solid var(--g-card-border);
-    border-radius: 10px;
 
     b {
       color: var(--g-text);
       font-variant-numeric: tabular-nums;
     }
 
-    .inv-warn {
-      color: var(--g-amber, #d4af37);
+    .inv-num--warn {
+      color: #fa8c16;
     }
   }
 
-  .inv-summary__time {
-    margin-left: auto;
-    font-size: 11px;
+  .inv-line__time {
+    margin-left: 10px;
+    font-size: 12px;
     color: var(--g-text-mute);
   }
 
   .inv-tabs {
+    margin-bottom: 4px;
+
+    :deep(.ant-tabs-nav) {
+      margin-bottom: 8px;
+    }
+  }
+
+  .inv-toolbar {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    padding: 6px 0;
+    margin-bottom: 2px;
+    border-bottom: 1px solid var(--g-card-border, #f0f0f0);
+  }
+
+  .inv-toolbar__tip {
+    font-size: 12px;
+    color: var(--g-text-mute);
   }
 
   .inv-list {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
     max-height: 46vh;
     overflow-y: auto;
   }
@@ -1156,14 +1167,12 @@
     display: flex;
     gap: 10px;
     align-items: center;
-    padding: 8px 12px;
-    background: var(--g-card-bg-soft);
-    border: 1px solid var(--g-card-border);
-    border-radius: 10px;
-    transition: border-color 0.18s;
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--g-card-border, #f0f0f0);
+    transition: background 0.15s;
 
     &:hover {
-      border-color: var(--g-card-border-strong);
+      background: var(--g-hover, rgb(0 0 0 / 3%));
     }
   }
 
@@ -1177,7 +1186,7 @@
     b {
       overflow: hidden;
       font-size: 13px;
-      color: var(--g-text);
+      color: var(--g-text, rgb(0 0 0 / 88%));
       text-overflow: ellipsis;
       white-space: nowrap;
     }
@@ -1193,7 +1202,7 @@
     display: flex;
     flex-shrink: 0;
     gap: 12px;
-    font-size: 11.5px;
+    font-size: 12px;
     color: var(--g-text-mute);
 
     b {
@@ -1202,28 +1211,22 @@
     }
   }
 
-  .inv-chip {
-    flex-shrink: 0;
-    padding: 1px 8px;
-    font-size: 11px;
-    border-radius: 20px;
-  }
-
-  .inv-chip--warn {
-    color: var(--g-amber, #d4af37);
-    background: rgb(212 175 55 / 12%);
-  }
-
-  .inv-actions {
+  .inv-foot {
     display: flex;
     gap: 12px;
     align-items: center;
-    justify-content: flex-end;
-    padding-top: 12px;
-    margin-top: 4px;
-    font-size: 12.5px;
+    justify-content: space-between;
+    padding-top: 14px;
+    margin-top: 6px;
+    font-size: 13px;
     color: var(--g-text-sub);
-    border-top: 1px dashed var(--g-card-border);
+    border-top: 1px solid var(--g-card-border, #f0f0f0);
+  }
+
+  .inv-foot__btns {
+    display: flex;
+    gap: 8px;
+    align-items: center;
   }
 
   .toolbar {
