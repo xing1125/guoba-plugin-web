@@ -1,58 +1,21 @@
 <template>
-  <Modal
-    :visible="visible"
-    :title="title"
-    :width="width"
-    :confirm-loading="loading"
-    :ok-text="okText"
-    cancel-text="取消"
-    :mask-closable="false"
-    @ok="handleOk"
-    @cancel="handleCancel"
-  >
+  <Modal :visible="visible" :title="title" :width="width" :confirm-loading="loading" :ok-text="okText" cancel-text="取消" :mask-closable="false" @ok="handleOk" @cancel="handleCancel">
     <Form ref="formRef" class="gfm-form" :label-col="{ span: 5 }" :wrapper-col="{ span: 17 }" :model="values">
       <div v-if="hint" class="gfm-hint">
         <Icon icon="ant-design:info-circle-outlined" :size="14" style="flex-shrink: 0; margin-top: 2px" />
         <span>{{ hint }}</span>
       </div>
-      <FormItem
-        v-for="f in schema"
-        :key="f.field"
-        :name="f.field"
-        :label="f.label"
-        :rules="buildRules(f)"
-      >
+      <FormItem v-for="f in schema" :key="f.field" :name="f.field" :label="f.label" :rules="buildRules(f)">
         <!-- 下拉 -->
-        <Select
-          v-if="f.type === 'select'"
-          v-model:value="values[f.field]"
-          :options="f.options || []"
-          :placeholder="f.placeholder || `请选择${f.label}`"
-          allow-clear
-        />
+        <GSelect v-if="f.type === 'select'" v-model="values[f.field]" :options="f.options || []" :placeholder="f.placeholder || `请选择${f.label}`" />
         <!-- 开关 -->
-        <Switch v-else-if="f.type === 'switch'" v-model:checked="values[f.field]" />
+        <GSwitch v-else-if="f.type === 'switch'" v-model="values[f.field]" />
         <!-- 数字 -->
-        <InputNumber
-          v-else-if="f.type === 'number'"
-          v-model:value="values[f.field]"
-          :placeholder="f.placeholder || `请输入${f.label}`"
-          style="width: 100%"
-        />
+        <GNumber v-else-if="f.type === 'number'" v-model="values[f.field]" :placeholder="f.placeholder || `请输入${f.label}`" />
         <!-- 多行文本 -->
-        <Textarea
-          v-else-if="f.type === 'textarea'"
-          v-model:value="values[f.field]"
-          :rows="3"
-          :placeholder="f.placeholder || `请输入${f.label}`"
-        />
+        <GInput v-else-if="f.type === 'textarea'" v-model="values[f.field]" type="textarea" :rows="3" :placeholder="f.placeholder || `请输入${f.label}`" />
         <!-- 单行文本（默认） -->
-        <Input
-          v-else
-          v-model:value="values[f.field]"
-          :placeholder="f.placeholder || `请输入${f.label}`"
-          allow-clear
-        />
+        <GInput v-else v-model="values[f.field]" :placeholder="f.placeholder || `请输入${f.label}`" />
         <div v-if="f.tip" class="gfm-field-tip">{{ f.tip }}</div>
       </FormItem>
     </Form>
@@ -62,9 +25,12 @@
 
 <script setup lang="ts">
   import { reactive, ref, watch } from 'vue';
-  import { Form, FormItem, Input, InputNumber, Modal, Select, Switch } from 'ant-design-vue';
+  import { Form, FormItem, Modal } from 'ant-design-vue';
   import { Icon } from '/@/components/Icon';
-  const Textarea = Input.TextArea;
+  import GInput from '../form/GInput.vue';
+  import GNumber from '../form/GNumber.vue';
+  import GSelect from '../form/GSelect.vue';
+  import GSwitch from '../form/GSwitch.vue';
 
   /**
    * GFormModal —— schema 驱动的表单弹窗（受控组件）

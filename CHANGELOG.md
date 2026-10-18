@@ -10,6 +10,64 @@
 
 ---
 
+## [2.3.1] - 2026-10-19
+
+自研表单控件（gc-*）：按「不依赖现成库、知其所以然」的思路，把最常用的表单控件从 antd 换成自研实现。
+
+### 新增
+
+- **4 个全新自研组件**（`_shared/form/`，零 antd 依赖）
+  - `GInput`：text / password（眼睛切换）/ textarea；可清空（SVG ×）、
+    中文组字（composition）期间不回写、回车事件、sm/md/lg 尺寸
+  - `GNumber`：草稿值编辑（失焦 / 回车才 clamp），↑↓ 键 = ±step，到达边界禁步进
+  - `GSwitch`：`role=switch`，checked/unchecked 文案，sm/md
+  - `GCheckbox`：自绘对勾，支持 `indeterminate` 半选短横线
+- **`GSelect` 完全重写（自研下拉）**
+  - 下拉 `Teleport to body` + `position: fixed`，弹窗 / overflow 裁切环境下不被裁
+  - 空间不足自动上翻；scroll（capture）/ resize 实时重定位
+  - 完整键盘导航：↑↓ / Enter / Esc / Home / End；选项自动滚入可视区
+  - 多选 tag（`maxTagCount` 超出收 `+N`）、面板内搜索、加载中 / 空态
+- **样式层 `guoba-controls.less` §11（gc-\*)**：与既有控件同一套度量
+  （32/28/38 高、10/8 圆角、聚焦 `0 0 0 3px` 软环），全部规则挂 `:root:root`
+  压过 antd cssinjs 运行时注入的样式（权重约定见 design-spec §2.5）
+
+### 调整
+
+- `GSearch` 改为 `GInput` 的搜索形态封装（保留旧 API，size 同时兼容 small/middle/large 与 sm/md/lg）
+- `GFormModal` 内部 5 种控件全换自研（校验逻辑不变）
+- 页面替换：系统账号、群聊管理、数据管理、UID 管理、荧 AI 设置、表格分页器
+- antd 相关导入仅在上述页面残余（Modal / Form 等结构组件不动）
+
+---
+
+## [2.3.0] - 2026-10-19
+
+运行日志接入后台：不用再自己翻 `app/logs`。
+
+### 新增
+
+- **运行日志页 `/logs`**（`views/guoba/system/logs/`）
+  - 左栏文件清单：`error.log` 置顶、按天流水倒序、今日标「今天」、归档标「归档」，附体积条
+  - 右侧日志流：时间 / 级别 / 上下文 / 正文四列，等宽字体、级别徽标、错误行左侧红条、
+    告警金条；点击行展开被折叠的堆栈续行（最多 60 行）
+  - 服务端能力：级别筛选、关键字搜索（前端再高亮）、按 100/300/800 取尾部
+  - 自动跟随：2.5s 轮询，滚动离开底部即自动暂停，回到底部自动恢复
+  - 一键复制当前筛选结果、下载原文件、清空（danger + 二次确认 + 审计 + 限流）
+- **后端 `LogService` / `LogController`**（`/api/admin/logs/*`）
+  - 只读窗口 1.5MB（大文件从尾部读，不整文件加载），续行并入上一条 entry
+  - ANSI 颜色码剥离（日志里带 `\u001b[33m`，直接展示会变成 `[33m` 乱码）
+  - 级别归一：ERRO→ERROR、DEBU→DEBUG、TRAC→TRACE…
+  - 文件名白名单 + 只允许 `app/logs` 下的 `.log` / `.log.gz`
+  - 清空归到 `log:delete` 操作码（管理员可看不可清），且归档拒绝清空
+- 菜单 `logs`（运行日志）注册 + 图标入库 + 权限目录补 `logs`
+
+### 调整
+
+- 内置「管理员」角色补全菜单：`sysinfo` / `files` / `miao-img` / `logs`
+- 日志页默认打开「今天的运行流水」，而不是 `error.log`
+
+---
+
 ## [2.2.0] - 2026-10-19
 
 控件体系补齐：输入框/选择器不再是 antd 默认样，全后台一套度量与交互。

@@ -6,23 +6,14 @@
         <div class="db-hero__main">
           <div class="db-hero__eyebrow">ACCESS CONTROL</div>
           <div class="db-hero__title">后台用户</div>
-          <div class="db-hero__desc">
-            RBAC 账号、角色与登录记录 · 菜单可见性与操作码两级权限
-          </div>
+          <div class="db-hero__desc"> RBAC 账号、角色与登录记录 · 菜单可见性与操作码两级权限 </div>
         </div>
         <div class="db-hero__side">
-          <GSegmented
-            :model-value="tab"
-            :options="tabs.map((t) => ({ value: t.key, label: t.name }))"
-            label="RBAC 视图"
-            @update:model-value="switchTab($event as any)"
-          />
+          <GSegmented :model-value="tab" :options="tabs.map((t) => ({ value: t.key, label: t.name }))" label="RBAC 视图" @update:model-value="switchTab($event as any)" />
         </div>
       </section>
 
-      <div v-if="!canManage" class="gu-tip">
-        当前角色只读，账户与角色管理仅超级管理员可用。
-      </div>
+      <div v-if="!canManage" class="gu-tip"> 当前角色只读，账户与角色管理仅超级管理员可用。 </div>
 
       <!-- 用户 -->
       <GTablePage
@@ -46,9 +37,7 @@
         @refresh="loadUsers"
       >
         <template #toolbar>
-          <Button type="primary" size="small" :disabled="!canManage" @click="openUserModal()">
-            新建用户
-          </Button>
+          <Button type="primary" size="small" :disabled="!canManage" @click="openUserModal()"> 新建用户 </Button>
         </template>
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'role'">
@@ -70,12 +59,7 @@
             <span class="gu-ops">
               <a :class="{ 'is-disabled': !canManage }" @click="canManage && openUserModal(record)">编辑</a>
               <a :class="{ 'is-disabled': !canManage }" @click="canManage && openReset(record)">重置密码</a>
-              <a
-                v-if="record.username !== 'admin'"
-                class="is-danger"
-                :class="{ 'is-disabled': !canManage }"
-                @click="canManage && askDeleteUser(record)"
-              >删除</a>
+              <a v-if="record.username !== 'admin'" class="is-danger" :class="{ 'is-disabled': !canManage }" @click="canManage && askDeleteUser(record)">删除</a>
             </span>
           </template>
           <template v-else>{{ record[column.dataIndex] ?? '-' }}</template>
@@ -98,9 +82,7 @@
         @refresh="loadRoles"
       >
         <template #toolbar>
-          <Button type="primary" size="small" :disabled="!canManage" @click="openRoleModal()">
-            新建角色
-          </Button>
+          <Button type="primary" size="small" :disabled="!canManage" @click="openRoleModal()"> 新建角色 </Button>
         </template>
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'name'">
@@ -118,12 +100,7 @@
               <a :class="{ 'is-disabled': !canManage || record.builtin }" @click="canManage && !record.builtin && openRoleModal(record)">
                 {{ record.builtin ? '内置不可改' : '编辑' }}
               </a>
-              <a
-                v-if="!record.builtin"
-                class="is-danger"
-                :class="{ 'is-disabled': !canManage }"
-                @click="canManage && askDeleteRole(record)"
-              >删除</a>
+              <a v-if="!record.builtin" class="is-danger" :class="{ 'is-disabled': !canManage }" @click="canManage && askDeleteRole(record)">删除</a>
             </span>
           </template>
           <template v-else>{{ record[column.dataIndex] ?? '-' }}</template>
@@ -153,14 +130,17 @@
         <template #filters>
           <GSelect
             v-model="logSuccess"
-            size="small"
+            size="sm"
             width="108px"
             :options="[
               { label: '全部结果', value: '' },
               { label: '成功', value: 'true' },
               { label: '失败', value: 'false' },
             ]"
-            @change="logPage = 1; loadLog()"
+            @change="
+              logPage = 1;
+              loadLog();
+            "
           />
         </template>
         <template #bodyCell="{ column, record }">
@@ -176,127 +156,78 @@
     </div>
 
     <!-- 用户编辑弹窗 -->
-    <Modal
-      v-model:visible="userModal.open"
-      :title="userModal.id ? '编辑用户' : '新建用户'"
-      :width="460"
-      :confirm-loading="userModal.saving"
-      :mask-closable="false"
-      @ok="saveUser"
-    >
+    <Modal v-model:visible="userModal.open" :title="userModal.id ? '编辑用户' : '新建用户'" :width="460" :confirm-loading="userModal.saving" :mask-closable="false" @ok="saveUser">
       <div class="gu-form">
         <GField label="用户名" required hint="3-32 位字母 / 数字 / 下划线，创建后不可修改">
-          <Input v-model:value="userModal.username" :disabled="!!userModal.id" placeholder="如 yunzai_ops" />
+          <GInput v-model="userModal.username" :disabled="!!userModal.id" placeholder="如 yunzai_ops" />
         </GField>
         <GField label="昵称" hint="仅用于后台展示，可留空">
-          <Input v-model:value="userModal.nickname" placeholder="如 运维小王" />
+          <GInput v-model="userModal.nickname" placeholder="如 运维小王" />
         </GField>
         <GField label="角色" required hint="决定可见菜单与可执行操作">
-          <GSelect
-            v-model="userModal.role"
-            :options="roles.map((r) => ({ label: `${r.name}（${r.role}）`, value: r.role }))"
-            :disabled="userModal.username === 'admin'"
-          />
+          <GSelect v-model="userModal.role" :options="roles.map((r) => ({ label: `${r.name}（${r.role}）`, value: r.role }))" :disabled="userModal.username === 'admin'" />
         </GField>
-        <GField
-          :label="userModal.id ? '新密码' : '密码'"
-          :required="!userModal.id"
-          :hint="userModal.id ? '留空则保持当前密码不变' : '6 位以上；首次登录会提示改密'"
-        >
-          <Input.Password
-            v-model:value="userModal.password"
-            :placeholder="userModal.id ? '不修改请留空' : '设置初始密码'"
-          />
+        <GField :label="userModal.id ? '新密码' : '密码'" :required="!userModal.id" :hint="userModal.id ? '留空则保持当前密码不变' : '6 位以上；首次登录会提示改密'">
+          <GInput v-model="userModal.password" type="password" :placeholder="userModal.id ? '不修改请留空' : '设置初始密码'" />
         </GField>
         <GField label="状态" hint="停用后该账号无法登录后台，权限保留">
-          <Switch
-            :checked="userModal.status === 'active'"
+          <GSwitch
+            :model-value="userModal.status === 'active'"
             :disabled="userModal.username === 'admin'"
-            checked-children="启用"
-            un-checked-children="停用"
-            @change="(v) => (userModal.status = v ? 'active' : 'disabled')"
+            checked-label="启用"
+            unchecked-label="停用"
+            @update:model-value="(v) => (userModal.status = v ? 'active' : 'disabled')"
           />
         </GField>
       </div>
     </Modal>
 
     <!-- 重置密码 -->
-    <Modal
-      v-model:visible="resetModal.open"
-      :title="`重置 ${resetModal.username} 的密码`"
-      :width="400"
-      :confirm-loading="resetModal.saving"
-      :mask-closable="false"
-      @ok="saveReset"
-    >
+    <Modal v-model:visible="resetModal.open" :title="`重置 ${resetModal.username} 的密码`" :width="400" :confirm-loading="resetModal.saving" :mask-closable="false" @ok="saveReset">
       <div class="gu-form">
         <GField label="新密码" required hint="至少 6 位；保存后旧密码立即失效">
-          <Input.Password v-model:value="resetModal.password" placeholder="至少 6 位" />
+          <GInput v-model="resetModal.password" type="password" placeholder="至少 6 位" />
         </GField>
       </div>
     </Modal>
 
     <!-- 角色编辑 -->
-    <Modal
-      v-model:visible="roleModal.open"
-      :title="roleModal.isNew ? '新建角色' : `编辑角色 ${roleModal.role}`"
-      :width="620"
-      :confirm-loading="roleModal.saving"
-      :mask-closable="false"
-      @ok="saveRole"
-    >
+    <Modal v-model:visible="roleModal.open" :title="roleModal.isNew ? '新建角色' : `编辑角色 ${roleModal.role}`" :width="620" :confirm-loading="roleModal.saving" :mask-closable="false" @ok="saveRole">
       <div class="gu-form">
         <GField label="标识" required hint="2-32 位字母 / 数字 / 下划线，创建后不可修改">
-          <Input v-model:value="roleModal.role" :disabled="!roleModal.isNew" placeholder="如 audit_viewer" />
+          <GInput v-model="roleModal.role" :disabled="!roleModal.isNew" placeholder="如 audit_viewer" />
         </GField>
         <GField label="名称" required hint="展示在账号列表与权限下拉里">
-          <Input v-model:value="roleModal.name" placeholder="如 只读审计员" />
+          <GInput v-model="roleModal.name" placeholder="如 只读审计员" />
         </GField>
         <GField label="可见菜单" hint="不勾选的菜单不会出现在侧边栏（接口层面仍按操作权限拦截）">
           <div class="gu-check">
-            <Checkbox
-              v-for="m in catalogue.menus"
-              :key="m.perm"
-              :checked="roleModal.menus.includes(m.perm)"
-              @change="(e) => toggle(roleModal.menus, m.perm, e.target.checked)"
-            >
+            <GCheckbox v-for="m in catalogue.menus" :key="m.perm" :model-value="roleModal.menus.includes(m.perm)" @update:model-value="(v) => toggle(roleModal.menus, m.perm, v)">
               {{ m.name }}
-            </Checkbox>
+            </GCheckbox>
           </div>
         </GField>
         <GField label="可执行操作" hint="未勾选的操作在写接口处一律 403">
           <div v-for="g in catalogue.ops" :key="g.group" class="gu-check-group">
             <div class="gu-check-group__title">{{ g.group }}</div>
             <div class="gu-check">
-              <Checkbox
-                v-for="o in g.items"
-                :key="o.op"
-                :checked="roleModal.ops.includes(o.op)"
-                @change="(e) => toggle(roleModal.ops, o.op, e.target.checked)"
-              >
+              <GCheckbox v-for="o in g.items" :key="o.op" :model-value="roleModal.ops.includes(o.op)" @update:model-value="(v) => toggle(roleModal.ops, o.op, v)">
                 <span class="gu-op-name">{{ o.name }}</span>
                 <code class="gu-op-code">{{ o.op }}</code>
-              </Checkbox>
+              </GCheckbox>
             </div>
           </div>
         </GField>
       </div>
     </Modal>
 
-    <GConfirmModal
-      v-model:visible="confirm.open"
-      :title="confirm.title"
-      :content="confirm.content"
-      :danger="confirm.danger"
-      :loading="confirm.loading"
-      @ok="confirm.run"
-    />
+    <GConfirmModal v-model:visible="confirm.open" :title="confirm.title" :content="confirm.content" :danger="confirm.danger" :loading="confirm.loading" @ok="confirm.run" />
   </PageWrapper>
 </template>
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue';
-  import { Button, Checkbox, Input, Modal, Switch, Tag } from 'ant-design-vue';
+  import { Button, Modal, Tag } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { usePermissionStore } from '/@/store/modules/permission';
@@ -304,6 +235,9 @@
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import GField from '../_shared/form/GField.vue';
   import GSelect from '../_shared/form/GSelect.vue';
+  import GInput from '../_shared/form/GInput.vue';
+  import GSwitch from '../_shared/form/GSwitch.vue';
+  import GCheckbox from '../_shared/form/GCheckbox.vue';
   import GSegmented from '../_shared/form/GSegmented.vue';
   import { authApi, type AdminRole, type AdminUser, type Catalogue, type LoginLogRow } from './api';
 

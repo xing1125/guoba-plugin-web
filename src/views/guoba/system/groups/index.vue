@@ -275,12 +275,12 @@
                 <div class="ai-switch__name">荧（YingAI）</div>
                 <div class="g-muted ai-switch__desc">本群的 AI 聊天与主动发言</div>
               </div>
-              <Switch
-                :checked="aiState.ying"
-                :loading="aiLoading.ying"
-                checked-children="开"
-                un-checked-children="关"
-                @change="(v: any) => toggleAI('ying', !!v)"
+              <GSwitch
+                :model-value="aiState.ying"
+                :disabled="aiLoading.ying"
+                checked-label="开"
+                unchecked-label="关"
+                @update:model-value="(v) => toggleAI('ying', !!v)"
               />
             </div>
             <div class="ai-switch">
@@ -288,12 +288,12 @@
                 <div class="ai-switch__name">群管拓展 AI</div>
                 <div class="g-muted ai-switch__desc">风控 / 日报 / 欢迎语 / 指令解析等</div>
               </div>
-              <Switch
-                :checked="aiState.gm"
-                :loading="aiLoading.gm"
-                checked-children="开"
-                un-checked-children="关"
-                @change="(v: any) => toggleAI('gm', !!v)"
+              <GSwitch
+                :model-value="aiState.gm"
+                :disabled="aiLoading.gm"
+                checked-label="开"
+                unchecked-label="关"
+                @update:model-value="(v) => toggleAI('gm', !!v)"
               />
             </div>
           </div>
@@ -343,13 +343,13 @@
         </Tabs>
 
         <div class="inv-toolbar">
-          <Checkbox
-            :checked="allCurrentChecked"
-            :indeterminate="someCurrentChecked"
-            @change="toggleAllCurrent"
+          <GCheckbox
+            :model-value="allCurrentChecked"
+            :indeterminate="someCurrentChecked && !allCurrentChecked"
+            @update:model-value="toggleAllCurrent"
           >
             全选本组
-          </Checkbox>
+          </GCheckbox>
           <span class="inv-toolbar__tip">
             {{ invalidDrawer.tab === 'left' ? '已退群的群清除残留后将不再出现在检测结果中' : '低活跃群仅提醒，建议先观察再处理' }}
           </span>
@@ -357,9 +357,9 @@
 
         <div v-if="currentInvList.length" class="inv-list">
           <div v-for="g in currentInvList" :key="g.gid" class="inv-row">
-            <Checkbox
-              :checked="invChecked.includes(g.gid)"
-              @change="(e: any) => toggleInv(g.gid, e?.target?.checked)"
+            <GCheckbox
+              :model-value="invChecked.includes(g.gid)"
+              @update:model-value="(v) => toggleInv(g.gid, v)"
             />
             <div class="inv-row__main">
               <b>{{ g.name || shortGid(g.gid) }}</b>
@@ -455,7 +455,7 @@
 
 <script setup lang="ts">
   import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
-  import { Button, Checkbox, message, Switch, Table, Tabs, Tag } from 'ant-design-vue';
+  import { Button, message, Table, Tabs, Tag } from 'ant-design-vue';
 
   const TabPane = Tabs.TabPane;
   import { CloseOutlined, InfoCircleOutlined } from '@ant-design/icons-vue';
@@ -469,6 +469,8 @@
   import GEmpty from '../_shared/GEmpty.vue';
   import GSearch from '../_shared/form/GSearch.vue';
   import GSelect from '../_shared/form/GSelect.vue';
+  import GSwitch from '../_shared/form/GSwitch.vue';
+  import GCheckbox from '../_shared/form/GCheckbox.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import GFormModal from '../_shared/dialog/GFormModal.vue';
   import type { GroupDetailResult, GroupRow, GroupSummary, InvalidGroupItem, InvalidGroupsResult, TrendPoint } from '../_shared/stats';

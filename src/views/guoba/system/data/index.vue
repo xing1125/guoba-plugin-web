@@ -301,8 +301,9 @@
             <span>值{{ keyDetail.type === 'string' ? '' : '（JSON 格式编辑）' }}</span>
             <span class="g-muted">{{ keyDetail.editable ? '可直接修改' : '过大或类型不支持，只读' }}</span>
           </div>
-          <Input.TextArea
-            v-model:value="keyDrawer.text"
+          <GInput
+            v-model="keyDrawer.text"
+            type="textarea"
             :rows="14"
             class="dm-editor__area mono"
             :disabled="!keyDetail.editable"
@@ -315,7 +316,8 @@
       <template #footer>
         <div v-if="keyDetail" class="dm-actions">
           <div class="dm-actions__left">
-            <InputNumber v-model:value="keyDrawer.ttl" :min="-1" style="width: 130px" addon-after="秒" />
+            <GNumber v-model="keyDrawer.ttl" :min="-1" style="width: 130px" />
+            <span class="dm-hint">秒</span>
             <Button size="small" @click="applyTtl">设置 TTL</Button>
           </div>
           <div class="dm-actions__right">
@@ -345,7 +347,7 @@
             <dd>{{ (fileContent.mtime || '').replace('T', ' ').slice(0, 19) }}</dd>
           </div>
         </dl>
-        <Input.TextArea v-model:value="fileDrawer.text" :rows="20" class="mono dm-editor__area" />
+        <GInput v-model="fileDrawer.text" type="textarea" :rows="20" class="mono dm-editor__area" />
         <div v-if="fileBackups.length" class="dm-backups">
           <div v-for="b in fileBackups.slice(0, 8)" :key="b.name" class="dm-backups__row">
             <span class="mono fs-12">{{ b.name }}</span>
@@ -419,12 +421,14 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, unref } from 'vue';
-  import { Button, Input, InputNumber, Table, message } from 'ant-design-vue';
+  import { Button, Table, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import GModal from '../_shared/dialog/GModal.vue';
   import { Icon } from '/@/components/Icon';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import GSearch from '../_shared/form/GSearch.vue';
+  import GInput from '../_shared/form/GInput.vue';
+  import GNumber from '../_shared/form/GNumber.vue';
   import GSegmented from '../_shared/form/GSegmented.vue';
   import GameIcon from '../_shared/GameIcon.vue';
   import type { DomainMeta, DomainsResult, FileContent, FileItem, FilePlugin, KeyDetail, KeyPage } from './api';

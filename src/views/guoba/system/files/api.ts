@@ -1,4 +1,5 @@
 import { defHttp } from '/@/utils/http/axios';
+import { getToken } from '/@/utils/auth';
 
 export interface WsRoot {
   key: string;
@@ -41,6 +42,13 @@ export interface WsBackup {
   size: number;
 }
 
+export interface WsTrashItem {
+  name: string;
+  dir: boolean;
+  size: number;
+  time: string | null;
+}
+
 const Api = {
   roots: '/admin/workspace/roots',
   list: '/admin/workspace/list',
@@ -51,7 +59,16 @@ const Api = {
   rename: '/admin/workspace/rename',
   backups: '/admin/workspace/backups',
   restore: '/admin/workspace/backup/restore',
+  trash: '/admin/workspace/trash',
+  trashRemove: '/admin/workspace/trash/remove',
+  trashClear: '/admin/workspace/trash/clear',
+  /** 下载直出走 /guoba 前缀，token 走 query 便于浏览器直接打开 */
+  download: '/guoba/api/admin/workspace/download',
 };
+
+export function downloadUrl(root: string, path: string) {
+  return `${Api.download}?root=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}&token=${getToken() || ''}`;
+}
 
 export const workspaceApi = {
   roots: () => defHttp.get<{ list: WsRoot[] }>({ url: Api.roots }),
@@ -71,4 +88,8 @@ export const workspaceApi = {
     defHttp.get<{ list: WsBackup[] }>({ url: Api.backups, params: { root, path } }),
   restore: (root: string, path: string, backup: string) =>
     defHttp.post({ url: Api.restore, params: { root, path, backup } }),
+  trash: () => defHttp.get<{ list: WsTrashItem[] }>({ url: Api.trash }),
+  trashRemove: (name: string) =>
+    defHttp.post<{ removed: string }>({ url: Api.trashRemove, params: { name, confirm: true } }),
+  trashClear: () => defHttp.post<{ cleared: number }>({ url: Api.trashClear, params: { confirm: true } }),
 };

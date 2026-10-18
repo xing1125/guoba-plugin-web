@@ -24,4 +24,8 @@ export const MENU_ICONS = [
   'ant-design:info-circle-outlined',
   'ant-design:team-outlined',
   'ant-design:audit-outlined',
+  'ant-design:file-text-outlined',
+  'ant-design:close-circle-outlined',
+  'ant-design:warning-outlined',
+  'ant-design:inbox-outlined',
 ];

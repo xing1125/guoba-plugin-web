@@ -1,34 +1,33 @@
 <template>
-  <Input
-    :value="modelValue"
-    :size="size"
+  <GInput
+    :model-value="modelValue"
+    type="text"
+    :size="gcSize"
     :placeholder="placeholder"
-    :allow-clear="clearable"
+    :width="width"
+    :loading="loading"
+    :clearable="clearable"
     :disabled="disabled"
-    class="g-input-search"
-    :style="{ width }"
-    @update:value="onInput"
+    @update:model-value="onInput"
     @press-enter="emitSearch"
   >
-    <template #prefix>
-      <LoadingOutlined v-if="loading" spin />
-      <Icon v-else icon="ant-design:search-outlined" />
+    <template v-if="!loading" #prefix>
+      <Icon icon="ant-design:search-outlined" :size="13" />
     </template>
-  </Input>
+  </GInput>
 </template>
 
 <script setup lang="ts">
-  import { Input } from 'ant-design-vue';
-  import { LoadingOutlined } from '@ant-design/icons-vue';
+  import { computed } from 'vue';
   import { Icon } from '/@/components/Icon';
+  import GInput from './GInput.vue';
 
   /**
-   * GSearch —— 列表页搜索框
+   * GSearch —— 列表页搜索框（GInput 的搜索形态）
    *
-   * 统一外观（前缀搜索图标 / 清除 / 回车触发 / loading 态），
-   * 样式见 design/guoba-controls.less §7。
+   * 统一外观：前缀搜索图标 / 清除即回收结果 / 回车触发 / loading 转圈。
    *
-   *   <GSearch v-model:value="query.keyword" placeholder="搜索昵称 / ID" @search="reload" />
+   *   <GSearch v-model="query.keyword" placeholder="搜索昵称 / ID" @search="reload" />
    */
   defineOptions({ name: 'GSearch' });
 
@@ -36,7 +35,8 @@
     defineProps<{
       modelValue?: string;
       placeholder?: string;
-      size?: 'small' | 'middle' | 'large';
+      /** 兼容旧用法（small/middle/large）与 gc 尺寸（sm/md/lg） */
+      size?: 'small' | 'middle' | 'large' | 'sm' | 'md' | 'lg';
       width?: string;
       loading?: boolean;
       clearable?: boolean;
@@ -57,6 +57,13 @@
     (e: 'update:modelValue', v: string): void;
     (e: 'search', v: string): void;
   }>();
+
+  const gcSize = computed(() => {
+    const s = props.size;
+    if (s === 'small' || s === 'sm') return 'sm';
+    if (s === 'large' || s === 'lg') return 'lg';
+    return 'md';
+  });
 
   function onInput(v: string) {
     const val = v ?? '';

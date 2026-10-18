@@ -21,14 +21,7 @@
 
     <!-- 筛选条 -->
     <div v-if="searchable || $slots.filters" class="gtp__bar">
-      <GSearch
-        v-if="searchable"
-        v-model="searchModel"
-        :placeholder="searchPlaceholder"
-        size="small"
-        width="240px"
-        @search="$emit('search')"
-      />
+      <GSearch v-if="searchable" v-model="searchModel" :placeholder="searchPlaceholder" size="small" width="240px" @search="$emit('search')" />
       <slot name="filters" />
       <Button v-if="searchable" size="small" type="primary" ghost @click="$emit('search')">查询</Button>
     </div>
@@ -38,16 +31,7 @@
       <div v-if="loading && !dataSource.length" class="gtp__skeleton">
         <div v-for="i in 6" :key="i" class="g-skeleton g-skeleton--text" />
       </div>
-      <Table
-        v-else
-        :columns="columns"
-        :data-source="dataSource"
-        :row-key="rowKey"
-        :pagination="false"
-        :scroll="scroll"
-        size="middle"
-        :row-class-name="rowClassName"
-      >
+      <Table v-else :columns="columns" :data-source="dataSource" :row-key="rowKey" :pagination="false" :scroll="scroll" size="middle" :row-class-name="rowClassName">
         <template #emptyText>
           <GEmpty :title="emptyTitle" :desc="emptyDesc" />
         </template>
@@ -61,25 +45,19 @@
     <div v-if="total > 0" class="gtp__foot">
       <span class="gtp__density">
         每页
-        <Select :value="pageSize" size="small" style="width: 72px" :options="sizeOptions" @change="onSizeChange" />
+        <GSelect :model-value="pageSize" size="sm" width="72px" :clearable="false" :options="sizeOptions" @update:model-value="onSizeChange" />
       </span>
-      <Pagination
-        :current="page"
-        :page-size="pageSize"
-        :total="total"
-        size="small"
-        :show-total="(t: number) => `共 ${t} 条`"
-        @change="onPageChange"
-      />
+      <Pagination :current="page" :page-size="pageSize" :total="total" size="small" :show-total="(t: number) => `共 ${t} 条`" @change="onPageChange" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed } from 'vue';
-  import { Table, Button, Pagination, Select } from 'ant-design-vue';
+  import { Table, Button, Pagination } from 'ant-design-vue';
   import GEmpty from './GEmpty.vue';
   import GSearch from './form/GSearch.vue';
+  import GSelect from './form/GSelect.vue';
   import { downloadCsv, type CsvColumn } from '/@/utils/export/csv';
 
   /**
@@ -139,14 +117,7 @@
     },
   );
 
-  const emit = defineEmits([
-    'update:page',
-    'update:pageSize',
-    'update:searchValue',
-    'search',
-    'refresh',
-    'sizeChange',
-  ]);
+  const emit = defineEmits(['update:page', 'update:pageSize', 'update:searchValue', 'search', 'refresh', 'sizeChange']);
 
   const sizeOptions = [
     { label: '10', value: 10 },

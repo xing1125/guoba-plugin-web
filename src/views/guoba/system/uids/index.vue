@@ -152,7 +152,7 @@
           <GSelect v-model="edit.game" :options="gameOptions" :disabled="!!edit.origin" />
         </GField>
         <GField label="UID" required hint="4~20 位纯数字">
-          <Input v-model:value="edit.uid" placeholder="4~20 位纯数字" allow-clear />
+          <GInput v-model="edit.uid" placeholder="4~20 位纯数字" />
         </GField>
       </div>
     </Modal>
@@ -161,7 +161,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, unref } from 'vue';
-  import { Button, Input, Modal, Table, Tag, message } from 'ant-design-vue';
+  import { Button, Modal, Table, Tag, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
@@ -174,6 +174,7 @@
   import GSearch from '../_shared/form/GSearch.vue';
   import GSelect from '../_shared/form/GSelect.vue';
   import GField from '../_shared/form/GField.vue';
+  import GInput from '../_shared/form/GInput.vue';
   import { adminApi } from '../account/api';
 
   defineOptions({ name: 'Uids' });

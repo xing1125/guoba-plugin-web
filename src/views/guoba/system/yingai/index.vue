@@ -79,11 +79,11 @@
               {{ fmtTime(record.lastAt) }}
             </template>
             <template v-else-if="column.key === 'enabled'">
-              <Switch
-                :checked="record.enabled"
-                size="small"
-                :loading="toggling === record.uid"
-                @change="(v) => onToggle(record, v)"
+              <GSwitch
+                :model-value="record.enabled"
+                size="sm"
+                :disabled="toggling === record.uid"
+                @update:model-value="(v) => onToggle(record, v)"
               />
             </template>
             <template v-else-if="column.key === 'ops'">
@@ -213,11 +213,12 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue';
-  import { Button, Switch, Table, Tag, message } from 'ant-design-vue';
+  import { Button, Table, Tag, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import GModal from '../_shared/dialog/GModal.vue';
   import GSearch from '../_shared/form/GSearch.vue';
   import GSegmented from '../_shared/form/GSegmented.vue';
+  import GSwitch from '../_shared/form/GSwitch.vue';
   import { Icon } from '/@/components/Icon';
   import type { YingCompare, YingCompareRow, YingInsights, YingMessage, YingOverview, YingUserRow } from './api';
   import { yingaiApi } from './api';

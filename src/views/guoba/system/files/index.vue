@@ -7,7 +7,7 @@
           <div class="ws-hero__eyebrow">WORKSPACE</div>
           <div class="ws-hero__title">文件管理</div>
           <div class="ws-hero__desc">
-            浏览与编辑云崽的配置和插件文件，不必再逐个开文件夹；保存自动备份，删除进回收站
+            浏览与编辑云崽的配置和插件文件；保存自动备份，删除进回收站
           </div>
         </div>
         <div class="ws-hero__side">
@@ -22,7 +22,7 @@
               {{ r.label }}
             </span>
           </span>
-          <Button size="small" :loading="treeLoading" @click="reloadTree">刷新</Button>
+          <Button size="small" :loading="treeLoading" @click="refreshAll">刷新</Button>
           <Button size="small" type="primary" @click="openCreate(false)">新建文件</Button>
           <Button size="small" @click="openCreate(true)">新建目录</Button>
         </div>
@@ -30,53 +30,142 @@
 
       <!-- ============================ 主体 ============================ -->
       <div class="ws-body">
-        <aside class="ws-tree">
-          <Tree
-            v-if="treeData.length"
-            :tree-data="treeData"
-            :expanded-keys="expandedKeys"
-            :selected-keys="selectedKeys"
-            block-node
-            @expand="onExpand"
-            @select="onSelect"
-          />
-          <div v-else class="ws-tree__empty">{{ treeLoading ? '加载中…' : '暂无内容' }}</div>
+        <!-- 左：目录树 -->
+        <aside class="ws-side">
+          <div class="ws-side__tree">
+            <Tree
+              v-if="treeData.length"
+              :tree-data="treeData"
+              :expanded-keys="expandedKeys"
+              :selected-keys="selectedKeys"
+              block-node
+              @expand="onExpand"
+              @select="onTreeSelect"
+            >
+              <template #title="{ key, title }">
+                <span class="ws-tree-item">
+                  <FolderOpenOutlined v-if="key === currentDir" class="ws-tree-item__icon is-open" />
+                  <FolderOutlined v-else class="ws-tree-item__icon" />
+                  <span class="ws-tree-item__name">{{ title }}</span>
+                </span>
+              </template>
+            </Tree>
+            <div v-else class="ws-side__empty">{{ treeLoading ? '加载中…' : '暂无内容' }}</div>
+          </div>
+          <div class="ws-side__foot">
+            <Button size="small" block @click="openTrash">
+              <template #icon><DeleteOutlined /></template>
+              回收站
+            </Button>
+          </div>
         </aside>
 
-        <main class="ws-editor">
-          <div class="ws-editor__bar">
-            <span class="ws-editor__path" :title="opened?.path || ''">
-              {{ opened ? opened.path : '未打开文件' }}
-              <em v-if="dirty" class="ws-editor__dot">未保存</em>
-            </span>
-            <span class="ws-editor__tools">
-              <Button v-if="opened" size="small" @click="openBackups">备份({{ backupCount }})</Button>
-              <Button v-if="opened" size="small" @click="openRename">重命名</Button>
-              <Button v-if="opened" size="small" danger @click="askRemove">删除</Button>
-              <Button
-                v-if="opened"
+        <!-- 右：文件表格 / 编辑器 -->
+        <main class="ws-main">
+          <!-- 浏览态 -->
+          <template v-if="viewMode === 'list'">
+            <div class="ws-main__bar">
+              <div class="ws-crumb">
+                <span class="ws-crumb__item" @click="openDir('')">{{ currentLabel }}</span>
+                <template v-for="(seg, i) in crumbSegs" :key="seg.path">
+                  <span class="ws-crumb__sep">/</span>
+                  <span
+                    class="ws-crumb__item"
+                    :class="{ 'is-last': i === crumbSegs.length - 1 }"
+                    @click="openDir(seg.path)"
+                  >
+                    {{ seg.name }}
+                  </span>
+                </template>
+              </div>
+              <div class="ws-main__tools">
+                <Input
+                  v-model:value="keyword"
+                  size="small"
+                  allow-clear
+                  placeholder="搜索当前目录…"
+                  class="ws-search"
+                >
+                  <template #prefix><SearchOutlined /></template>
+                </Input>
+              </div>
+            </div>
+            <div class="ws-table-wrap">
+              <Table
+                :columns="columns"
+                :data-source="filteredRows"
+                :loading="tableLoading"
+                :pagination="false"
                 size="small"
-                type="primary"
-                :loading="saving"
-                :disabled="!dirty"
-                @click="save"
+                row-key="path"
               >
-                保存 (Ctrl+S)
-              </Button>
-            </span>
-          </div>
-          <div v-if="opened" class="ws-editor__code">
-            <CodeEditor
-              :value="draft"
-              :mode="editorMode"
-              :auto-format="false"
-              @change="(v) => (draft = v)"
-            />
-          </div>
-          <div v-else class="ws-editor__empty">
-            <div class="ws-editor__empty-main">在左侧选择文件开始编辑</div>
-            <div class="ws-editor__empty-sub">支持 js / json / yaml / css / html / md / txt 等文本文件（≤1MB）</div>
-          </div>
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <span class="ws-file" @click="onRowNameClick(record)">
+                      <component :is="iconFor(record).icon" class="ws-file__icon" :style="{ color: iconFor(record).color }" />
+                      <span class="ws-file__name">{{ record.name }}</span>
+                    </span>
+                  </template>
+                  <template v-else-if="column.key === 'type'">
+                    <span class="ws-type" :class="{ 'is-dir': record.dir }">{{ typeLabel(record) }}</span>
+                  </template>
+                  <template v-else-if="column.key === 'size'">
+                    <span class="ws-dim">{{ record.dir ? `${record.childCount ?? 0} 项` : fmtSize(record.size) }}</span>
+                  </template>
+                  <template v-else-if="column.key === 'mtime'">
+                    <span class="ws-dim">{{ fmtTime(record.mtime) }}</span>
+                  </template>
+                  <template v-else-if="column.key === 'action'">
+                    <span class="ws-acts">
+                      <a v-if="!record.dir && record.editable" @click="openEdit(record.path)">编辑</a>
+                      <a :href="downloadHref(record.path)" target="_blank" @click.stop>
+                        <DownloadOutlined /> 下载
+                      </a>
+                      <a @click="openRename(record)"><EditOutlined /> 重命名</a>
+                      <a class="is-danger" @click="askRemove(record)"><DeleteOutlined /> 删除</a>
+                    </span>
+                  </template>
+                </template>
+              </Table>
+            </div>
+          </template>
+
+          <!-- 编辑态 -->
+          <template v-else>
+            <div class="ws-main__bar">
+              <div class="ws-edit-head">
+                <Button size="small" @click="backToList">
+                  <template #icon><ArrowLeftOutlined /></template>
+                  返回列表
+                </Button>
+                <span class="ws-edit-head__path" :title="opened?.path || ''">
+                  {{ opened ? opened.path : '' }}
+                  <em v-if="dirty" class="ws-edit-head__dot">未保存</em>
+                </span>
+              </div>
+              <div class="ws-main__tools">
+                <Button size="small" @click="openBackups">备份({{ backupCount }})</Button>
+                <Button size="small" danger @click="askRemove(null)">删除</Button>
+                <Button
+                  size="small"
+                  type="primary"
+                  :loading="saving"
+                  :disabled="!dirty"
+                  @click="save"
+                >
+                  保存 (Ctrl+S)
+                </Button>
+              </div>
+            </div>
+            <div v-if="opened" class="ws-editor">
+              <CodeEditor
+                :value="draft"
+                :mode="editorMode"
+                :auto-format="false"
+                @change="(v) => (draft = v)"
+              />
+            </div>
+          </template>
         </main>
       </div>
 
@@ -99,7 +188,7 @@
         :visible="removeModal.visible"
         title="删除确认"
         :content="removeModal.path"
-        hint="不会直接删除，会先移入 temp/guoba-trash 回收站，可手工找回"
+        hint="不会直接删除，会先移入 temp/guoba-trash 回收站，可在左下角「回收站」查看"
         danger
         :loading="removeModal.loading"
         ok-text="移入回收站"
@@ -116,9 +205,42 @@
       >
         <div v-if="!backupModal.list.length" class="ws-backup-empty">还没有备份（保存时自动生成）</div>
         <div v-for="b in backupModal.list" :key="b.name" class="ws-backup-row">
-          <span class="ws-backup-row__name">{{ shortTime(b.time) }}</span>
+          <span class="ws-backup-row__name">{{ fmtTime(b.time) }}</span>
           <span class="ws-backup-row__size">{{ fmtSize(b.size) }}</span>
           <Button size="small" @click="doRestore(b)">恢复</Button>
+        </div>
+      </Modal>
+
+      <!-- ============================ 回收站 ============================ -->
+      <Modal
+        :visible="trashModal.visible"
+        title="回收站（temp/guoba-trash）"
+        :footer="null"
+        width="640px"
+        @cancel="trashModal.visible = false"
+      >
+        <div class="ws-trash-head">
+          <span class="ws-dim">共 {{ trashModal.list.length }} 项，彻底删除后不可找回</span>
+          <Button
+            v-if="trashModal.list.length"
+            size="small"
+            danger
+            :loading="trashModal.loading"
+            @click="askTrashClear"
+          >
+            <template #icon><ClearOutlined /></template>
+            清空回收站
+          </Button>
+        </div>
+        <div v-if="!trashModal.list.length" class="ws-backup-empty">回收站是空的</div>
+        <div v-for="t in trashModal.list" :key="t.name" class="ws-backup-row">
+          <span class="ws-backup-row__name" :title="t.name">
+            <FolderOutlined v-if="t.dir" style="color: #fbbf24; margin-right: 4px" />
+            {{ t.name.slice(t.name.indexOf('_') + 1) }}
+          </span>
+          <span class="ws-dim ws-backup-row__time">{{ fmtTime(t.time) }}</span>
+          <span class="ws-backup-row__size">{{ t.dir ? '目录' : fmtSize(t.size) }}</span>
+          <Button size="small" danger :loading="trashModal.loading" @click="askTrashRemove(t)">删除</Button>
         </div>
       </Modal>
     </div>
@@ -127,15 +249,32 @@
 
 <script setup lang="ts">
   import { computed, onBeforeUnmount, onMounted, reactive, ref, unref } from 'vue';
-  import { Button, Input, Modal, Tree, message } from 'ant-design-vue';
+  import { Button, Input, Modal, Table, Tree, message } from 'ant-design-vue';
+  import {
+    ArrowLeftOutlined,
+    ClearOutlined,
+    DeleteOutlined,
+    DownloadOutlined,
+    EditOutlined,
+    FileExcelOutlined,
+    FileImageOutlined,
+    FileMarkdownOutlined,
+    FileOutlined,
+    FilePdfOutlined,
+    FileTextOutlined,
+    FileZipOutlined,
+    FolderOpenOutlined,
+    FolderOutlined,
+    SearchOutlined,
+  } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import { CodeEditor } from '/@/components/CodeEditor';
   import { MODE } from '/@/components/CodeEditor/src/typing';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
-  import type { WsBackup, WsItem, WsReadResult, WsRoot } from './api';
-  import { workspaceApi } from './api';
+  import type { WsBackup, WsItem, WsReadResult, WsRoot, WsTrashItem } from './api';
+  import { downloadUrl, workspaceApi } from './api';
 
   defineOptions({ name: 'WorkspaceFiles' });
 
@@ -147,7 +286,6 @@
     title: string;
     dir: boolean;
     root?: boolean;
-    editable?: boolean;
     isLeaf: boolean;
     children?: TreeNode[];
     loaded?: boolean;
@@ -160,6 +298,12 @@
   const treeLoading = ref(false);
   const expandedKeys = ref<string[]>([]);
   const selectedKeys = ref<string[]>([]);
+
+  const viewMode = ref<'list' | 'edit'>('list');
+  const currentDir = ref('');
+  const tableRows = ref<WsItem[]>([]);
+  const tableLoading = ref(false);
+  const keyword = ref('');
 
   const opened = ref<WsReadResult | null>(null);
   const savedContent = ref('');
@@ -174,16 +318,15 @@
     if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
     return `${(n / 1024 / 1024).toFixed(2)} MB`;
   }
-  function shortTime(iso: string | null) {
+  function fmtTime(iso: string | null) {
     if (!iso) return '-';
-    return String(iso).replace('T', ' ').slice(0, 19);
-  }
-  function extOf(p: string) {
-    const i = p.lastIndexOf('.');
-    return i >= 0 ? p.slice(i).toLowerCase() : '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '-';
+    const p = (x: number) => String(x).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
   }
   const editorMode = computed(() => {
-    const ext = opened.value ? extOf(opened.value.path) : '';
+    const ext = opened.value ? opened.value.ext : '';
     if (ext === '.json' || ext === '.jsonl' || ext === '.ndjson') return MODE.JSON;
     if (['.js', '.mjs', '.cjs', '.ts', '.vue', '.jsx', '.tsx'].includes(ext)) return MODE.JS;
     if (ext === '.html' || ext === '.htm') return MODE.HTML;
@@ -191,15 +334,71 @@
     return MODE.TEXT;
   });
 
-  /* ----------------------------- 目录树 ----------------------------- */
-  function itemToNode(it: WsItem): TreeNode {
-    return {
-      key: it.path,
-      title: it.dir ? `${it.name}/` : `${it.name}  ${fmtSize(it.size)}`,
-      dir: it.dir,
-      editable: it.editable,
-      isLeaf: !it.dir,
-    };
+  const ICON_MAP: { exts: string[]; icon: any; color: string }[] = [
+    { exts: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp'], icon: FileImageOutlined, color: '#10b981' },
+    { exts: ['zip', 'rar', '7z', 'gz', 'tar'], icon: FileZipOutlined, color: '#f59e0b' },
+    { exts: ['md', 'markdown'], icon: FileMarkdownOutlined, color: '#3b82f6' },
+    { exts: ['pdf'], icon: FilePdfOutlined, color: '#ef4444' },
+    { exts: ['xls', 'xlsx', 'csv'], icon: FileExcelOutlined, color: '#16a34a' },
+    { exts: ['js', 'mjs', 'cjs', 'ts', 'vue', 'jsx', 'tsx', 'json', 'jsonl', 'yaml', 'yml', 'html', 'css', 'less', 'scss', 'xml', 'txt', 'log', 'sh', 'bat', 'cmd', 'conf', 'ini'], icon: FileTextOutlined, color: '#6366f1' },
+  ];
+  function iconFor(record: WsItem) {
+    if (record.dir) return { icon: FolderOutlined, color: '#fbbf24' };
+    const ext = String(record.ext || '').replace('.', '').toLowerCase();
+    const hit = ICON_MAP.find((m) => m.exts.includes(ext));
+    return hit ? { icon: hit.icon, color: hit.color } : { icon: FileOutlined, color: '#94a3b8' };
+  }
+  function typeLabel(record: WsItem) {
+    if (record.dir) return '目录';
+    const ext = String(record.ext || '').replace('.', '');
+    return ext ? ext.toUpperCase() : '文件';
+  }
+  function downloadHref(path: string) {
+    return downloadUrl(root.value, path);
+  }
+  function parentOf(p: string) {
+    const i = p.lastIndexOf('/');
+    return i >= 0 ? p.slice(0, i) : '';
+  }
+
+  const columns = [
+    { title: '文件名', key: 'name', sorter: (a: WsItem, b: WsItem) => a.name.localeCompare(b.name, 'zh-Hans-CN') },
+    { title: '类型', key: 'type', width: 90 },
+    { title: '大小', key: 'size', width: 110, sorter: (a: WsItem, b: WsItem) => a.size - b.size },
+    {
+      title: '修改时间',
+      key: 'mtime',
+      width: 165,
+      defaultSortOrder: 'descend' as const,
+      sorter: (a: WsItem, b: WsItem) => {
+        const ta = a.mtime ? new Date(a.mtime).getTime() : 0;
+        const tb = b.mtime ? new Date(b.mtime).getTime() : 0;
+        return ta - tb;
+      },
+    },
+    { title: '操作', key: 'action', width: 235 },
+  ];
+
+  const filteredRows = computed(() => {
+    const kw = keyword.value.trim().toLowerCase();
+    if (!kw) return tableRows.value;
+    return tableRows.value.filter((r) => r.name.toLowerCase().includes(kw));
+  });
+
+  const currentLabel = computed(() => {
+    const r = roots.value.find((x) => x.key === root.value);
+    return r ? r.label.split('(')[0].trim() : root.value;
+  });
+  const crumbSegs = computed(() => {
+    if (!currentDir.value) return [];
+    const segs = currentDir.value.split('/');
+    return segs.map((name, i) => ({ name, path: segs.slice(0, i + 1).join('/') }));
+  });
+
+  /* ----------------------------- 目录树（只放目录） ----------------------------- */
+  function dirNode(it: WsItem): TreeNode | null {
+    if (!it.dir) return null;
+    return { key: it.path, title: it.name, dir: true, isLeaf: false };
   }
 
   async function loadRoots() {
@@ -214,30 +413,37 @@
     if (root.value === key && treeData.value.length) return;
     root.value = key;
     opened.value = null;
+    viewMode.value = 'list';
     selectedKeys.value = [];
     expandedKeys.value = [];
+    currentDir.value = '';
+    keyword.value = '';
+    await refreshAll();
+  }
+
+  async function refreshAll() {
     await reloadTree();
+    await loadDir(currentDir.value);
   }
 
   async function reloadTree() {
     if (!root.value) return;
-    const prevExpanded = expandedKeys.value.filter((k) => k && k !== '');
+    const prevExpanded = expandedKeys.value.filter((k) => k !== '');
     treeLoading.value = true;
     try {
       const res = await workspaceApi.list(root.value, '');
       treeData.value = [
         {
           key: '',
-          title: res.label,
+          title: currentLabel.value,
           dir: true,
           root: true,
           isLeaf: false,
           loaded: true,
-          children: (res.list || []).map(itemToNode),
+          children: (res.list || []).map(dirNode).filter(Boolean) as TreeNode[],
         },
       ];
       expandedKeys.value = [''];
-      // 重新展开之前展开过的目录
       for (const k of prevExpanded) {
         try {
           await ensureChildren(k);
@@ -264,16 +470,15 @@
     const node = findNode(treeData.value, key);
     if (!node || !node.dir || node.loaded) return;
     const res = await workspaceApi.list(root.value, key);
-    node.children = (res.list || []).map(itemToNode);
+    node.children = (res.list || []).map(dirNode).filter(Boolean) as TreeNode[];
     node.loaded = true;
   }
 
-  async function onExpand(keys: (string | number)[], info?: unknown) {
+  async function onExpand(keys: (string | number)[]) {
     const next = (keys as string[]) || [];
-    // 只对「新展开」的目录懒加载子节点（不依赖事件内部结构，用 key 差集判断）
     const added = next.find((k) => !expandedKeys.value.includes(k));
     expandedKeys.value = next;
-    if (added) {
+    if (added !== undefined) {
       try {
         await ensureChildren(String(added));
       } catch (e: any) {
@@ -282,20 +487,77 @@
     }
   }
 
-  /* ----------------------------- 打开 / 保存 ----------------------------- */
-  async function onSelect(keys: (string | number)[], info?: unknown) {
+  /** 树点目录 = 进入该目录（同时展开、加载），并让表格跟随 */
+  async function onTreeSelect(keys: (string | number)[]) {
     const key = String(keys?.[0] ?? '');
     if (!key) return;
     const node = findNode(treeData.value, key);
-    if (!node || node.dir) return;
-    if (node.editable === false) {
-      message.warning('该文件类型或大小不支持在线编辑');
-      return;
+    if (!node || !node.dir) return;
+    await openDir(key);
+  }
+
+  /* ----------------------------- 目录导航 ----------------------------- */
+  async function openDir(key: string) {
+    // 沿路径逐层加载树节点
+    const segs = key ? key.split('/') : [];
+    let prefix = '';
+    for (const s of segs) {
+      prefix = prefix ? `${prefix}/${s}` : s;
+      try {
+        await ensureChildren(prefix);
+      } catch {}
     }
+    if (key && !expandedKeys.value.includes(key)) {
+      expandedKeys.value = [...expandedKeys.value, key];
+    }
+    currentDir.value = key;
+    selectedKeys.value = [key];
+    if (viewMode.value === 'edit') {
+      if (dirty.value) {
+        Modal.confirm({
+          title: '当前文件有未保存修改',
+          content: '切换后将丢弃这些修改，是否继续？',
+          onOk: () => {
+            opened.value = null;
+            viewMode.value = 'list';
+          },
+        });
+        return;
+      }
+      opened.value = null;
+      viewMode.value = 'list';
+    }
+    await loadDir(key);
+  }
+
+  async function loadDir(key: string) {
+    tableLoading.value = true;
     try {
-      const res = await workspaceApi.read(root.value, key);
-      if (opened.value && dirty.value && opened.value.path !== key) {
-        // 切换文件前丢弃未保存提示
+      const res = await workspaceApi.list(root.value, key);
+      tableRows.value = res?.list || [];
+    } catch (e: any) {
+      message.error(e?.message || '读取目录失败');
+      tableRows.value = [];
+    } finally {
+      tableLoading.value = false;
+    }
+  }
+
+  function onRowNameClick(record: WsItem) {
+    if (record.dir) {
+      openDir(record.path);
+    } else if (record.editable) {
+      openEdit(record.path);
+    } else {
+      message.info('该类型不支持在线编辑，可下载查看');
+    }
+  }
+
+  /* ----------------------------- 打开 / 保存 ----------------------------- */
+  async function openEdit(path: string) {
+    try {
+      const res = await workspaceApi.read(root.value, path);
+      if (opened.value && dirty.value && opened.value.path !== path) {
         Modal.confirm({
           title: '当前文件有未保存修改',
           content: '切换后将丢弃这些修改，是否继续？',
@@ -314,6 +576,23 @@
     savedContent.value = res.content;
     draft.value = res.content;
     selectedKeys.value = [res.path];
+    viewMode.value = 'edit';
+  }
+
+  function backToList() {
+    if (dirty.value) {
+      Modal.confirm({
+        title: '当前文件有未保存修改',
+        content: '返回后将丢弃这些修改，是否继续？',
+        onOk: () => {
+          opened.value = null;
+          viewMode.value = 'list';
+        },
+      });
+      return;
+    }
+    opened.value = null;
+    viewMode.value = 'list';
   }
 
   async function save() {
@@ -339,38 +618,24 @@
     title: '',
     hint: '',
     name: '',
-    target: '',
+    target: '', // create: 父目录；rename: 原路径
   });
 
-  /** 当前操作目录：选中目录用之，选中文件用其父目录，否则根 */
-  function currentDir(): string {
-    const key = selectedKeys.value[0] || '';
-    if (!key) return '';
-    const node = findNode(treeData.value, key);
-    if (!node) return '';
-    if (node.dir) return key;
-    const i = key.lastIndexOf('/');
-    return i >= 0 ? key.slice(0, i) : '';
-  }
-
   function openCreate(isDir: boolean) {
-    const dir = currentDir();
     nameModal.mode = isDir ? 'create-dir' : 'create-file';
     nameModal.title = isDir ? '新建目录' : '新建文件';
-    nameModal.hint = `位置：${dir || root.value}`;
+    nameModal.hint = `位置：${currentDir.value || root.value}`;
     nameModal.name = '';
-    nameModal.target = dir;
+    nameModal.target = currentDir.value;
     nameModal.visible = true;
   }
 
-  function openRename() {
-    if (!opened.value) return;
-    const p = opened.value.path;
+  function openRename(record: WsItem) {
     nameModal.mode = 'rename';
     nameModal.title = '重命名';
-    nameModal.hint = `原路径：${p}`;
-    nameModal.name = p.slice(p.lastIndexOf('/') + 1);
-    nameModal.target = p;
+    nameModal.hint = `原路径：${record.path}`;
+    nameModal.name = record.name;
+    nameModal.target = record.path;
     nameModal.visible = true;
   }
 
@@ -386,25 +651,19 @@
           opened.value = null;
           savedContent.value = '';
           draft.value = '';
-          try {
-            applyOpened(await workspaceApi.read(root.value, res.to));
-          } catch {}
+          viewMode.value = 'list';
         }
+        const dir = parentOf(nameModal.target);
+        await refreshAfterMutate(dir);
       } else {
         const isDir = nameModal.mode === 'create-dir';
         await workspaceApi.create(root.value, nameModal.target, name, isDir);
         message.success(isDir ? '目录已创建' : '文件已创建');
-        const node = findNode(treeData.value, nameModal.target);
-        if (node && node.dir && node.loaded) {
-          const res = await workspaceApi.list(root.value, nameModal.target);
-          node.children = (res.list || []).map(itemToNode);
-        } else {
-          await reloadTree();
-        }
-        if (!isDir && nameModal.target !== undefined) {
+        await refreshAfterMutate(nameModal.target);
+        if (!isDir) {
           const childPath = nameModal.target ? `${nameModal.target}/${name}` : name;
           try {
-            applyOpened(await workspaceApi.read(root.value, childPath));
+            await openEdit(childPath);
           } catch {}
         }
       }
@@ -416,10 +675,22 @@
     }
   }
 
+  /** 变更后刷新：受影响目录 + 树（保持展开状态） */
+  async function refreshAfterMutate(dir: string) {
+    const target = dir || currentDir.value;
+    if (target === currentDir.value) {
+      await loadDir(currentDir.value);
+    }
+    // 若受影响目录是 currentDir 的祖先或自身，重载树以同步
+    if (!currentDir.value || currentDir.value === target || currentDir.value.startsWith(target + '/')) {
+      await reloadTree();
+    }
+  }
+
   const removeModal = reactive({ visible: false, loading: false, path: '' });
 
-  function askRemove() {
-    const p = opened.value?.path || selectedKeys.value[0] || '';
+  function askRemove(record: WsItem | null) {
+    const p = record ? record.path : opened.value?.path || '';
     if (!p) return;
     removeModal.path = p;
     removeModal.visible = true;
@@ -435,6 +706,11 @@
         opened.value = null;
         savedContent.value = '';
         draft.value = '';
+        viewMode.value = 'list';
+      }
+      const dir = parentOf(removeModal.path);
+      if (dir === currentDir.value) {
+        await loadDir(currentDir.value);
       }
       await reloadTree();
     } catch (e: any) {
@@ -468,6 +744,54 @@
     } catch (e: any) {
       message.error(e?.message || '恢复失败');
     }
+  }
+
+  /* ----------------------------- 回收站 ----------------------------- */
+  const trashModal = reactive({ visible: false, loading: false, list: [] as WsTrashItem[] });
+
+  async function openTrash() {
+    trashModal.visible = true;
+    await loadTrash();
+  }
+
+  async function loadTrash() {
+    trashModal.loading = true;
+    try {
+      const res = await workspaceApi.trash();
+      trashModal.list = res?.list || [];
+    } catch (e: any) {
+      message.error(e?.message || '读取回收站失败');
+    } finally {
+      trashModal.loading = false;
+    }
+  }
+
+  function askTrashRemove(t: WsTrashItem) {
+    Modal.confirm({
+      title: '彻底删除该条目？',
+      content: t.name,
+      okText: '彻底删除',
+      okType: 'danger',
+      onOk: async () => {
+        await workspaceApi.trashRemove(t.name);
+        message.success('已彻底删除');
+        await loadTrash();
+      },
+    });
+  }
+
+  function askTrashClear() {
+    Modal.confirm({
+      title: '清空回收站？',
+      content: `共 ${trashModal.list.length} 项，彻底删除后不可找回`,
+      okText: '全部删除',
+      okType: 'danger',
+      onOk: async () => {
+        const res = await workspaceApi.trashClear();
+        message.success(`已清空 ${res?.cleared ?? 0} 项`);
+        await loadTrash();
+      },
+    });
   }
 
   /* ----------------------------- 快捷键 / 生命周期 ----------------------------- */
@@ -571,29 +895,63 @@
     display: flex;
     gap: 12px;
     margin-top: 12px;
-    height: calc(100vh - 260px);
-    min-height: 420px;
+    height: calc(100vh - 250px);
+    min-height: 460px;
   }
 
-  .ws-tree {
-    width: 340px;
+  /* ----------------------------- 左侧目录树 ----------------------------- */
+  .ws-side {
+    width: 300px;
     flex-shrink: 0;
-    overflow: auto;
-    padding: 10px;
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--ws-line);
     border-radius: 12px;
     background: var(--ws-panel);
     backdrop-filter: blur(10px);
+    overflow: hidden;
 
+    &__tree {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 10px 6px;
+    }
     &__empty {
       text-align: center;
       color: var(--ws-text-dim);
       font-size: 12px;
       padding: 24px 0;
     }
+    &__foot {
+      padding: 8px 10px;
+      border-top: 1px solid var(--ws-line);
+    }
   }
 
-  .ws-editor {
+  .ws-tree-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+
+    .ws-tree-item__icon {
+      color: #fbbf24;
+      flex-shrink: 0;
+
+      &.is-open {
+        color: var(--ws-accent);
+      }
+    }
+    .ws-tree-item__name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  /* ----------------------------- 右侧主区 ----------------------------- */
+  .ws-main {
     flex: 1;
     min-width: 0;
     display: flex;
@@ -611,7 +969,122 @@
       gap: 10px;
       padding: 8px 12px;
       border-bottom: 1px solid var(--ws-line);
+      flex-wrap: wrap;
     }
+    &__tools {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+  }
+
+  .ws-crumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    min-width: 0;
+    flex-wrap: wrap;
+
+    &__item {
+      color: var(--ws-text-dim);
+      cursor: pointer;
+
+      &:hover {
+        color: var(--ws-accent);
+      }
+      &.is-last {
+        color: var(--ws-text);
+        font-weight: 600;
+        cursor: default;
+
+        &:hover {
+          color: var(--ws-text);
+        }
+      }
+    }
+    &__sep {
+      color: var(--ws-text-dim);
+      opacity: 0.5;
+    }
+  }
+
+  .ws-search {
+    width: 220px;
+  }
+
+  .ws-table-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 6px 6px;
+  }
+
+  .ws-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    min-width: 0;
+    max-width: 100%;
+
+    &:hover .ws-file__name {
+      color: var(--ws-accent);
+    }
+    &__icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    &__name {
+      color: var(--ws-text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .ws-type {
+    font-size: 11px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.12);
+    color: #6366f1;
+    font-weight: 600;
+
+    &.is-dir {
+      background: rgba(251, 191, 36, 0.16);
+      color: #d97706;
+    }
+  }
+
+  .ws-dim {
+    color: var(--ws-text-dim);
+    font-size: 12px;
+  }
+
+  .ws-acts {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+
+    a {
+      font-size: 12px;
+      color: var(--ws-accent);
+
+      &.is-danger {
+        color: #ef4444;
+      }
+    }
+  }
+
+  .ws-edit-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+
     &__path {
       font-size: 12px;
       color: var(--ws-text);
@@ -620,7 +1093,7 @@
       text-overflow: ellipsis;
       white-space: nowrap;
 
-      em.ws-editor__dot {
+      em.ws-edit-head__dot {
         font-style: normal;
         margin-left: 8px;
         padding: 1px 8px;
@@ -630,36 +1103,14 @@
         background: #f59e0b;
       }
     }
-    &__tools {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-    &__code {
-      flex: 1;
-      min-height: 0;
+  }
 
-      :deep(.CodeMirror) {
-        height: 100%;
-      }
-    }
-    &__empty {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+  .ws-editor {
+    flex: 1;
+    min-height: 0;
 
-      &-main {
-        font-size: 14px;
-        color: var(--ws-text);
-      }
-      &-sub {
-        font-size: 12px;
-        color: var(--ws-text-dim);
-      }
+    :deep(.CodeMirror) {
+      height: 100%;
     }
   }
 
@@ -694,9 +1145,26 @@
     &__name {
       color: var(--ws-text);
       flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    &__time {
+      flex-shrink: 0;
     }
     &__size {
       color: var(--ws-text-dim);
+      width: 70px;
+      text-align: right;
+      flex-shrink: 0;
     }
+  }
+
+  .ws-trash-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
   }
 </style>
