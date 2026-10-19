@@ -55,73 +55,36 @@
         </div>
       </section>
 
-      <!-- ============================ 趋势 + 游戏分布 ============================ -->
+      <!-- ============================ 系统运行态 + 运行状态 ============================ -->
       <section class="gm-grid gm-grid--2-1">
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:line-chart-outlined" :size="13" /></i>
-              消息趋势
+              <i><Icon icon="ant-design:dashboard-outlined" :size="13" /></i>
+              系统运行态
             </div>
-            <div class="gm-panel__extra">
-              <GSegmented
-                :model-value="trendDays"
-                :options="[
-                  { value: 7, label: '7 天' },
-                  { value: 14, label: '14 天' },
-                  { value: 30, label: '30 天' },
-                ]"
-                size="sm"
-                label="趋势区间"
-                @update:model-value="setTrendDays($event as number)"
-              />
-            </div>
+            <span class="gm-panel__link" @click="go('/sysinfo')">系统信息›</span>
           </div>
-          <div v-show="!booting" ref="trendRef" class="hm-chart" />
-          <div v-if="booting" class="gm-skeleton hm-chart" />
-        </div>
-
-        <div class="g-card">
-          <div class="gm-panel__head">
-            <div class="gm-panel__title">
-              <i><Icon icon="ant-design:pie-chart-outlined" :size="13" /></i>
-              米游社缓存分布
-            </div>
-            <span class="gm-panel__extra">{{ thousands(gamesTotal) }} 键</span>
-          </div>
-          <div v-show="!booting && games.length" ref="gameRef" class="hm-chart" />
-          <div v-if="booting" class="gm-skeleton hm-chart" />
-          <GEmpty v-if="!booting && !games.length" title="暂无缓存数据" desc="米游社接口产生缓存后自动统计" />
-        </div>
-      </section>
-
-      <!-- ============================ 群排行 + 运行状态 ============================ -->
-      <section class="gm-grid gm-grid--2-1">
-        <div class="g-card">
-          <div class="gm-panel__head">
-            <div class="gm-panel__title">
-              <i><Icon icon="ant-design:bar-chart-outlined" :size="13" /></i>
-              群活跃排行
-            </div>
-            <span class="gm-panel__link" @click="go('/groups')">
-              查看全部<IonIcon />
-            </span>
-          </div>
-          <div v-if="topGroups.length" class="gm-rank">
-            <div v-for="(g, i) in topGroups" :key="g.gid" class="gm-rank__row">
-              <span class="gm-rank__no">{{ i + 1 }}</span>
-              <div class="gm-rank__name">
-                {{ g.name }}
-                <span>{{ g.label }}</span>
+          <div v-if="runtime" class="hm-rt">
+            <div class="hm-rt__gauges">
+              <div v-for="g in gauges" :key="g.label" class="hm-rt__gauge">
+                <div class="hm-rt__gauge-head">
+                  <span>{{ g.label }}</span>
+                  <b>{{ g.text }}</b>
+                </div>
+                <div class="hm-rt__track">
+                  <i :style="{ width: `${g.pct}%`, background: g.color }" />
+                </div>
               </div>
-              <div class="gm-rank__bar">
-                <div class="gm-rank__fill" :style="{ width: `${g.pct}%` }" />
-              </div>
-              <span class="gm-rank__val">{{ fmtNum(g.total) }}</span>
             </div>
+            <dl class="hm-rt__rows">
+              <div v-for="r in rtRows" :key="r.k" class="hm-rt__row">
+                <dt>{{ r.k }}</dt>
+                <dd :class="{ mono: r.mono }">{{ r.v }}</dd>
+              </div>
+            </dl>
           </div>
-          <GEmpty v-else-if="!booting" title="暂无群消息数据" desc="群内产生消息后即可统计" />
-          <div v-else class="gm-skeleton hm-rank-skeleton" />
+          <div v-else class="gm-skeleton" style="height: 176px" />
         </div>
 
         <div class="g-card">
@@ -132,69 +95,23 @@
             </div>
             <span class="gm-panel__extra">实时</span>
           </div>
-          <div class="gm-meter" v-for="m in meters" :key="m.label" :style="`--g-meter-from:${m.from};--g-meter-to:${m.to}`">
-            <div class="gm-meter__head">
-              <span>{{ m.label }}</span>
-              <b>{{ m.value }}%</b>
-            </div>
-            <div class="gm-meter__track">
-              <div class="gm-meter__fill" :style="{ width: `${m.value}%` }" />
-            </div>
-            <div class="gm-meter__note">{{ m.note }}</div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ============================ 用户排行 + 插件体量 ============================ -->
-      <section class="gm-grid gm-grid--1-1">
-        <div class="g-card">
-          <div class="gm-panel__head">
-            <div class="gm-panel__title">
-              <i><Icon icon="ant-design:team-outlined" :size="13" /></i>
-              用户消息排行
-            </div>
-            <span class="gm-panel__link" @click="go('/users-data')">查看全部›</span>
-          </div>
-          <div v-if="userRows.length" class="gm-rank">
-            <div v-for="(u, i) in userRows" :key="u.uid" class="gm-rank__row">
-              <span class="gm-rank__no">{{ i + 1 }}</span>
-              <div class="gm-rank__name">
-                {{ u.name || u.uid }}
-                <span>{{ u.activeDays }} 天活跃</span>
+          <div class="hm-meters">
+            <div
+              v-for="m in meters"
+              :key="m.label"
+              class="gm-meter"
+              :style="`--g-meter-from:${m.from};--g-meter-to:${m.to}`"
+            >
+              <div class="gm-meter__head">
+                <span>{{ m.label }}</span>
+                <b>{{ m.value }}%</b>
               </div>
-              <div class="gm-rank__bar">
-                <div class="gm-rank__fill" :style="{ width: `${u.pct}%` }" />
+              <div class="gm-meter__track">
+                <div class="gm-meter__fill" :style="{ width: `${m.value}%` }" />
               </div>
-              <span class="gm-rank__val">{{ fmtNum(u.total) }}</span>
+              <div class="gm-meter__note">{{ m.note }}</div>
             </div>
           </div>
-          <GEmpty v-else-if="!booting" title="暂无用户消息数据" desc="用户维度计数键尚未生成" />
-          <div v-else class="gm-skeleton hm-rank-skeleton" />
-        </div>
-
-        <div class="g-card">
-          <div class="gm-panel__head">
-            <div class="gm-panel__title">
-              <i><Icon icon="ant-design:api-outlined" :size="13" /></i>
-              插件数据体量
-            </div>
-            <span class="gm-panel__link" @click="go('/plugins-data')">查看全部›</span>
-          </div>
-          <div v-if="nsRows.length" class="gm-rank">
-            <div v-for="(n, i) in nsRows" :key="n.ns" class="gm-rank__row">
-              <span class="gm-rank__no">{{ i + 1 }}</span>
-              <div class="gm-rank__name">
-                {{ n.label }}
-                <span>{{ n.owner }}</span>
-              </div>
-              <div class="gm-rank__bar">
-                <div class="gm-rank__fill" :style="{ width: `${n.pct}%` }" />
-              </div>
-              <span class="gm-rank__val">{{ fmtNum(n.keys) }}</span>
-            </div>
-          </div>
-          <GEmpty v-else-if="!booting" title="暂无命名空间数据" desc="Redis 扫描完成后即可查看" />
-          <div v-else class="gm-skeleton hm-rank-skeleton" />
         </div>
       </section>
 
@@ -226,58 +143,30 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, defineComponent, h, nextTick, onBeforeUnmount, onMounted, ref, unref, watch } from 'vue';
+  import { computed, nextTick, onBeforeUnmount, onMounted, ref, unref } from 'vue';
   import { useRouter } from 'vue-router';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import { defHttp } from '/@/utils/http/axios';
-  import { useECharts } from '/@/hooks/web/useECharts';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import { sysApi } from '/@/api/guoba';
-  import GEmpty from '../system/_shared/GEmpty.vue';
-  import GSegmented from '../system/_shared/form/GSegmented.vue';
   import { adminApi } from '../system/account/api';
-  import type { OverviewCards, TrendPoint } from '../system/_shared/stats';
-  import {
-    areaGradient,
-    chartBase,
-    chartColors,
-    fmtNum,
-    hexToRgba,
-    primaryColor,
-    secondaryColor,
-    shortGid,
-    statsApi,
-    thousands,
-  } from '../system/_shared/stats';
+  import type { BotRuntime, OverviewCards, TrendPoint } from '../system/_shared/stats';
+  import { fmtNum, hexToRgba, statsApi, thousands } from '../system/_shared/stats';
 
   defineOptions({ name: 'Home' });
-
-  /** 小箭头（避免额外图标依赖） */
-  const IonIcon = defineComponent({
-    name: 'IonIcon',
-    render: () => h('span', { style: 'font-size:11px;opacity:.7' }, '›'),
-  });
 
   const router = useRouter();
   const { getDarkMode } = useRootSetting();
   const isDark = computed(() => unref(getDarkMode) === ThemeEnum.DARK);
-  const primary = computed(() => primaryColor(isDark.value));
-  const secondary = computed(() => secondaryColor(isDark.value));
 
-  const booting = ref(true);
   const overview = ref<Partial<OverviewCards>>({});
   const homeData = ref<Record<string, any>>({});
   const admin = ref<any>({});
   const userSummary = ref<any>({});
   const trendAll = ref<TrendPoint[]>([]);
-  const trend = ref<TrendPoint[]>([]);
-  const trendDays = ref(14);
-  const games = ref<{ label: string; count: number }[]>([]);
-  const groupRows = ref<any[]>([]);
-  const userRows = ref<{ uid: string; name?: string; total: number; activeDays: number; pct: number }[]>([]);
-  const nsRows = ref<{ ns: string; label: string; owner: string; keys: number; pct: number }[]>([]);
+  const runtime = ref<BotRuntime | null>(null);
 
   const conf = computed(() => (window as any).__YUNZAI_BOT_CONF__ ?? {});
 
@@ -413,20 +302,6 @@
     return `${arrow} ${Math.abs(d)}%`;
   }
 
-  const gamesTotal = computed(() => games.value.reduce((s, g) => s + (g.count || 0), 0));
-
-  const topGroups = computed(() => {
-    const rows = [...groupRows.value].slice(0, 8);
-    const max = rows.reduce((m, r) => Math.max(m, r.total || 0), 0) || 1;
-    return rows.map((r) => ({
-      gid: r.gid,
-      name: r.name || `群 ${shortGid(r.gid)}`,
-      label: r.activeDays ? `活跃 ${r.activeDays} 天` : '今日新增',
-      total: r.total || 0,
-      pct: Math.max(3, Math.round(((r.total || 0) / max) * 100)),
-    }));
-  });
-
   const meters = computed(() => {
     const d = isDark.value;
     const groupTotal = overview.value.groupCount || homeData.value.groupCount || 0;
@@ -467,10 +342,66 @@
     ];
   });
 
+  /* ------------------------------ 系统运行态 ------------------------------ */
+
+  const gauges = computed(() => {
+    const r = runtime.value;
+    const d = isDark.value;
+    const cpu = r?.cpuUsage;
+    const mem = r?.memory?.usagePct ?? 0;
+    return [
+      {
+        label: 'CPU 占用',
+        text: cpu == null ? '—' : `${cpu}%`,
+        pct: Math.min(100, Math.round(cpu ?? 0)),
+        color: d ? 'linear-gradient(90deg,#62A8EA,#4FC3D9)' : 'linear-gradient(90deg,#2F86C4,#4FA8D8)',
+      },
+      {
+        label: '内存占用',
+        text: `${Math.round(mem)}%`,
+        pct: Math.min(100, Math.round(mem)),
+        color: d ? 'linear-gradient(90deg,#9D8DF0,#62A8EA)' : 'linear-gradient(90deg,#8D83E8,#4FA8D8)',
+      },
+    ];
+  });
+
+  function uptimeText(sec: number) {
+    const s = Number(sec) || 0;
+    if (!s) return '—';
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (d) return `${d} 天 ${h} 小时`;
+    if (h) return `${h} 小时 ${m} 分`;
+    return `${m} 分钟`;
+  }
+
+  function mb(bytes: number) {
+    return `${Math.round((Number(bytes) || 0) / 1048576)} MB`;
+  }
+
+  const rtRows = computed(() => {
+    const r = runtime.value;
+    if (!r) return [];
+    const bots = r.bots ?? [];
+    return [
+      { k: '运行时长', v: uptimeText(r.botUptime), mono: false },
+      { k: 'Node.js', v: r.nodeVersion || '—', mono: true },
+      { k: '运行平台', v: `${r.system?.platform || '—'} ${r.system?.arch || ''}`.trim(), mono: true },
+      { k: '进程内存', v: `${mb(r.memory?.rss)} · 堆 ${mb(r.memory?.heapUsed)}`, mono: false },
+      { k: 'Redis', v: `${r.redis?.version || '—'} · ${thousands(r.redis?.keys)} 键`, mono: true },
+      {
+        k: 'Bot 实例',
+        v: bots.length ? `${bots.length} 个已加载` : '未连接',
+        mono: false,
+      },
+    ];
+  });
+
   const tiles = computed(() => {
     const p = palette.value;
     return [
-      { path: '/dashboard', title: '数据总览', desc: '命名空间分布', icon: 'ant-design:dashboard-outlined', ...p.blue },
+      { path: '/dashboard', title: '数据总览', desc: '趋势与缓存分布', icon: 'ant-design:dashboard-outlined', ...p.blue },
       { path: '/groups', title: '群数据', desc: '活跃与趋势', icon: 'ant-design:appstore-outlined', ...p.green },
       { path: '/users-data', title: '用户数据', desc: '消息排行', icon: 'ant-design:team-outlined', ...p.violet },
       { path: '/plugins-data', title: '插件数据', desc: '键数占比', icon: 'ant-design:api-outlined', ...p.cyan },
@@ -512,196 +443,28 @@
     }
   }
 
-  /* ------------------------------ 图表 ------------------------------ */
-
-  const trendRef = ref<HTMLDivElement | null>(null);
-  const trendChart = useECharts(trendRef);
-
-  function renderTrend() {
-    if (!trend.value.length) return;
-    const base = chartBase(isDark.value);
-    trendChart.setOptions({
-      grid: { top: 34, right: 18, bottom: 26, left: 46 },
-      tooltip: { ...base.tooltip, trigger: 'axis' },
-      legend: {
-        data: ['接收消息', '机器人发送'],
-        textStyle: { color: base.text, fontSize: 11 },
-        top: 0,
-        left: 0,
-        itemWidth: 14,
-        itemHeight: 8,
-        icon: 'roundRect',
-      },
-      xAxis: {
-        type: 'category',
-        data: trend.value.map((t) => t.date.slice(5)),
-        boundaryGap: false,
-        axisLine: { lineStyle: { color: base.grid } },
-        axisTick: { show: false },
-        axisLabel: base.axisLabel,
-      },
-      yAxis: { type: 'value', axisLabel: base.axisLabel, splitLine: base.splitLine },
-      series: [
-        {
-          name: '接收消息',
-          type: 'line',
-          smooth: true,
-          showSymbol: false,
-          data: trend.value.map((t) => t.recv),
-          lineStyle: { width: 2.4, color: primary.value },
-          itemStyle: { color: primary.value },
-          areaStyle: { color: areaGradient(trendChart.echarts, primary.value, 0.28) },
-        },
-        {
-          name: '机器人发送',
-          type: 'line',
-          smooth: true,
-          showSymbol: false,
-          data: trend.value.map((t) => t.send),
-          lineStyle: { width: 2.4, color: secondary.value },
-          itemStyle: { color: secondary.value },
-          areaStyle: { color: areaGradient(trendChart.echarts, secondary.value, 0.16) },
-        },
-      ],
-    });
-  }
-
-  const gameRef = ref<HTMLDivElement | null>(null);
-  const gameChart = useECharts(gameRef);
-
-  function renderGames() {
-    if (!games.value.length) return;
-    const base = chartBase(isDark.value);
-    const colors = chartColors(isDark.value);
-    gameChart.setOptions({
-      tooltip: { ...base.tooltip, trigger: 'item', formatter: '{b}<br/>{c} 键（{d}%）' },
-      legend: {
-        orient: 'vertical',
-        right: 4,
-        top: 'center',
-        itemWidth: 8,
-        itemHeight: 8,
-        icon: 'circle',
-        textStyle: { color: base.text, fontSize: 11.5 },
-        formatter: (name: string) => {
-          const it = games.value.find((g) => g.label === name);
-          return `${name}  ${it?.count ?? 0}`;
-        },
-      },
-      series: [
-        {
-          type: 'pie',
-          radius: ['52%', '74%'],
-          center: ['28%', '52%'],
-          avoidLabelOverlap: false,
-          itemStyle: { borderWidth: 0, borderRadius: 4 },
-          label: { show: false },
-          labelLine: { show: false },
-          data: games.value.map((g, i) => ({
-            name: g.label,
-            value: g.count,
-            itemStyle: { color: colors[i % colors.length] },
-          })),
-        },
-      ],
-      graphic: [
-        {
-          type: 'text',
-          left: '20%',
-          top: '44%',
-          style: {
-            text: `共 ${gamesTotal.value}`,
-            fill: base.textStrong,
-            fontSize: 17,
-            fontWeight: 700,
-            textAlign: 'center',
-          },
-        },
-        {
-          type: 'text',
-          left: '23%',
-          top: '58%',
-          style: { text: '缓存键', fill: base.text, fontSize: 11, textAlign: 'center' },
-        },
-      ],
-    });
-  }
-
-  function renderAll() {
-    renderTrend();
-    renderGames();
-  }
-
-  function setTrendDays(d: number) {
-    trendDays.value = d;
-    trend.value = trendAll.value.slice(-d);
-    nextTick(renderTrend);
-  }
-
   /* ------------------------------ 加载 ------------------------------ */
 
   async function loadData() {
-    booting.value = true;
     sysApi
       .getHomeData()
       .then((d) => (homeData.value = d || {}))
       .catch(() => {});
-    const [ov, users, tr, gs, ao] = await Promise.allSettled([
+    const [ov, users, tr, ao, rt] = await Promise.allSettled([
       statsApi.getOverview(),
       statsApi.getUsers({ page: 1, size: 1 }),
-      statsApi.getTrend(30),
-      statsApi.getGames(),
+      statsApi.getTrend(7),
       adminApi.getOverview(),
+      statsApi.getRuntime(),
     ]);
     if (ov.status === 'fulfilled' && ov.value) overview.value = ov.value;
     if (users.status === 'fulfilled') userSummary.value = users.value?.summary ?? {};
-    if (tr.status === 'fulfilled') {
-      trendAll.value = tr.value?.trend ?? [];
-      trend.value = trendAll.value.slice(-trendDays.value);
-    }
-    if (gs.status === 'fulfilled') {
-      const cache = (gs.value?.cache ?? []).filter((g) => (g.count || 0) > 0);
-      games.value = [...cache].sort((a, b) => (b.count || 0) - (a.count || 0));
-    }
+    if (tr.status === 'fulfilled') trendAll.value = tr.value?.trend ?? [];
     if (ao.status === 'fulfilled' && ao.value) admin.value = ao.value;
+    if (rt.status === 'fulfilled' && rt.value?.available) runtime.value = rt.value;
 
-    const [gr, ur, pl] = await Promise.allSettled([
-      statsApi.getGroups({ page: 1, size: 8, sort: 'total', order: 'desc' }),
-      statsApi.getUsers({ page: 1, size: 8, sort: 'total', order: 'desc' }),
-      statsApi.getPlugins(),
-    ]);
-    if (gr.status === 'fulfilled') groupRows.value = gr.value?.list ?? [];
-
-    if (ur.status === 'fulfilled') {
-      const list = (ur.value?.list ?? []).slice(0, 8);
-      const max = list.reduce((m: number, r: any) => Math.max(m, r.total || 0), 0) || 1;
-      userRows.value = list.map((r: any) => ({
-        uid: String(r.uid ?? ''),
-        name: r.name || '',
-        total: r.total || 0,
-        activeDays: r.activeDays || 0,
-        pct: Math.max(3, Math.round(((r.total || 0) / max) * 100)),
-      }));
-    }
-
-    if (pl.status === 'fulfilled') {
-      const buckets = [...(pl.value?.buckets ?? [])].sort((a: any, b: any) => (b.keys || 0) - (a.keys || 0));
-      const maxKeys = buckets[0]?.keys || 1;
-      nsRows.value = buckets.slice(0, 8).map((b: any) => ({
-        ns: b.ns,
-        label: b.label,
-        owner: b.owner || '',
-        keys: b.keys || 0,
-        pct: Math.max(3, Math.round(((b.keys || 0) / maxKeys) * 100)),
-      }));
-    }
-
-    booting.value = false;
     await nextTick();
-    renderAll();
   }
-
-  watch(isDark, () => nextTick(renderAll));
 
   // 立绘每 60 秒自动轮换一张
   let artTimer: ReturnType<typeof setInterval> | null = null;
@@ -729,11 +492,100 @@
     font-weight: 600;
   }
 
-  .hm-chart {
-    height: 236px;
+  /* ---------------- 运行状态：宽卡内两列摆放 ---------------- */
+  .hm-meters {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 2px 0 4px;
   }
 
-  .hm-rank-skeleton {
-    height: 236px;
+  /* ---------------- 系统运行态 ---------------- */
+  .hm-rt {
+    display: grid;
+    gap: 18px 10px;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    align-items: start;
+  }
+
+  .hm-rt__gauges {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 2px;
+  }
+
+  .hm-rt__gauge-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: var(--g-text-sub);
+  }
+
+  .hm-rt__gauge-head b {
+    font-size: 12.5px;
+    font-weight: 650;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hm-rt__track {
+    height: 6px;
+    overflow: hidden;
+    background: var(--g-track);
+    border-radius: 4px;
+  }
+
+  .hm-rt__track i {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .hm-rt__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-left: 18px;
+    border-left: 1px dashed var(--g-card-border);
+  }
+
+  .hm-rt__row {
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 12px;
+    border-bottom: 1px dashed var(--g-card-border);
+  }
+
+  .hm-rt__row:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .hm-rt__row dt {
+    flex: 0 0 auto;
+    color: var(--g-text-mute);
+  }
+
+  .hm-rt__row dd {
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 600;
+    color: var(--g-text);
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 900px) {
+    .hm-rt {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 </style>

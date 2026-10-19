@@ -145,27 +145,68 @@
         </div>
       </section>
 
-      <!-- ============================ 模块入口 ============================ -->
-      <section class="g-card">
-        <div class="gm-panel__head">
-          <div class="gm-panel__title">
-            <i><Icon icon="ant-design:appstore-outlined" :size="13" /></i>
-            模块入口
+      <!-- ============================ 用户 TOP + 插件体量 ============================ -->
+      <section class="db-grid db-grid--6-6">
+        <div class="g-card">
+          <div class="gm-panel__head">
+            <div class="gm-panel__title">
+              <i><Icon icon="ant-design:team-outlined" :size="13" /></i>
+              用户消息量 TOP 8
+            </div>
+            <span class="gm-panel__link" @click="go('/users-data')">查看全部›</span>
           </div>
-          <span class="gm-panel__extra">数据每分钟自动聚合</span>
+          <div v-if="userRows.length" class="db-rank db-rank--user">
+            <div v-for="(u, i) in userRows" :key="u.uid" class="db-rank__row">
+              <span class="db-rank__no" :class="`is-${['gold', 'silver', 'bronze'][i] ?? 'plain'}`">{{ i + 1 }}</span>
+              <div class="db-rank__info">
+                <div class="db-rank__name">
+                  <b>{{ u.name || u.uid }}</b>
+                  <span>{{ u.uid }}</span>
+                  <span class="db-rank__avg">{{ u.activeDays }} 天活跃</span>
+                </div>
+                <div class="db-rank__track">
+                  <i :style="{ width: u.pct }" />
+                </div>
+              </div>
+              <div class="db-rank__val">
+                <b>{{ fmtNum(u.total) }}</b>
+                <span>条</span>
+              </div>
+            </div>
+          </div>
+          <GEmpty v-else-if="!booting" title="暂无用户消息数据" desc="用户维度计数键生成后即可统计" />
+          <div v-else class="gm-skeleton" style="height: 288px" />
         </div>
-        <div class="gm-tiles">
-          <div
-            v-for="m in modules"
-            :key="m.path"
-            class="gm-tile"
-            :style="{ '--g-tile-accent': m.color, '--g-tile-soft': m.soft }"
-            @click="go(m.path)"
-          >
-            <span class="gm-tile__icon"><Icon :icon="m.icon" :size="17" /></span>
-            <span class="gm-tile__name">{{ m.label }}</span>
-            <span class="gm-tile__desc">{{ m.value || m.desc }}</span>
+
+        <div class="g-card">
+          <div class="gm-panel__head">
+            <div class="gm-panel__title">
+              <i><Icon icon="ant-design:api-outlined" :size="13" /></i>
+              插件数据体量
+            </div>
+            <span class="gm-panel__link" @click="go('/plugins-data')">查看全部›</span>
           </div>
+          <div v-if="nsRows.length" class="db-rank db-rank--user">
+            <div v-for="(n, i) in nsRows" :key="n.ns" class="db-rank__row">
+              <span class="db-rank__no" :class="`is-${['gold', 'silver', 'bronze'][i] ?? 'plain'}`">{{ i + 1 }}</span>
+              <div class="db-rank__info">
+                <div class="db-rank__name">
+                  <b>{{ n.label }}</b>
+                  <span>{{ n.owner }}</span>
+                  <span class="db-rank__avg mono">{{ n.ns }}</span>
+                </div>
+                <div class="db-rank__track">
+                  <i :style="{ width: n.pct }" />
+                </div>
+              </div>
+              <div class="db-rank__val">
+                <b>{{ fmtNum(n.keys) }}</b>
+                <span>键</span>
+              </div>
+            </div>
+          </div>
+          <GEmpty v-else-if="!booting" title="暂无命名空间数据" desc="Redis 扫描完成后即可查看" />
+          <div v-else class="gm-skeleton" style="height: 288px" />
         </div>
       </section>
 
@@ -200,7 +241,6 @@
     chartBase,
     chartColors,
     fmtNum,
-    hexToRgba,
     primaryColor,
     secondaryColor,
     shortGid,
@@ -238,6 +278,8 @@
   const groups = ref<GroupRow[]>([]);
   const cacheSlices = ref<GameSlice[]>([]);
   const userSummary = ref<{ userCount: number; activeToday: number }>({ userCount: 0, activeToday: 0 });
+  const userRows = ref<{ uid: string; name?: string; total: number; activeDays: number; pct: string }[]>([]);
+  const nsRows = ref<{ ns: string; label: string; owner: string; keys: number; pct: string }[]>([]);
 
   /** KPI 渐变色板（每张卡一对渐变色） */
   const palette = computed(() => {
@@ -333,18 +375,31 @@
     return `${Math.max(4, Math.round((n / max) * 100))}%`;
   }
 
-  const modules = computed(() => {
-    const p = palette.value;
-    return [
-      { label: '游戏签到', desc: '每日签到汇总', path: '/sign', value: '', icon: 'mdi:calendar-check-outline', color: p.green[0], soft: hexToRgba(p.green[0], 0.14) },
-      { label: '米游社账号', desc: 'CK 状态与绑定', path: '/account', value: '', icon: 'ant-design:key-outlined', color: p.amber[0], soft: hexToRgba(p.amber[0], 0.14) },
-      { label: '游戏 UID', desc: '六游戏归属', path: '/uid', value: '', icon: 'ant-design:fund-outlined', color: p.rose[0], soft: hexToRgba(p.rose[0], 0.14) },
-      { label: '群数据', desc: '消息量与活跃榜', path: '/groups', value: `${overview.value.groupCount} 群`, icon: 'ant-design:appstore-outlined', color: p.green[0], soft: hexToRgba(p.green[0], 0.14) },
-      { label: '用户数据', desc: '消息量排行', path: '/users-data', value: `${thousands(userSummary.value.userCount)} 人`, icon: 'ant-design:team-outlined', color: p.violet[0], soft: hexToRgba(p.violet[0], 0.14) },
-      { label: '插件数据', desc: '命名空间占用', path: '/plugins-data', value: `${overview.value.namespaces} 类`, icon: 'ant-design:api-outlined', color: p.cyan[0], soft: hexToRgba(p.cyan[0], 0.14) },
-      { label: '配置管理', desc: '写前自动备份', path: '/config', value: '', icon: 'ant-design:safety-certificate-outlined', color: p.blue[0], soft: hexToRgba(p.blue[0], 0.14) },
-    ];
-  });
+  /** 用户消息量 TOP 8 */
+  function buildUserRows(list: any[]) {
+    const rows = list.slice(0, 8);
+    const max = rows.reduce((m, r) => Math.max(m, r.total || 0), 0) || 1;
+    userRows.value = rows.map((r) => ({
+      uid: String(r.uid ?? ''),
+      name: r.name || '',
+      total: r.total || 0,
+      activeDays: r.activeDays || 0,
+      pct: `${Math.max(4, Math.round(((r.total || 0) / max) * 100))}%`,
+    }));
+  }
+
+  /** 插件命名空间体量 TOP 8 */
+  function buildNsRows(buckets: any[]) {
+    const rows = [...buckets].sort((a, b) => (b.keys || 0) - (a.keys || 0)).slice(0, 8);
+    const max = rows[0]?.keys || 1;
+    nsRows.value = rows.map((b) => ({
+      ns: b.ns,
+      label: b.label || b.ns,
+      owner: b.owner || '',
+      keys: b.keys || 0,
+      pct: `${Math.max(4, Math.round(((b.keys || 0) / max) * 100))}%`,
+    }));
+  }
 
   function sparkHeight(g: GroupRow, n: number) {
     const max = Math.max(...g.daily.map((d) => d.n), 1);
@@ -526,9 +581,35 @@
     }
   }
 
+  async function loadUserRank() {
+    try {
+      const res = await statsApi.getUsers({ page: 1, size: 8, sort: 'total', order: 'desc' });
+      buildUserRows(res?.list ?? []);
+    } catch {
+      userRows.value = [];
+    }
+  }
+
+  async function loadPluginVol() {
+    try {
+      const res = await statsApi.getPlugins();
+      buildNsRows(res?.buckets ?? []);
+    } catch {
+      nsRows.value = [];
+    }
+  }
+
   async function loadAll() {
     loading.value = true;
-    await Promise.all([loadOverview(), loadGroups(), loadTrend(), loadGames(), loadUsers()]);
+    await Promise.all([
+      loadOverview(),
+      loadGroups(),
+      loadTrend(),
+      loadGames(),
+      loadUsers(),
+      loadUserRank(),
+      loadPluginVol(),
+    ]);
     loading.value = false;
     booting.value = false;
     await nextTick();
@@ -695,6 +776,10 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
   }
 
+  .db-grid--6-6 {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
   .db-chart {
     height: 262px;
   }
@@ -707,9 +792,8 @@
   .db-rank {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     gap: 6px;
-    height: 288px;
+    min-height: 288px;
   }
 
   .db-rank__row {
@@ -814,6 +898,15 @@
 
   .db-rank__row:nth-child(3) .db-rank__track i {
     background: linear-gradient(90deg, #c98a58, #e3b48b);
+  }
+
+  /* 用户/插件榜：名字列允许收缩，长命名空间省略 */
+  .db-rank--user .db-rank__name span {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .db-rank__val {
@@ -957,7 +1050,8 @@
 
   @media (max-width: 1180px) {
     .db-grid--8-4,
-    .db-grid--5-7 {
+    .db-grid--5-7,
+    .db-grid--6-6 {
       grid-template-columns: 1fr;
     }
   }

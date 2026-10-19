@@ -232,48 +232,59 @@
           <div class="dm-block__head">
             <span class="dm-block__title">群主 / 群管名单</span>
             <span class="dm-block__actions">
-              <Button type="link" size="small" @click="openRoleModal('groupAdmin')">添加群管</Button>
-              <Button type="link" size="small" @click="openRoleModal('owner')">设置群主</Button>
+              <Button type="link" size="small" @click="openRoleModal('groupAdmin')">+ 群管</Button>
+              <Button type="link" size="small" @click="openRoleModal('owner')">+ 群主</Button>
             </span>
           </div>
           <div class="roles">
             <div class="roles__row">
-              <span class="roles__label">群主</span>
+              <span class="roles__label">
+                群主<em v-if="roles.owner.length">{{ roles.owner.length }}</em>
+              </span>
               <div class="roles__chips">
-                <template v-if="roles.owner.length">
-                  <span v-for="u in roles.owner" :key="u" class="g-chip roles__chip">
-                    {{ shortGid(u) }}
-                    <CloseOutlined class="roles__remove" @click="removeRole('owner', u)" />
-                  </span>
-                </template>
-                <span v-else class="g-muted">未设置（Redis 名单）</span>
+                <span v-for="u in roles.owner" :key="u" class="g-chip roles__chip">
+                  <span class="roles__chip-name">{{ shortGid(u) }}</span>
+                  <CloseOutlined class="roles__remove" @click="removeRole('owner', u)" />
+                </span>
+                <span v-if="!roles.owner.length" class="roles__empty" @click="openRoleModal('owner')">
+                  未设置，点击添加
+                </span>
               </div>
             </div>
             <div class="roles__row">
-              <span class="roles__label">群管</span>
+              <span class="roles__label">
+                群管<em v-if="roles.groupAdmin.length">{{ roles.groupAdmin.length }}</em>
+              </span>
               <div class="roles__chips">
-                <template v-if="roles.groupAdmin.length">
-                  <span v-for="u in roles.groupAdmin" :key="u" class="g-chip roles__chip">
-                    {{ shortGid(u) }}
-                    <CloseOutlined class="roles__remove" @click="removeRole('groupAdmin', u)" />
-                  </span>
-                </template>
-                <span v-else class="g-muted">未设置（Redis 名单）</span>
+                <span v-for="u in roles.groupAdmin" :key="u" class="g-chip roles__chip">
+                  <span class="roles__chip-name">{{ shortGid(u) }}</span>
+                  <CloseOutlined class="roles__remove" @click="removeRole('groupAdmin', u)" />
+                </span>
+                <span v-if="!roles.groupAdmin.length" class="roles__empty" @click="openRoleModal('groupAdmin')">
+                  未设置，点击添加
+                </span>
               </div>
             </div>
-            <div class="roles__tip g-muted">
-              名单存于 Redis（Yz:GM:owner / Yz:GM:groupAdmin），与群管拓展指令共用，改动即时生效。
+            <div class="roles__tip">
+              Redis 实时名单（Yz:GM:owner / Yz:GM:groupAdmin），与群管拓展指令共用
             </div>
           </div>
         </div>
 
         <div class="dm-block">
-          <div class="dm-block__head"><span class="dm-block__title">AI 分群开关</span></div>
+          <div class="dm-block__head">
+            <span class="dm-block__title">AI 分群开关</span>
+            <span class="dm-block__meta">仅本群生效</span>
+          </div>
           <div class="ai-switches">
             <div class="ai-switch">
-              <div>
-                <div class="ai-switch__name">荧（YingAI）</div>
-                <div class="g-muted ai-switch__desc">本群的 AI 聊天与主动发言</div>
+              <span class="ai-switch__dot" :class="{ 'is-on': aiState.ying }" />
+              <div class="ai-switch__text">
+                <div class="ai-switch__name">
+                  荧（YingAI）
+                  <em :class="{ 'is-on': aiState.ying }">{{ aiState.ying ? '已开启' : '已关闭' }}</em>
+                </div>
+                <div class="ai-switch__desc">本群的 AI 聊天与主动发言</div>
               </div>
               <GSwitch
                 :model-value="aiState.ying"
@@ -284,9 +295,13 @@
               />
             </div>
             <div class="ai-switch">
-              <div>
-                <div class="ai-switch__name">群管拓展 AI</div>
-                <div class="g-muted ai-switch__desc">风控 / 日报 / 欢迎语 / 指令解析等</div>
+              <span class="ai-switch__dot" :class="{ 'is-on': aiState.gm }" />
+              <div class="ai-switch__text">
+                <div class="ai-switch__name">
+                  群管拓展 AI
+                  <em :class="{ 'is-on': aiState.gm }">{{ aiState.gm ? '已开启' : '已关闭' }}</em>
+                </div>
+                <div class="ai-switch__desc">风控 / 日报 / 欢迎语 / 指令解析等</div>
               </div>
               <GSwitch
                 :model-value="aiState.gm"
@@ -1277,8 +1292,8 @@
   .roles {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px 14px;
+    gap: 7px;
+    padding: 10px 12px;
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
     border-radius: 10px;
@@ -1299,23 +1314,71 @@
   }
 
   .roles__label {
+    display: inline-flex;
     flex-shrink: 0;
-    width: 36px;
+    gap: 5px;
+    align-items: center;
+    width: 46px;
     padding-top: 2px;
-    font-size: 12px;
+    font-size: 11.5px;
     color: var(--g-text-mute);
+    white-space: nowrap;
+
+    & em {
+      min-width: 15px;
+      padding: 0 4px;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 700;
+      line-height: 15px;
+      color: var(--g-blue);
+      text-align: center;
+      background: var(--g-blue-soft);
+      border-radius: 5px;
+    }
   }
 
   .roles__chips {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    min-width: 0;
   }
 
   .roles__chip {
     display: inline-flex;
-    gap: 4px;
+    gap: 5px;
     align-items: center;
+    max-width: 190px;
+    height: 22px;
+    padding: 0 8px;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .roles__chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .roles__empty {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 9px;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+    cursor: pointer;
+    background: transparent;
+    border: 1px dashed var(--g-card-border-strong);
+    border-radius: 6px;
+    transition: color 0.18s, border-color 0.18s;
+
+    &:hover {
+      color: var(--g-blue);
+      border-color: var(--g-blue);
+    }
   }
 
   .roles__remove {
@@ -1328,35 +1391,81 @@
   }
 
   .roles__tip {
-    font-size: 12px;
+    margin-top: 1px;
+    padding-top: 7px;
+    font-size: 11px;
+    color: var(--g-text-mute);
+    border-top: 1px dashed var(--g-card-border);
   }
 
   .ai-switches {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px;
+    overflow: hidden;
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
     border-radius: 10px;
   }
 
   .ai-switch {
-    display: flex;
-    flex: 1;
+    display: grid;
+    grid-template-columns: 7px minmax(0, 1fr) auto;
     gap: 10px;
     align-items: center;
-    justify-content: space-between;
+    padding: 10px 12px;
+  }
+
+  .ai-switch + .ai-switch {
+    border-top: 1px solid var(--g-card-border);
+  }
+
+  .ai-switch__dot {
+    width: 7px;
+    height: 7px;
+    background: var(--g-text-mute);
+    border-radius: 50%;
+    opacity: 0.5;
+
+    &.is-on {
+      background: var(--g-green);
+      opacity: 1;
+      box-shadow: 0 0 0 3px rgb(69 185 124 / 18%);
+    }
+  }
+
+  .ai-switch__text {
+    min-width: 0;
   }
 
   .ai-switch__name {
-    font-size: 13px;
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    font-size: 12.5px;
     font-weight: 600;
     color: var(--g-text);
+
+    & em {
+      padding: 0 5px;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 600;
+      line-height: 15px;
+      color: var(--g-text-mute);
+      background: var(--g-chip-bg);
+      border-radius: 5px;
+
+      &.is-on {
+        color: var(--g-green);
+        background: rgb(69 185 124 / 14%);
+      }
+    }
   }
 
   .ai-switch__desc {
-    font-size: 12px;
+    margin-top: 1px;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
   }
 
   .w-200 {
