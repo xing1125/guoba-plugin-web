@@ -831,7 +831,10 @@ html[data-theme='dark'] ::selection {
   transform: translateY(-50%);
 }
 
-.ant-modal-body {
+.ant-modal .ant-modal-body:not(:has(> .scrollbar)) {
+  /* vben 全局把 .ant-modal .ant-modal-body 清成 padding:0（它自家的 BasicModal 靠
+     内部 .scrollbar 补 14px）；原生 antd Modal（后台账户/签到详情等）没有 scrollbar，
+     内容会贴边 —— 这里把非 scrollbar 的弹窗体补回内边距，GModal 自管 padding 不受影响 */
   padding: 18px 22px;
 }
 

@@ -459,6 +459,12 @@
     color: var(--g-red);
   }
 
+  /* GField 是纵向 flex，开关/复选会被 stretch 成整行宽 —— 保持内容宽 */
+  .g-field > .gc-switch,
+  .g-field > .gc-checkbox {
+    align-self: flex-start;
+  }
+
   /* ------------------------------ 9. 筛选条（GToolbar） ------------------------------ */
 
   .g-toolbar {
