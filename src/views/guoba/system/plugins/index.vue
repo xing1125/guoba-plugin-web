@@ -169,7 +169,7 @@
               </div>
             </div>
 
-            <div v-if="b.samples.length" class="g-sample">{{ b.samples[0] }}</div>
+            <div v-if="b.samples.length" class="g-sample" :title="b.samples.join('\n')">{{ b.samples[0] }}</div>
           </div>
         </div>
         <div v-else class="g-empty">没有匹配的命名空间</div>

@@ -144,3 +144,112 @@ export const signApi = {
     return defHttp.get<SignDay>({ url: `${SignApi.day}/${date}` });
   },
 };
+
+/* ================================ 鸣潮签到 ================================ */
+
+/** 鸣潮单条流水（对应 schedules 归档里的一个 entry） */
+export interface WavesRecord {
+  date: string;
+  /** 计划触发时刻，如 00:15 */
+  time: string;
+  qq: string;
+  done: boolean;
+  ok: boolean;
+  /** 失败原因，如「[鸣潮] token 已失效…」 */
+  msg: string;
+  /** 库街区角色名 */
+  name: string;
+  roleId: string;
+  /** 累计签到天数 */
+  sigInNum: number;
+  /** 漏签次数 */
+  omission: number;
+  rewards: { name: string; num: number }[];
+  rewardText: string;
+}
+
+export interface WavesTrendPoint {
+  date: string;
+  total: number;
+  ok: number;
+  fail: number;
+  pending: number;
+  users: number;
+  maxSigIn: number;
+  omission: number;
+}
+
+export interface WavesToday {
+  date: string;
+  total: number;
+  ok: number;
+  fail: number;
+  pending: number;
+  users: number;
+  maxSigIn: number;
+  omission: number;
+  rate: number;
+}
+
+export interface WavesOverview {
+  available: boolean;
+  meta: {
+    available: boolean;
+    path?: string;
+    files?: number;
+    firstDate?: string | null;
+    lastDate?: string | null;
+    lastAt?: string | null;
+    fixedTime?: string;
+    mode?: string;
+    updatedAt?: string;
+  };
+  today: WavesToday | null;
+  trend: WavesTrendPoint[];
+  recent: (WavesRecord & { time: string })[];
+  summary?: { days: number; records: number; users: number; avgOkRate: number };
+}
+
+export interface WavesDayUser {
+  qq: string;
+  name: string;
+  roleId: string;
+  ok: number;
+  fail: number;
+  sigInNum: number;
+  omission: number;
+  rewards: string;
+  msg: string;
+}
+
+export interface WavesDay {
+  date: string;
+  available: boolean;
+  total: number;
+  ok: number;
+  fail: number;
+  pending: number;
+  users: number;
+  maxSigIn: number;
+  omission: number;
+  rate: number;
+  userList: WavesDayUser[];
+}
+
+const enum WavesApi {
+  overview = '/admin/sign/waves/overview',
+  records = '/admin/sign/waves/records',
+  day = '/admin/sign/waves/day',
+}
+
+export const wavesApi = {
+  getOverview(days = 14) {
+    return defHttp.get<WavesOverview>({ url: WavesApi.overview, params: { days } });
+  },
+  getRecords(params: { date?: string; q?: string; ok?: string; page?: number; size?: number }) {
+    return defHttp.get<SignPage>({ url: WavesApi.records, params });
+  },
+  getDay(date: string) {
+    return defHttp.get<WavesDay>({ url: `${WavesApi.day}/${date}` });
+  },
+};
