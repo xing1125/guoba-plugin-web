@@ -446,8 +446,8 @@
 
   const botPlatforms = computed(() => {
     const names = (runtime.value.bots || [])
-      .map((b) => b.platform)
-      .filter((v): v is string => !!v);
+      .map((b) => (typeof b.platform === 'string' ? b.platform.trim() : ''))
+      .filter(Boolean);
     return [...new Set(names)].slice(0, 2).join(' · ');
   });
 
@@ -519,7 +519,7 @@
         unit: '个',
         tone: r.bots?.length ? 'green' : 'red',
         foot: r.bots?.length
-          ? `<span class="mu">${botPlatforms || '适配器已连接'}</span>`
+          ? `<span class="mu">${botPlatforms.value || '适配器已连接'}</span>`
           : `<span class="mu">适配器未连接</span>`,
       },
     ];
@@ -844,6 +844,8 @@
    */
   let fastBusy = false;
   let slowBusy = false;
+  /** 慢层预热兜底只补拉一次，避免适配器未连完时空表被反复请求 */
+  let slowRetried = false;
   /** 上一次渲染仪表时的关键值，没变就不重绘 */
   let gaugeSig = '';
 
@@ -934,6 +936,20 @@
 
     await nextTick();
     renderTrend();
+
+    // 预热期兜底：Bot 刚重启时适配器可能还没连完，后端会返回空群表（3 秒短缓存）。
+    // 与其等下一个 30 秒慢轮询，4 秒后主动补拉一次，用户就不用看 30 秒「暂无群数据」。
+    if (
+      !slowRetried &&
+      !groups.value.length &&
+      !trend.value.length &&
+      (overview.value.groupCount ?? 0) > 0
+    ) {
+      slowRetried = true;
+      setTimeout(() => {
+        loadSlow();
+      }, 4000);
+    }
   }
 
   /** 全屏切换后容器尺寸变了，清掉首帧标记，让图表按新尺寸重建一次 */

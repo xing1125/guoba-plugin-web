@@ -24,6 +24,7 @@
             <span>角色</span>
             <span class="mi-side__hint">{{ chars.length }} 个有图</span>
           </div>
+          <div class="mi-side__dir" :title="KIND_DIR[kind]">目录：{{ KIND_DIR[kind] }}</div>
           <div class="mi-side__new">
             <Input v-model:value="newChar" size="small" :placeholder="kind === 'profile' ? '输入角色名，如 芙宁娜' : '输入角色名'" @pressEnter="pickNewChar" />
             <Button size="small" type="primary" @click="pickNewChar">添加</Button>
@@ -63,7 +64,13 @@
             <div class="mi-main__empty-main">{{ char ? '该角色还没有图片' : '在左侧选择或添加角色' }}</div>
             <div class="mi-main__empty-sub">
               {{
-                kind === 'profile' ? '面板图支持 png / jpg / webp（建议竖版立绘）' : kind === 'art' ? '立绘支持 png / webp（卡面图库根目录，不含 upload / se 子层）' : '写真支持 png / jpg / webp / gif'
+                kind === 'profile'
+                  ? '面板图落盘 profile/normal-character/<角色>/，支持 png / jpg / webp（建议竖版）'
+                  : kind === 'art'
+                    ? '立绘落盘 character-img/<角色>/ 根层（卡面随机图库，01..04.webp），支持 png / webp'
+                    : kind === 'se'
+                      ? '小清新落盘 character-img/<角色>/se/，支持 png / jpg / webp / gif'
+                      : '写真（自传图）落盘 character-img/<角色>/upload/，聊天 #上传xx图片 会落到这里'
               }}
             </div>
           </div>
@@ -113,13 +120,22 @@
     { key: 'profile', label: '面板图' },
     { key: 'art', label: '立绘' },
     { key: 'character', label: '写真' },
+    { key: 'se', label: '小清新' },
   ];
+  /** 四类图库各自的落盘目录（相对 miao-plugin/resources），列表互不干扰 */
+  const KIND_DIR: Record<string, string> = {
+    profile: 'profile/normal-character/<角色>/',
+    art: 'character-img/<角色>/',
+    character: 'character-img/<角色>/upload/',
+    se: 'character-img/<角色>/se/',
+  };
   const label = computed(() => kinds.find((k) => k.key === kind.value)?.label || '');
   /** 后端 MiaoImgService kindsMap 的扩展名白名单 */
   const KIND_EXTS: Record<string, string> = {
     profile: 'image/png,image/jpeg,image/webp',
     art: 'image/png,image/webp',
     character: 'image/png,image/jpeg,image/webp,image/gif',
+    se: 'image/png,image/jpeg,image/webp,image/gif',
   };
   const accept = computed(() => KIND_EXTS[kind.value] || KIND_EXTS.character);
 
@@ -340,6 +356,17 @@
       font-size: 11px;
       color: var(--mi-text-dim);
       font-weight: 400;
+    }
+    &__dir {
+      overflow: hidden;
+      padding: 6px 12px;
+      font-size: 10.5px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      color: var(--mi-text-dim);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      background: rgba(127, 127, 127, 0.08);
+      border-bottom: 1px solid var(--mi-line);
     }
     &__new {
       display: flex;

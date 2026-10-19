@@ -63,7 +63,7 @@
               <i><Icon icon="ant-design:dashboard-outlined" :size="13" /></i>
               系统运行态
             </div>
-            <span class="gm-panel__link" @click="go('/sysinfo')">系统信息›</span>
+            <span v-if="sysinfoVisible" class="gm-panel__link" @click="go('/sysinfo')">系统信息›</span>
           </div>
           <div v-if="runtime" class="hm-rt">
             <div class="hm-rt__gauges">
@@ -150,6 +150,7 @@
   import { defHttp } from '/@/utils/http/axios';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
+  import { usePermissionStore } from '/@/store/modules/permission';
   import { sysApi } from '/@/api/guoba';
   import { adminApi } from '../system/account/api';
   import type { BotRuntime, OverviewCards, TrendPoint } from '../system/_shared/stats';
@@ -169,6 +170,13 @@
   const runtime = ref<BotRuntime | null>(null);
 
   const conf = computed(() => (window as any).__YUNZAI_BOT_CONF__ ?? {});
+
+  /* 导航管理屏蔽的页面，入口链接同步隐藏 */
+  const sysinfoVisible = computed(() =>
+    usePermissionStore()
+      .getBackMenuList.map((m: any) => m?.path)
+      .includes('/sysinfo'),
+  );
 
   const greeting = computed(() => {
     const h = new Date().getHours();
@@ -400,7 +408,9 @@
 
   const tiles = computed(() => {
     const p = palette.value;
-    return [
+    /* 导航管理屏蔽的页面，快捷入口同步隐藏 */
+    const visible = new Set(usePermissionStore().getBackMenuList.map((m: any) => m?.path).filter(Boolean));
+    const all = [
       { path: '/dashboard', title: '数据总览', desc: '趋势与缓存分布', icon: 'ant-design:dashboard-outlined', ...p.blue },
       { path: '/groups', title: '群数据', desc: '活跃与趋势', icon: 'ant-design:appstore-outlined', ...p.green },
       { path: '/users-data', title: '用户数据', desc: '消息排行', icon: 'ant-design:team-outlined', ...p.violet },
@@ -410,6 +420,7 @@
       { path: '/config', title: '配置管理', desc: '写前自动备份', icon: 'ant-design:safety-certificate-outlined', ...p.blue },
       { path: '/plugins', title: '插件管理', desc: '安装与启停', icon: 'ant-design:thunderbolt-outlined', ...p.violet },
     ];
+    return visible.size ? all.filter((t) => visible.has(t.path)) : all;
   });
 
   function go(path: string) {
