@@ -259,6 +259,7 @@
               @change="search"
             />
             <Button type="primary" @click="search">查询</Button>
+            <Button :loading="exporting" :disabled="!(scope === 'mys' ? pager.total : wPager.total)" @click="exportCsv">导出 CSV</Button>
           </div>
         </div>
 
@@ -552,6 +553,7 @@
   import GModal from '../_shared/dialog/GModal.vue';
   import type { SignDay, SignOverview, SignRecord, WavesDay, WavesOverview } from './api';
   import { signApi, wavesApi } from './api';
+  import { downloadCsv } from '/@/utils/export/csv';
   import {
     areaGradient,
     chartBase,
@@ -1067,6 +1069,100 @@
       wPager.page = pag?.current ?? 1;
       wPager.size = pag?.pageSize ?? 20;
       loadWaveRecords();
+    }
+  }
+
+  /* ------------------------------ 导出 CSV（按当前筛选，分页拉全量，上限 5000） ------------------------------ */
+
+  const exporting = ref(false);
+  const EXPORT_PAGE = 200;
+  const EXPORT_CAP = 5000;
+
+  async function fetchAllRecords() {
+    const rows: any[] = [];
+    if (scope.value === 'mys') {
+      for (let page = 1; rows.length < EXPORT_CAP; page++) {
+        const res: any = await signApi.getRecords({
+          q: query.q || undefined,
+          ok: query.ok || undefined,
+          game: query.game || undefined,
+          page,
+          size: EXPORT_PAGE,
+        });
+        const list = res?.list ?? [];
+        rows.push(...list);
+        const total = res?.total ?? 0;
+        if (!list.length || rows.length >= total) break;
+      }
+    } else {
+      for (let page = 1; rows.length < EXPORT_CAP; page++) {
+        const res: any = await wavesApi.getRecords({
+          q: wQuery.q || undefined,
+          ok: wQuery.ok || undefined,
+          page,
+          size: EXPORT_PAGE,
+        });
+        const list = res?.list ?? [];
+        rows.push(...list);
+        const total = res?.total ?? 0;
+        if (!list.length || rows.length >= total) break;
+      }
+    }
+    return rows.slice(0, EXPORT_CAP);
+  }
+
+  async function exportCsv() {
+    if (exporting.value) return;
+    exporting.value = true;
+    try {
+      const rows = await fetchAllRecords();
+      if (!rows.length) {
+        message.warning('当前筛选条件下没有可导出的记录');
+        return;
+      }
+      if (scope.value === 'mys') {
+        downloadCsv(
+          `sign-mys-${new Date().toISOString().slice(0, 10)}`,
+          [
+            { title: '时间', key: 'time' },
+            { title: 'QQ', key: 'qq' },
+            { title: '账号', format: (r: any) => userName(r.qq) },
+            { title: '结果', format: (r: any) => (r.ok ? '成功' : '失败') },
+            { title: '来源', key: 'source' },
+            {
+              title: '游戏状态',
+              format: (r: any) =>
+                (r.games ?? [])
+                  .map((g: any) => `${gameShort(g.key)}=${g.status}${g.days ? `(${g.days}d)` : ''}`)
+                  .join(' '),
+            },
+            { title: '米游币', format: (r: any) => r.coins?.current ?? '' },
+          ],
+          rows,
+        );
+      } else {
+        downloadCsv(
+          `sign-waves-${new Date().toISOString().slice(0, 10)}`,
+          [
+            { title: '日期', key: 'date' },
+            { title: '时间', key: 'time' },
+            { title: 'QQ', key: 'qq' },
+            { title: '账号', key: 'name' },
+            { title: '角色ID', key: 'roleId' },
+            { title: '结果', format: (r: any) => (r.ok ? '成功' : r.done === false ? '未签' : '失败') },
+            { title: '累计签到', key: 'sigInNum' },
+            { title: '漏签', key: 'omission' },
+            { title: '奖励', key: 'rewardText' },
+            { title: '失败原因', key: 'msg' },
+          ],
+          rows,
+        );
+      }
+      message.success(`已导出 ${rows.length} 条${rows.length >= EXPORT_CAP ? '（已达上限，建议缩小筛选范围）' : ''}`);
+    } catch (e: any) {
+      message.error(e?.message || '导出失败');
+    } finally {
+      exporting.value = false;
     }
   }
 

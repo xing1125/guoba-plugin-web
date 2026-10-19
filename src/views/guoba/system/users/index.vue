@@ -233,6 +233,7 @@
             <GSelect v-model="query.order" :options="orderOptions" width="110px" @change="handleSearch" />
             <template #right>
               <Button type="primary" @click="handleSearch">查询</Button>
+              <Button :loading="exporting" :disabled="!pager.total" @click="exportCsv">导出 CSV</Button>
               <Button :loading="loading" @click="loadAll">刷新</Button>
             </template>
           </GToolbar>
@@ -364,7 +365,7 @@
 <script setup lang="ts">
   import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
   import { useRouter } from 'vue-router';
-  import { Button, Table } from 'ant-design-vue';
+  import { Button, Table, message } from 'ant-design-vue';
   import { InfoCircleOutlined } from '@ant-design/icons-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
@@ -397,6 +398,7 @@
   } from '../_shared/stats';
   import type { GameOverviewItem } from '../account/gameApi';
   import { gameApi } from '../account/gameApi';
+  import { downloadCsv } from '/@/utils/export/csv';
 
   defineOptions({ name: 'Users' });
 
@@ -697,6 +699,57 @@
     pager.page = pag?.current ?? 1;
     pager.size = pag?.pageSize ?? 20;
     loadData();
+  }
+
+  /* ------------------------------ 导出 CSV（按当前筛选，分页拉全量，上限 2000） ------------------------------ */
+
+  const exporting = ref(false);
+  const EXPORT_CAP = 2000;
+
+  async function exportCsv() {
+    if (exporting.value) return;
+    exporting.value = true;
+    try {
+      const rows: any[] = [];
+      for (let page = 1; rows.length < EXPORT_CAP; page++) {
+        const res: any = await statsApi.getUsers({
+          keyword: query.keyword || undefined,
+          sort: query.sort,
+          order: query.order,
+          page,
+          size: 100,
+        });
+        const list = res?.list ?? [];
+        rows.push(...list);
+        const total = res?.total ?? 0;
+        if (!list.length || rows.length >= total) break;
+      }
+      const slice = rows.slice(0, EXPORT_CAP);
+      if (!slice.length) {
+        message.warning('当前筛选条件下没有可导出的用户');
+        return;
+      }
+      downloadCsv(
+        `users-${new Date().toISOString().slice(0, 10)}`,
+        [
+          { title: '用户ID', key: 'uid' },
+          { title: '昵称', format: (r: any) => r.name || '' },
+          { title: '消息总量', key: 'total' },
+          { title: '收消息', key: 'recv' },
+          { title: '发消息', key: 'send' },
+          { title: '日均', key: 'avgDaily' },
+          { title: '活跃天数', key: 'activeDays' },
+          { title: '首次发言', key: 'firstDate' },
+          { title: '最后发言', key: 'lastDate' },
+        ],
+        slice,
+      );
+      message.success(`已导出 ${slice.length} 条${slice.length >= EXPORT_CAP ? '（已达上限，建议缩小筛选范围）' : ''}`);
+    } catch (e: any) {
+      message.error(e?.message || '导出失败');
+    } finally {
+      exporting.value = false;
+    }
   }
 
   /* ------------------------------ 详情 ------------------------------ */
