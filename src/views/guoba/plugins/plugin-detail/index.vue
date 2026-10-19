@@ -27,9 +27,9 @@
         </div>
       </section>
 
-      <div v-if="groupList.length > 1" class="db-cfg">
-        <!-- 左侧：配置分组 -->
-        <aside class="db-cfg__nav">
+      <!-- 统一结构：有分组时左侧导航，单分组时仅右侧面板；两种形态都有顶部操作条（保存始终可见） -->
+      <div class="db-cfg" :class="{ 'db-cfg--flat': groupList.length <= 1 }">
+        <aside v-if="groupList.length > 1" class="db-cfg__nav">
           <div class="db-cfg__nav-head">
             <span>配置分组</span>
             <span>{{ pad(groupList.length) }}</span>
@@ -51,11 +51,13 @@
         <div class="db-cfg__body">
           <div class="db-cfg__bar">
             <div class="db-cfg__bar-main">
-              <span class="db-cfg__bar-title">{{ activeGroupTitle }}</span>
+              <span class="db-cfg__bar-title">{{ barTitle }}</span>
               <span class="db-cfg__bar-sub">{{ activeFieldCount }} 项配置</span>
             </div>
             <div class="db-cfg__bar-ops">
-              <a-button type="primary" size="small" pre-icon="ant-design:save" :loading="loading" @click="onSave">保存配置</a-button>
+              <a-button type="primary" size="small" pre-icon="ant-design:save" :loading="loading" @click="onSave">
+                保存配置
+              </a-button>
             </div>
           </div>
 
@@ -68,20 +70,6 @@
               :plugin="plugin!"
             />
           </div>
-        </div>
-      </div>
-
-      <!-- 只有一个分组时不需要导航，直接铺满 -->
-      <div v-else class="g-card pd-form pd-form--flat">
-        <PluginConfigForm
-          ref="configFormRef"
-          soft-grouping
-          v-model:activeGroupKey="activeGroupKey"
-          v-model:softGroupList="groupList"
-          :plugin="plugin!"
-        />
-        <div class="pd-save">
-          <a-button type="primary" pre-icon="ant-design:save" :loading="loading" @click="onSave">保存配置</a-button>
         </div>
       </div>
 
@@ -127,6 +115,12 @@
   const groupList = ref<{ name: string; title: string }[]>([]);
 
   const activeGroupTitle = computed(() => groupList.value.find((g) => g.name === activeGroupKey.value)?.title ?? '配置项');
+
+  /** 单分组时「默认」这种占位标题换成「插件配置」 */
+  const barTitle = computed(() => {
+    const t = activeGroupTitle.value;
+    return !t || t === '默认' ? '插件配置' : t;
+  });
 
   const fieldCount = computed(() => {
     const schemas = (plugin.value?.schemas ?? []) as any[];
@@ -304,56 +298,10 @@
       background: var(--g-chip-bg);
     }
 
+    /* 表单自身的密度 / 控件外观统一由 design/guoba-modules.less 的 .g-cfg-form 接管，
+       这里只负责卡片内边距，避免两处规则打架 */
     .pd-form {
-      padding: 18px 18px 4px;
-    }
-
-    .pd-form--flat {
-      margin-top: 16px;
-    }
-
-    .pd-save {
-      position: fixed;
-      right: 30px;
-      bottom: 34px;
-      z-index: 80;
-
-      /* 悬浮保存胶囊：始终可见，滚到哪都能存 */
-      .ant-btn {
-        height: 42px;
-        padding: 0 22px;
-        font-size: 13.5px;
-        font-weight: 650;
-        border-radius: 999px;
-        box-shadow:
-          0 10px 26px -8px rgb(47 134 196 / 55%),
-          0 2px 8px rgb(0 0 0 / 18%);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-        &:hover {
-          transform: translateY(-2px);
-          box-shadow:
-            0 14px 30px -8px rgb(47 134 196 / 65%),
-            0 4px 12px rgb(0 0 0 / 22%);
-        }
-      }
-    }
-
-    /* 配置表单密度与输入框跟随主题 */
-    .pd-form .ant-form-item {
-      margin-bottom: 14px;
-    }
-
-    .pd-form .ant-form-item-label > label {
-      font-size: 12.5px;
-      color: var(--g-text-sub);
-    }
-
-    .pd-form .ant-input,
-    .pd-form .ant-input-number,
-    .pd-form .ant-select:not(.ant-select-customize-input) .ant-select-selector {
-      background: var(--g-card-bg-soft);
-      border-color: var(--g-card-border);
+      padding: 18px 20px 6px;
     }
   }
 </style>

@@ -4,7 +4,7 @@
   import type { FormActionType, FormProps, FormSchema } from '../types/form';
   import type { ValidationRule } from 'ant-design-vue/lib/form/Form';
   import type { TableActionType } from '/@/components/Table';
-  import { Col, Divider, Form } from 'ant-design-vue';
+  import { Col, Form } from 'ant-design-vue';
   import { componentMap } from '../componentMap';
   import { BasicHelp } from '/@/components/Basic';
   import { isBoolean, isFunction, isNull } from '/@/utils/is';
@@ -312,10 +312,14 @@
             </div>
           );
         } else if (component === 'Divider') {
+          // 区块标题：通栏渲染（外层 Col 的 span 在下方 return 处强制 24），
+          // 不能再嵌一层 Col，否则只有半栏宽，且会和右侧字段挤在同一行，看起来像漏了控件
           return (
-            <Col span={24}>
-              <Divider {...unref(getComponentsProps)}>{renderLabelHelpMessage()}</Divider>
-            </Col>
+            <div class="cfg-sec">
+              <span class="cfg-sec__bar"></span>
+              <span class="cfg-sec__txt">{renderLabelHelpMessage()}</span>
+              <span class="cfg-sec__line"></span>
+            </div>
           );
         } else {
           const getContent = () => {
@@ -360,8 +364,9 @@
           return colSlot ? getSlot(slots, colSlot, values) : renderColContent ? renderColContent(values) : renderItem();
         };
 
-        // 软分组标题条必须通栏：span 与所有响应式断点全部强制 24，否则 md/lg 等仍会拆半栏
-        const isSoftGroupHead = props.schema.component === 'SOFT_GROUP_BEGIN';
+        // 软分组标题条 / 分区标题必须通栏：span 与所有响应式断点全部强制 24，否则 md/lg 等仍会拆半栏
+        const isSoftGroupHead =
+          props.schema.component === 'SOFT_GROUP_BEGIN' || props.schema.component === 'Divider';
         const finalColProps = isSoftGroupHead
           ? { ...realColProps, span: 24, xs: 24, sm: 24, md: 24, lg: 24, xl: 24, xxl: 24 }
           : realColProps;

@@ -163,6 +163,25 @@ export interface UserHero {
   top: UserHeroTop[];
 }
 
+/**
+ * 实时脉冲：只读「今日/累计」计数器，走 O(群数) 的 MGET，不 SCAN。
+ * 供大屏高频轮询（2~3 秒）使用，与 /overview 的重聚合区分开。
+ */
+export interface LiveInfo {
+  available: boolean;
+  /** 统计日 YYYY-MM-DD */
+  day: string;
+  todayMsg: number;
+  todayRecv: number;
+  todaySend: number;
+  totalMsg: number;
+  activeToday: number;
+  /** gid -> 今日条数 */
+  groups: Record<string, number>;
+  redisKeys: number;
+  at: string;
+}
+
 /* ---------------------------------- 接口 ---------------------------------- */
 
 const enum StatsApi {
@@ -172,6 +191,7 @@ const enum StatsApi {
   trend = '/admin/stats/trend',
   games = '/admin/stats/games',
   runtime = '/admin/stats/runtime',
+  live = '/admin/stats/live',
 }
 
 export interface InvalidGroupItem {
@@ -201,11 +221,13 @@ export interface BotRuntime {  available: boolean;
     hostname: string;
     osRelease: string;
     cpuModel: string;
+    /** 逻辑核心数（含超线程） */
     cpuCores: number;
   };
   nodeVersion: string;
   botUptime: number;
   osUptime: number;
+  /** 全机 CPU 占用，两次采样差值；首次请求为 null */
   cpuUsage: number | null;
   memory: {
     total: number;
@@ -215,14 +237,36 @@ export interface BotRuntime {  available: boolean;
     rss: number;
     heapUsed: number;
     heapTotal: number;
+    /** 堆使用率，后端可能不返回（旧版本） */
+    heapPct?: number;
   };
+  /** 磁盘；statfs 不可用时为 null，前端显 N/A */
+  disk?: { total: number; free: number; used: number; usagePct: number } | null;
+  /** AI 引擎用量；YingAI 未装或当日无调用为 null */
+  ai?: {
+    day: string | null;
+    /** _day 是否为今天；false 时各计数字段已归零 */
+    isToday: boolean;
+    calls: number;
+    prompt: number;
+    completion: number;
+    total: number;
+    byModel: { model: string; calls: number; total: number }[];
+    rateLimit: { hits: number; lastAt: number };
+  } | null;
+  /** 日志体积；文件不存在时为 null */
+  logs?: { errorSize: number | null; errorMtime: string | null; todaySize: number | null };
   redis: { keys: number; version: string | null };
-  bots: { uin: string; nickname: string; platform: string | null; status: number | null }[];
+  bots: { uin: string; nickname: string; platform: string | null; status: number | null; online?: boolean }[];
 }
 
 export const statsApi = {
   getRuntime() {
     return defHttp.get<BotRuntime>({ url: StatsApi.runtime });
+  },
+  /** 实时脉冲（高频轮询用，代价极低） */
+  getLive() {
+    return defHttp.get<LiveInfo>({ url: StatsApi.live });
   },
   getOverview() {
     return defHttp.get<OverviewCards>({ url: StatsApi.overview });

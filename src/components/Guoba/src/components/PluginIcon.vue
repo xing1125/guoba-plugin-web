@@ -8,7 +8,7 @@
     :style="{
       width: `${size}px`,
       height: `${size}px`,
-      fontSize: `${Math.max(9, Math.round(size * 0.52))}px`,
+      fontSize: `${Math.max(10, Math.round(size * 0.52))}px`,
       background: badge.bg,
       color: badge.fg,
       borderRadius: `${Math.round(size * 0.28)}px`,

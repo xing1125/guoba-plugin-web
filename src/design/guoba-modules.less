@@ -736,10 +736,10 @@ html[data-theme='light'] .db-hero::before {
   }
 }
 
-.db-kpi--6 .db-kpi__label,
-.db-kpi--6 .db-kpi__foot {
+.db-kpi--6 .db-kpi__label {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .db-kpi__card {
@@ -829,13 +829,18 @@ html[data-theme='light'] .db-hero::before {
   color: var(--g-text-mute);
 }
 
+/* 卡片脚注允许两行：6 列布局下脚注经常比卡片宽，
+   单行 ellipsis 会变成「28 个账号 / 31 个…」这种半截话 */
 .db-kpi__foot {
+  display: -webkit-box;
   margin-top: 3px;
   overflow: hidden;
   font-size: 11.5px;
+  line-height: 1.45;
   color: var(--g-text-mute);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 /* -------- 栅格 / 图表容器 -------- */
@@ -928,6 +933,11 @@ html[data-theme='light'] .db-hero::before {
   gap: 16px;
   align-items: start;
   margin-top: 16px;
+}
+
+/* 单分组插件：没有左侧导航，整宽铺满 */
+.db-cfg--flat {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* -------- 左侧分组导航 -------- */
@@ -1316,6 +1326,114 @@ html[data-theme='light'] .db-hero::before {
   flex: 1;
   height: 1px;
   background: linear-gradient(90deg, var(--g-card-border), transparent);
+}
+
+/* -------- 插件配置表单（Guoba PluginConfigForm） -------- */
+/* 用于 /plugin/@/:name：第三方插件的字段名、帮助文案都不可控，这里统一兜底排版 */
+.g-cfg-form {
+  /* 控件与帮助文案共用的宽度基准：单列时 520，宽屏两列时铺满列宽，
+     两者必须一致，否则帮助文案会比输入框「多出一截」，看起来像没对齐 */
+  --g-field-w: 520px;
+
+  .ant-form-item {
+    margin-bottom: 20px;
+  }
+
+  .ant-form-item-label {
+    padding-right: 14px; /* label 与控件之间留白，否则右对齐的「：」会贴住控件 */
+  }
+
+  /* label 允许两行：插件里 8~20 字的字段名很常见，截成省略号反而看不出配置项 */
+  .ant-form-item-label > label {
+    display: block;
+    max-width: 100%;
+    overflow: visible;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--g-text-sub);
+    text-align: right;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* 必填星号 + info 图标不许被拆到下一行 */
+  .ant-form-item-label > label::before {
+    margin-right: 4px;
+  }
+
+  .ant-form-item-label .guoba-basic-help {
+    display: inline-flex;
+    margin-left: 3px;
+    vertical-align: -1px;
+    opacity: 0.75;
+    transition: opacity 0.18s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  .ant-form-item-control-input-content {
+    min-width: 0;
+  }
+
+  /* 单列时控件不铺满整行，避免 1000px 长的输入框；宽屏两列时改由列宽决定 */
+  .ant-form-item:not(:has(textarea)) {
+    .ant-input:not(textarea),
+    .ant-input-number,
+    .ant-select,
+    .ant-cascader-picker,
+    .ant-picker {
+      width: 100%;
+      max-width: var(--g-field-w);
+    }
+  }
+
+  textarea.ant-input {
+    max-width: 100%;
+    line-height: 1.72;
+    resize: vertical;
+  }
+
+  /* 帮助文案（bottomHelpMessage）：紧贴控件下方，宽度与控件对齐。
+     原来用 --g-text-mute，深色下几乎看不见，这里提到 sub 级并允许保留换行 */
+  .bottom-message {
+    max-width: var(--g-field-w);
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.72;
+    color: var(--g-text-sub);
+    white-space: pre-line;
+  }
+
+  /* 多行文本 / 标签组 / 子表单：控件是通栏的，帮助文案也跟着通栏 */
+  .ant-form-item:has(textarea),
+  .ant-form-item:has(.ant-tag),
+  .ant-form-item:has(.g-sub-form) {
+    .bottom-message {
+      max-width: 100%;
+    }
+  }
+
+  .ant-form-item-extra {
+    font-size: 11.5px;
+    color: var(--g-text-sub);
+  }
+
+  /* 标签型控件（GTags）：换行留白，标签不被挤成两行 */
+  .ant-tag {
+    margin: 0 6px 6px 0;
+  }
+
+  .ant-switch {
+    min-width: 40px;
+  }
+
+  /* 宽屏：控件铺满半列，和帮助文案左右同宽 */
+  @media (min-width: 1600px) {
+    --g-field-w: 100%;
+  }
 }
 
 /* -------- 喵喵帮助预览画布 -------- */

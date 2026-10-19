@@ -89,7 +89,7 @@
         :pagination="false"
         :row-selection="rowSelection"
         :custom-row="customRow"
-        :scroll="{ x: 1020 }"
+        :scroll="{ x: 1040 }"
         row-key="name"
         class="pf-table"
       >
@@ -209,12 +209,14 @@
   const selectedKeys = ref<string[]>([]);
   const page = reactive({ current: 1, size: 10 });
 
+  // 列宽总和（含 48px 勾选列）≈ 1040，正好等于 scroll.x；
+  // 之前「说明」列留空随内容撑宽，会把右侧「操作」列顶出可视区
   const columns = [
-    { title: '插件', dataIndex: 'title', key: 'plugin', width: 292 },
-    { title: '作者', dataIndex: 'author', key: 'author', width: 152 },
-    { title: '说明', dataIndex: 'description', key: 'desc' },
-    { title: '状态', dataIndex: 'installed', key: 'status', width: 236 },
-    { title: '操作', key: 'action', width: 126, align: 'right' as const },
+    { title: '插件', dataIndex: 'title', key: 'plugin', width: 268 },
+    { title: '作者', dataIndex: 'author', key: 'author', width: 132 },
+    { title: '说明', dataIndex: 'description', key: 'desc', width: 300 },
+    { title: '状态', dataIndex: 'installed', key: 'status', width: 176 },
+    { title: '操作', key: 'action', width: 116, align: 'right' as const },
   ];
 
   const rowSelection = computed(() => ({

@@ -698,7 +698,7 @@
 
   .lg-row__head {
     display: grid;
-    grid-template-columns: 78px 44px minmax(0, 190px) minmax(0, 1fr) 12px;
+    grid-template-columns: 86px 46px minmax(0, 190px) minmax(0, 1fr) 12px;
     gap: 8px;
     align-items: baseline;
     padding: 3px 0;
@@ -708,7 +708,7 @@
   }
 
   .lg-row__lv {
-    font-size: 9.5px;
+    font-size: 10px;
     font-weight: 700;
     color: var(--g-text-mute);
     letter-spacing: 0.04em;

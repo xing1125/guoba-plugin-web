@@ -38,7 +38,9 @@
                 />
               </svg>
               <div class="ur-ring__label">
-                <div class="ur-ring__num">{{ hero.users.bindRate }}<small>%</small></div>
+                <div class="ur-ring__num">
+                  {{ heroReady ? hero.users.bindRate : '—' }}<small v-if="heroReady">%</small>
+                </div>
                 <div class="ur-ring__cap">已绑定</div>
               </div>
             </div>
@@ -47,17 +49,17 @@
               <div class="ur-fact">
                 <span class="ur-fact__dot is-total" />
                 <span class="ur-fact__label">用户总数</span>
-                <span class="ur-fact__value">{{ thousands(hero.users.total) }}</span>
+                <span class="ur-fact__value">{{ heroReady ? thousands(hero.users.total) : '—' }}</span>
               </div>
               <div class="ur-fact">
                 <span class="ur-fact__dot is-bound" />
                 <span class="ur-fact__label">已绑定</span>
-                <span class="ur-fact__value">{{ thousands(hero.users.bound) }}</span>
+                <span class="ur-fact__value">{{ heroReady ? thousands(hero.users.bound) : '—' }}</span>
               </div>
               <div class="ur-fact">
                 <span class="ur-fact__dot is-unbound" />
                 <span class="ur-fact__label">未绑定</span>
-                <span class="ur-fact__value">{{ thousands(unbound) }}</span>
+                <span class="ur-fact__value">{{ heroReady ? thousands(unbound) : '—' }}</span>
               </div>
               <div class="ur-bind__hint">
                 绑定率来自 <span class="g-mono">Users.ltuids</span>，与账号管理页的
@@ -93,7 +95,13 @@
             </div>
             <span class="gm-panel__extra">按累计消息量</span>
           </div>
-          <GEmpty v-if="!hero.top.length" title="暂无排行" desc="用户消息日计数尚未生成" :size="64" />
+          <div v-if="!heroReady" class="gm-skeleton" style="height: 236px; margin: 12px 0" />
+          <GEmpty
+            v-else-if="!hero.top.length"
+            title="暂无排行"
+            desc="用户消息日计数尚未生成"
+            :size="64"
+          />
           <div v-else class="ur-top5">
             <div v-for="(t, i) in hero.top" :key="t.uid" class="ur-top5__row">
               <span class="ur-top5__rank" :class="`is-${i + 1}`">{{ i + 1 }}</span>
@@ -423,6 +431,8 @@
   });
 
   const hero = ref<UserHero>(emptyHero());
+  /** 首屏未拿到 hero 前不显示 0，避免「先全是 0 再跳数」 */
+  const heroReady = ref(false);
   const games = ref<GameOverviewItem[]>([]);
   const gamesLoading = ref(false);
 
@@ -453,12 +463,14 @@
     return `${(c * p).toFixed(1)} ${(c * (1 - p)).toFixed(1)}`;
   });
 
-  const metrics = computed(() => [
+  const metrics = computed(() => {
+    const v = (n: number) => (heroReady.value ? fmtNum(n) : '—');
+    return [
     {
       key: 'today',
       label: '今日活跃',
       icon: 'ant-design:fire-outlined',
-      value: fmtNum(hero.value.active.today),
+      value: v(hero.value.active.today),
       unit: '人',
       foot: '今天有消息往来的用户',
       bg: 'rgb(240 164 107 / 16%)',
@@ -468,7 +480,7 @@
       key: 'last7',
       label: '近 7 日活跃',
       icon: 'ant-design:calendar-outlined',
-      value: fmtNum(hero.value.active.last7),
+      value: v(hero.value.active.last7),
       unit: '人',
       foot: `7 日内新增 ${hero.value.active.new7} 人`,
       bg: 'rgb(87 199 149 / 16%)',
@@ -478,7 +490,7 @@
       key: 'msg',
       label: '今日消息',
       icon: 'ant-design:message-outlined',
-      value: fmtNum(hero.value.message.today),
+      value: v(hero.value.message.today),
       unit: '条',
       foot: `昨日 ${fmtNum(hero.value.message.yesterday)} 条`,
       bg: 'rgb(110 155 255 / 16%)',
@@ -494,7 +506,8 @@
       bg: 'rgb(155 139 240 / 16%)',
       fg: '#6C5CD6',
     },
-  ]);
+    ];
+  });
 
   const sortOptions = [
     { label: '按消息总量', value: 'total' },
@@ -627,6 +640,8 @@
       if (res) hero.value = { ...emptyHero(), ...res };
     } catch {
       hero.value = emptyHero();
+    } finally {
+      heroReady.value = true;
     }
   }
 
@@ -1188,7 +1203,7 @@
   .ur-game__en {
     margin-top: 1px;
     overflow: hidden;
-    font-size: 9px;
+    font-size: 10px;
     color: var(--g-text-mute);
     letter-spacing: 0.4px;
     white-space: nowrap;

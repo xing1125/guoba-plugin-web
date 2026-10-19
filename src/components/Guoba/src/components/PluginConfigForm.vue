@@ -1,6 +1,8 @@
 <template>
   <a-spin :spinning="loading">
-    <BasicForm @register="registerForm" />
+    <div class="g-cfg-form">
+      <BasicForm @register="registerForm" />
+    </div>
   </a-spin>
 </template>
 
@@ -53,20 +55,76 @@
       const defGroupKey = 'default';
       const softGroupMap = new Map<string, SoftGroupItem>();
 
+      /** 紧凑控件：宽屏下可以和别的字段并排占半列 */
+      const COMPACT = new Set(['Switch', 'InputNumber', 'Select', 'RadioGroup', 'EasyCron', 'InputPassword', 'Input']);
+      /** 必须通栏的控件：多行文本 / 标签组 / 子表单 / 群选择 */
+      const MUST_WIDE = new Set(['InputTextArea', 'GTags', 'GSelectGroup', 'GSubForm', 'Divider', 'Editor']);
+
       const schemas = initSchemas();
 
       const [registerForm, formActions] = useForm({
-        labelWidth: 116,
-        schemas: schemas,
+        // 120px 会让「成功发送回复文本」这类 8 字 label 被截成省略号；
+        // 156px + 允许两行换行，能装下绝大多数插件字段名（实测中位数仅 6 字）
+        labelWidth: 156,
+        schemas: normalizeSchemas(schemas),
         labelAlign: 'right',
         showActionButtonGroup: false,
-        // 后台规格：宽屏两列网格
-        baseColProps: { xs: 24, sm: 24, md: 12, lg: 12, xl: 12, xxl: 12 },
+        // 后台规格：1440 及以下单列（label 左、控件右），1600+ 才拆两列，
+        // 且只有「短 label + 紧凑控件」才占半列，其余一律通栏（见 normalizeSchemas）
+        baseColProps: { xs: 24, sm: 24, md: 24, lg: 24, xl: 24, xxl: 12 },
       });
 
       provide('formActions', formActions);
       provide('pluginInfo', props.plugin);
       const { setFieldsValue, validate } = formActions;
+
+      /**
+       * 字段排版兜底（第三方插件的 schema 完全不可控，这里统一收口）：
+       * 1. 多行文本固定 4 行，不在两三行高度里滚
+       * 2. 帮助文案过长 / label 过长 / 重型控件 → 通栏，否则半栏里会被压成细条
+       * 3. 只有短 label 的紧凑控件才允许宽屏两列，避免「两列里塞不下还留 200px 空白」
+       */
+      function normalizeSchemas(list: FormSchemas): FormSchemas {
+        const longText = (t: any) => typeof t === 'string' && t.length > 40;
+        const textWidth = (s: any) =>
+          [...String(s ?? '')].reduce((n, c) => n + (/[\u2E80-\uFFEF]/.test(c) ? 2 : 1), 0);
+        return (list || []).map((schema) => {
+          if (!schema || !schema.component) return schema;
+          const next: any = { ...schema };
+          if (next.component === 'InputTextArea') {
+            // 插件侧常用 `autosize`（小写），antd 只认 `autoSize`；两者都收，
+            // 并把行数夹在合理区间，免得 11 行的模板把整页顶到几屏高
+            const cp: any = { ...(next.componentProps || {}) };
+            const src = cp.autoSize ?? cp.autosize;
+            delete cp.autosize;
+            const clamp = (v: any, lo: number, hi: number, def: number) =>
+              Math.min(hi, Math.max(lo, Number(v) || def));
+            cp.autoSize =
+              src && typeof src === 'object'
+                ? { minRows: clamp(src.minRows, 2, 6, 4), maxRows: clamp(src.maxRows, 4, 12, 8) }
+                : { minRows: 3, maxRows: 8 };
+            next.componentProps = cp;
+          }
+          const isGroupMark = next.component === 'SOFT_GROUP_BEGIN';
+          const wide =
+            !isGroupMark &&
+            (next.component === 'InputTextArea' ||
+              MUST_WIDE.has(next.component) ||
+              longText(next.bottomHelpMessage) ||
+              textWidth(next.label) > 26);
+          next.colProps = {
+            span: 24,
+            xs: 24,
+            sm: 24,
+            md: 24,
+            lg: 24,
+            xl: 24,
+            xxl: !wide && COMPACT.has(next.component) ? 12 : 24,
+            ...(next.colProps || {}),
+          };
+          return next;
+        });
+      }
 
       function initSchemas(): FormSchemas {
         if (!props.softGrouping) {
@@ -109,9 +167,13 @@
           }
         }
         groupKeys = Array.from(softGroupMap.keys());
-        // 当仅有一个分组时，不显示分组
+        // 当仅有一个分组时，不显示分组导航，但仍把分组名抛给页面当标题用
         if (groupKeys.length == 1) {
-          return props.plugin.schemas;
+          const only = softGroupMap.get(groupKeys[0])!;
+          emit('update:activeGroupKey', only.name);
+          emit('update:softGroupList', [{ name: only.name, title: only.title || only.name }]);
+          // 单分组时页面顶栏已经显示分组名，表单里不用再来一条同名标题
+          return props.plugin.schemas.filter((s: any) => s.component !== 'SOFT_GROUP_BEGIN');
         }
         // 获取激活的分组
         let activeGroup = softGroupMap.get(props.activeGroupKey);

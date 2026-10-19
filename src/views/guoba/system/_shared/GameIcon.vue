@@ -5,7 +5,7 @@
       width: `${size}px`,
       height: `${size}px`,
       borderRadius: `${Math.round(size * 0.3)}px`,
-      fontSize: `${Math.round(size * 0.52)}px`,
+      fontSize: `${Math.max(10, Math.round(size * 0.52))}px`,
       background: meta.bg,
       color: meta.fg,
     }"

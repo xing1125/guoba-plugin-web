@@ -40,12 +40,45 @@
     transition: border-color @ctl-dur ease, box-shadow @ctl-dur ease, background @ctl-dur ease;
   }
 
-  /* 单行输入统一高度（textarea 不参与） */
+  /* 单行输入统一高度（textarea 及其包装不参与，见下） */
   .ant-input:not(textarea),
-  .ant-input-affix-wrapper,
+  .ant-input-affix-wrapper:not(:has(textarea)),
   .ant-input-number,
   .ant-picker {
     height: @ctl-h;
+  }
+
+  /* 带 allowClear 的多行文本框会被 antd 包进 affix-wrapper：
+   * 上面那条 height 会把容器锁在 32px，textarea 直接「溢出」容器，
+   * 下面的帮助文案就被文本域压住（插件配置页模板字段的经典花屏）。
+   * 这里改成高度自适应 + 内层 textarea 透明化。 */
+  .ant-input-affix-wrapper:has(textarea) {
+    height: auto;
+    min-height: @ctl-h;
+    padding: 5px 11px;
+    align-items: stretch;
+  }
+
+  .ant-input-affix-wrapper > textarea.ant-input {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    resize: vertical;
+  }
+
+  .ant-input-affix-wrapper > textarea.ant-input:hover,
+  .ant-input-affix-wrapper > textarea.ant-input:focus {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* 清空按钮贴在右上角，不要垂直居中压着文本 */
+  .ant-input-affix-wrapper:has(textarea) .ant-input-clear {
+    align-self: flex-start;
+    margin-top: 4px;
   }
 
   /* 带前后缀的输入框：内层 input 必须「透明化」。

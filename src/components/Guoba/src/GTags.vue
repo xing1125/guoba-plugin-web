@@ -1,19 +1,25 @@
 <template>
-  <template v-for="tag in tags" :key="tag">
-    <a-tooltip v-if="tag.length > 20" :title="tag">
-      <a-tag closable @close="handleClose(tag)">
-        {{ `${tag.slice(0, 20)}...` }}
+  <div class="g-tags">
+    <a-tooltip v-for="tag in tags" :key="tag" :title="tag.length > 20 ? tag : ''">
+      <a-tag class="g-tags__item" closable @close="handleClose(tag)">
+        {{ tag.length > 20 ? `${tag.slice(0, 20)}...` : tag }}
       </a-tag>
     </a-tooltip>
-    <a-tag v-else closable @close="handleClose(tag)">
-      {{ tag }}
-    </a-tag>
-  </template>
-  <a-input v-if="inputVisible" ref="inputRef" v-model:value="inputValue" type="text" size="small" :style="{ width: '78px' }" @blur="handleInputConfirm" @keyup.enter="handleInputConfirm" />
-  <a-tag v-else style="background: #fff; border-style: dashed; cursor: pointer" @click="showInput">
-    <icon icon="ant-design:plus" />
-    新增
-  </a-tag>
+    <a-input
+      v-if="inputVisible"
+      ref="inputRef"
+      v-model:value="inputValue"
+      class="g-tags__input"
+      type="text"
+      size="small"
+      @blur="handleInputConfirm"
+      @keyup.enter="handleInputConfirm"
+    />
+    <span v-else class="g-tags__add" @click="showInput">
+      <icon icon="ant-design:plus" :size="11" />
+      新增
+    </span>
+  </div>
 </template>
 
 <script lang="ts">
@@ -124,4 +130,43 @@
   });
 </script>
 
-<style></style>
+<style scoped lang="less">
+  /* 标签型列表：深色下不再是一块白底（原来写死 background:#fff） */
+  .g-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    min-height: 32px;
+  }
+
+  .g-tags__item {
+    margin: 0;
+  }
+
+  .g-tags__input {
+    width: 88px;
+    height: 24px;
+  }
+
+  .g-tags__add {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+    height: 24px;
+    padding: 0 10px;
+    font-size: 12px;
+    color: var(--g-text-sub);
+    cursor: pointer;
+    background: var(--g-card-bg-soft);
+    border: 1px dashed var(--g-card-border-strong);
+    border-radius: 6px;
+    transition: color 0.18s, border-color 0.18s, background 0.18s;
+
+    &:hover {
+      color: var(--g-blue);
+      background: var(--g-blue-soft);
+      border-color: var(--g-blue);
+    }
+  }
+</style>

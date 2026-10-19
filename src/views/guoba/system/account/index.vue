@@ -791,7 +791,7 @@
 
   .ac-hero__en {
     margin-top: 2px;
-    font-size: 9.5px;
+    font-size: 10px;
     color: var(--g-text-mute);
     letter-spacing: 0.6px;
   }
