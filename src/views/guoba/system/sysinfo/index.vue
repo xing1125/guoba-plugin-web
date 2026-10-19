@@ -23,6 +23,10 @@
             @update:model-value="setAuto($event as number)"
           />
           <Button size="small" :loading="loading" @click="load">刷新</Button>
+          <Button size="small" @click="openMobileLink">
+            <Icon icon="mdi:qrcode-scan" :size="13" style="margin-right: 4px" />
+            移动端访问
+          </Button>
         </div>
       </section>
 
@@ -169,15 +173,47 @@
           </div>
         </div>
       </section>
+
+      <!-- ============================ 移动端访问 ============================ -->
+      <GModal :visible="mobile.visible" title="移动端访问" subtitle="手机扫码或复制链接，局域网内直接查看数据" :width="440" @close="mobile.visible = false">
+        <div class="si-mobile">
+          <template v-if="mobile.links.length">
+            <div class="si-mobile__qr">
+              <QrCode :value="mobile.links[0]" :width="200" />
+            </div>
+            <div class="si-mobile__hint">
+              用手机浏览器 / 相机扫码打开（需与本机同一局域网）。链接含一次性登录码，<b>3 分钟内有效</b>
+              ；登录后本机 24 小时免登。
+            </div>
+            <div class="si-mobile__list">
+              <button v-for="(u, i) in mobile.links" :key="i" class="si-mobile__link" type="button" @click="copyLink(u)">
+                <span class="si-mobile__url">{{ u }}</span>
+                <Icon icon="ant-design:copy-outlined" :size="13" />
+              </button>
+            </div>
+          </template>
+          <div v-else-if="mobile.loading" class="si-mobile__empty">正在生成访问链接…</div>
+          <div v-else class="si-mobile__empty">
+            未获取到可用的局域网地址
+            <div class="si-mobile__empty-sub">请确认设备与 bot 主机在同一网络，或检查锅巴「服务地址」配置</div>
+          </div>
+        </div>
+        <template #footer>
+          <Button @click="openMobileLink">重新生成</Button>
+          <Button v-if="mobile.links.length" type="primary" @click="copyLink(mobile.links[0])">复制链接</Button>
+        </template>
+      </GModal>
     </div>
   </PageWrapper>
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, onUnmounted, ref } from 'vue';
-  import { Button } from 'ant-design-vue';
+  import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
+  import { Button, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
+  import { QrCode } from '/@/components/Qrcode';
+  import GModal from '../_shared/dialog/GModal.vue';
   import GSegmented from '../_shared/form/GSegmented.vue';
   import { defHttp } from '/@/utils/http/axios';
 
@@ -312,6 +348,50 @@
       return new Date(iso).toLocaleTimeString('zh-CN', { hour12: false });
     } catch {
       return iso;
+    }
+  }
+
+  /* ------------------------------ 移动端访问 ------------------------------ */
+
+  const mobile = reactive<{ visible: boolean; loading: boolean; links: string[] }>({
+    visible: false,
+    loading: false,
+    links: [],
+  });
+
+  async function openMobileLink() {
+    mobile.visible = true;
+    mobile.loading = true;
+    try {
+      const res = await defHttp.post<{ links: string[]; expiresIn: number }>({
+        url: '/admin/auth/quick-link',
+      });
+      mobile.links = res?.links || [];
+      if (!mobile.links.length) {
+        message.warning('未获取到局域网地址');
+      }
+    } catch (e: any) {
+      message.error(e?.message || '生成访问链接失败');
+      mobile.links = [];
+    } finally {
+      mobile.loading = false;
+    }
+  }
+
+  async function copyLink(u: string) {
+    try {
+      await navigator.clipboard.writeText(u);
+      message.success('已复制，手机浏览器粘贴打开即可');
+    } catch {
+      // http 非安全上下文 clipboard 不可用 → 降级
+      const ta = document.createElement('textarea');
+      ta.value = u;
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) message.success('已复制');
+      else message.warning('复制失败，请手动选择链接文本');
     }
   }
 </script>
@@ -511,6 +591,69 @@
 
     @media (max-width: 960px) {
       grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* ------------------------------ 移动端访问弹窗 ------------------------------ */
+  .si-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    &__qr {
+      padding: 12px;
+      background: #fff;
+      border-radius: 12px;
+    }
+    &__hint {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--g-text-mute, #6b7280);
+      text-align: center;
+    }
+    &__list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    &__link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--g-blue, #2563eb);
+      text-align: left;
+      cursor: pointer;
+      background: var(--g-hover, rgba(127, 127, 127, 0.08));
+      border: 1px solid var(--g-card-border, transparent);
+      border-radius: 8px;
+
+      &:hover {
+        border-color: var(--g-blue, #2563eb);
+      }
+    }
+    &__url {
+      overflow: hidden;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    &__empty {
+      padding: 30px 0;
+      font-size: 13px;
+      text-align: center;
+      color: var(--g-text-mute, #6b7280);
+
+      &-sub {
+        margin-top: 6px;
+        font-size: 12px;
+        opacity: 0.7;
+      }
     }
   }
 </style>

@@ -982,9 +982,9 @@
     }
     &__tools {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 6px;
-      flex-shrink: 0;
     }
   }
 
@@ -1021,6 +1021,16 @@
 
   .ws-search {
     width: 220px;
+  }
+
+  /* 窄屏：搜索框整行、工具条换行，避免横向溢出 */
+  @media (max-width: 768px) {
+    .ws-main__bar {
+      flex-wrap: wrap;
+    }
+    .ws-search {
+      width: 100%;
+    }
   }
 
   .ws-table-wrap {

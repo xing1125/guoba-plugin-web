@@ -58,6 +58,11 @@ export function initAppConfigStore() {
   }
   appStore.setProjectConfig(projCfg);
 
+  // 手机 / 窄屏（<768px）默认折叠侧栏为 mini 模式，保证内容区可用；桌面端不受影响
+  if (window.innerWidth < 768) {
+    appStore.setProjectConfig({ menuSetting: { collapsed: true } });
+  }
+
   // init dark mode
   updateDarkTheme(darkMode);
   if (darkMode === ThemeEnum.DARK) {
