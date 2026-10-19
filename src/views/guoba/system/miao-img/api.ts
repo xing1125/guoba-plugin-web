@@ -40,6 +40,9 @@ const Api = {
   characters: '/admin/miao-img/characters',
   list: '/admin/miao-img/list',
   upload: '/admin/miao-img/upload',
+  mkdir: '/admin/miao-img/mkdir',
+  rename: '/admin/miao-img/rename',
+  renameDir: '/admin/miao-img/rename-dir',
   remove: '/admin/miao-img/delete',
   /** 图片直出走 /guoba 前缀（与 defHttp 基址等价），token 走 query 便于 <img> 引用 */
   img: '/guoba/api/admin/miao-img/img',
@@ -68,4 +71,19 @@ export const miaoImgApi = {
   },
   remove: (kind: string, name: string, file: string) =>
     defHttp.post<{ trash: string }>({ url: Api.remove, params: { kind, name, file, confirm: true } }),
+  mkdir: (kind: string, name: string) =>
+    defHttp.post<{ kind: string; name: string; existed: boolean; dir: string }>({
+      url: Api.mkdir,
+      params: { kind, name },
+    }),
+  rename: (kind: string, name: string, from: string, to: string) =>
+    defHttp.post<{ kind: string; name: string; from: string; to: string; rel: string }>({
+      url: Api.rename,
+      params: { kind, name, from, to },
+    }),
+  renameDir: (kind: string, from: string, to: string) =>
+    defHttp.post<{ kind: string; from: string; to: string }>({
+      url: Api.renameDir,
+      params: { kind, from, to },
+    }),
 };

@@ -33,7 +33,10 @@
           <div class="mi-side__list">
             <div v-for="c in chars" :key="c.name" class="mi-char" :class="{ 'is-active': char === c.name }" @click="pickChar(c.name)">
               <span class="mi-char__name">{{ c.name }}</span>
-              <span class="mi-char__count">{{ c.count }}</span>
+              <span class="mi-char__ops">
+                <span class="mi-char__count">{{ c.count }}</span>
+                <button class="mi-char__ren" type="button" title="重命名目录" @click.stop="askCharRename(c)">✎</button>
+              </span>
             </div>
             <div v-if="!chars.length" class="mi-side__empty">还没有图片，先在上方输入角色名</div>
           </div>
@@ -57,6 +60,7 @@
                 <span class="mi-card__name" :title="im.name">{{ im.name }}</span>
                 <span class="mi-card__size">{{ fmtSize(im.size) }}</span>
               </div>
+              <button class="mi-card__ren" type="button" title="重命名（可改后缀）" @click="askFileRename(im)">✎</button>
               <button class="mi-card__del" type="button" title="删除" @click="askRemove(im)">×</button>
             </div>
           </div>
@@ -96,6 +100,36 @@
         @ok="doRemove"
         @cancel="removeModal.visible = false"
       />
+
+      <!-- ============================ 重命名角色目录 ============================ -->
+      <GModal :visible="charRen.visible" title="重命名角色目录" :width="440" @close="charRen.visible = false">
+        <div class="mi-form">
+          <div class="mi-form__label">原目录</div>
+          <div class="mi-form__mono">{{ charRen.from }}</div>
+          <div class="mi-form__label">新名字</div>
+          <Input v-model:value="charRen.to" size="small" placeholder="输入新的角色名" @pressEnter="doCharRename" />
+          <div class="mi-form__hint">目录整体改名，目录下所有分类的图片一起移动</div>
+        </div>
+        <template #footer>
+          <Button @click="charRen.visible = false">取消</Button>
+          <Button type="primary" :loading="charRen.loading" @click="doCharRename">确定</Button>
+        </template>
+      </GModal>
+
+      <!-- ============================ 重命名图片 ============================ -->
+      <GModal :visible="fileRen.visible" title="重命名图片" :width="440" @close="fileRen.visible = false">
+        <div class="mi-form">
+          <div class="mi-form__label">原文件名</div>
+          <div class="mi-form__mono">{{ fileRen.from }}</div>
+          <div class="mi-form__label">新文件名（含扩展名）</div>
+          <Input v-model:value="fileRen.to" size="small" placeholder="如 01.webp / 芙宁娜.png" @pressEnter="doFileRename" />
+          <div class="mi-form__hint">可改后缀，{{ label }}支持：{{ extHint }}；不能与现有文件重名</div>
+        </div>
+        <template #footer>
+          <Button @click="fileRen.visible = false">取消</Button>
+          <Button type="primary" :loading="fileRen.loading" @click="doFileRename">确定</Button>
+        </template>
+      </GModal>
     </div>
   </PageWrapper>
 </template>
@@ -138,6 +172,13 @@
     se: 'image/png,image/jpeg,image/webp,image/gif',
   };
   const accept = computed(() => KIND_EXTS[kind.value] || KIND_EXTS.character);
+  /** 重命名弹窗里的扩展名提示（如 png / jpeg / webp） */
+  const extHint = computed(() =>
+    (KIND_EXTS[kind.value] || KIND_EXTS.character)
+      .split(',')
+      .map((s) => s.replace('image/', '').replace('jpeg', 'jpg'))
+      .join(' / '),
+  );
 
   const kind = ref('profile');
   const chars = ref<{ name: string; count: number }[]>([]);
@@ -181,6 +222,15 @@
       return;
     }
     newChar.value = '';
+    // 先在磁盘上真正建目录（幂等）——之后可直接往该目录手动复制图片
+    try {
+      const res = await miaoImgApi.mkdir(kind.value, name);
+      if (res?.existed) message.info(`目录已存在，直接选中「${name}」`);
+      else message.success(`已创建目录：${res?.dir || name}`);
+    } catch (e: any) {
+      message.error(e?.message || '创建目录失败');
+      return;
+    }
     char.value = name;
     imgs.value = [];
     // 左侧列表只显示有图角色：新角色立即插入置顶并选中，避免"点了没反应"
@@ -189,7 +239,7 @@
     }
     await loadList().catch((e) => message.error(e?.message || '加载失败'));
     if (!imgs.value.length) {
-      message.info(`已选中「${name}」，点右上角「上传图片」即可添加${label.value}`);
+      message.info(`已选中「${name}」，点右上角「上传图片」，或把图片文件直接复制进目录`);
     }
   }
 
@@ -228,6 +278,71 @@
   }
 
   const removeModal = reactive({ visible: false, loading: false, file: '' });
+
+  /* ---------------- 重命名：角色目录 ---------------- */
+  const charRen = reactive({ visible: false, loading: false, from: '', to: '' });
+
+  function askCharRename(c: { name: string; count: number }) {
+    charRen.from = c.name;
+    charRen.to = c.name;
+    charRen.loading = false;
+    charRen.visible = true;
+  }
+
+  async function doCharRename() {
+    const to = charRen.to.trim();
+    if (!to) {
+      message.warning('输入新名字');
+      return;
+    }
+    if (to === charRen.from) {
+      charRen.visible = false;
+      return;
+    }
+    charRen.loading = true;
+    try {
+      await miaoImgApi.renameDir(kind.value, charRen.from, to);
+      message.success(`已重命名为「${to}」`);
+      charRen.visible = false;
+      if (char.value === charRen.from) char.value = to;
+      await loadChars();
+      if (char.value === to) await loadList();
+    } catch (e: any) {
+      message.error(e?.message || '重命名失败');
+    } finally {
+      charRen.loading = false;
+    }
+  }
+
+  /* ---------------- 重命名：图片（可改后缀） ---------------- */
+  const fileRen = reactive({ visible: false, loading: false, from: '', to: '' });
+
+  function askFileRename(im: MiaoImgItem) {
+    fileRen.from = im.name;
+    fileRen.to = im.name;
+    fileRen.loading = false;
+    fileRen.visible = true;
+  }
+
+  async function doFileRename() {
+    const to = fileRen.to.trim();
+    if (!to || to === fileRen.from) {
+      fileRen.visible = false;
+      return;
+    }
+    fileRen.loading = true;
+    try {
+      await miaoImgApi.rename(kind.value, char.value, fileRen.from, to);
+      message.success(`已重命名为「${to}」`);
+      fileRen.visible = false;
+      preview.value = null;
+      await loadList();
+    } catch (e: any) {
+      message.error(e?.message || '重命名失败');
+    } finally {
+      fileRen.loading = false;
+    }
+  }
 
   function askRemove(im: MiaoImgItem) {
     removeModal.file = im.name;
@@ -412,6 +527,10 @@
 
     &:hover {
       background: rgba(37, 99, 235, 0.1);
+
+      .mi-char__ren {
+        opacity: 1;
+      }
     }
     &.is-active {
       background: var(--mi-accent);
@@ -420,10 +539,37 @@
       .mi-char__count {
         color: rgba(255, 255, 255, 0.8);
       }
+      .mi-char__ren {
+        color: rgba(255, 255, 255, 0.85);
+      }
+    }
+    &__ops {
+      display: flex;
+      gap: 6px;
+      align-items: center;
     }
     &__count {
       font-size: 11px;
       color: var(--mi-text-dim);
+    }
+    &__ren {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      font-size: 11px;
+      line-height: 18px;
+      color: var(--mi-text-dim);
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      border-radius: 5px;
+      opacity: 0;
+      transition: all 0.15s;
+
+      &:hover {
+        color: var(--mi-accent);
+        background: rgba(37, 99, 235, 0.15);
+      }
     }
   }
 
@@ -517,8 +663,51 @@
       cursor: pointer;
       display: none;
     }
-    &:hover .mi-card__del {
+    &__ren {
+      position: absolute;
+      top: 6px;
+      right: 32px;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: none;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.62);
+      color: #fff;
+      font-size: 11px;
+      line-height: 20px;
+      cursor: pointer;
+      display: none;
+    }
+    &:hover .mi-card__del,
+    &:hover .mi-card__ren {
       display: block;
+    }
+  }
+
+  .mi-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &__label {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--g-text-mute, #6b7280);
+    }
+    &__mono {
+      padding: 6px 10px;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 12px;
+      color: var(--g-text, #1f2937);
+      word-break: break-all;
+      background: rgba(127, 127, 127, 0.1);
+      border-radius: 8px;
+    }
+    &__hint {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--g-text-mute, #6b7280);
     }
   }
 
