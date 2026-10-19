@@ -1042,6 +1042,21 @@ html[data-theme='light'] .db-hero::before {
   padding-right: 10px;
 }
 
+/* 两列表单里控件统一撑满列宽：数字框默认只有 90px，和下拉/输入框并排时参差不齐。
+ * 开关、单选、复选保持原尺寸（撑满会变成一条长条）。 */
+.db-cfg .ant-input-number,
+.db-cfg .ant-picker,
+.db-cfg .ant-select,
+.db-cfg .ant-cascader-picker {
+  width: 100%;
+}
+
+/* 加了「添加」按钮的数组行（cron 之类）里，控件不要顶到按钮上 */
+.db-cfg .ant-form-item-control-input-content > div[style*='display: flex'] {
+  gap: 8px;
+  align-items: center;
+}
+
 .db-cfg .ant-form-item {
   margin-bottom: 18px;
 }

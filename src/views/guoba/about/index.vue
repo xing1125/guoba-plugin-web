@@ -22,9 +22,15 @@
     </section>
 
     <div v-show="activeKey === 'about'" key="about" class="db-about">
-      <Description @register="infoRegister" class="enter-y" />
-      <Description @register="register" class="my-4 enter-y" />
-      <Description @register="registerDev" class="enter-y" />
+      <section class="g-card db-about__block">
+        <Description @register="infoRegister" />
+      </section>
+      <section class="g-card db-about__block db-about__deps">
+        <Description @register="register" />
+      </section>
+      <section class="g-card db-about__block db-about__deps">
+        <Description @register="registerDev" />
+      </section>
     </div>
     <div v-show="activeKey === 'todo'" key="todo" class="db-about">
       <LoadGitee />
@@ -136,55 +142,74 @@
 
 <style scoped>
   .db-about {
-    padding: 14px 4px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px 0 4px;
   }
 
   .db-hero__desc a {
     color: var(--g-blue);
   }
 
-  /* 让 vben 的 Description 卡片跟随设计令牌（尤其暗色主题） */
-  .db-about :deep(.ant-descriptions) {
-    margin-bottom: 16px;
+  /* 每块「项目信息 / 依赖」都是一张 g-card，内部表格不再自带外框与阴影 */
+  .db-about__block :deep(.ant-descriptions) {
+    margin-bottom: 0;
   }
 
-  .db-about :deep(.ant-descriptions-title) {
-    margin-bottom: 10px;
-    font-size: 13.5px;
-    font-weight: 650;
+  .db-about__block :deep(.ant-descriptions-title) {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--g-text);
     letter-spacing: 0.2px;
   }
 
-  .db-about :deep(.ant-descriptions-view) {
+  /* 标题前的竖条与 g-card__title 一致 */
+  .db-about__block :deep(.ant-descriptions-title)::before {
+    width: 3px;
+    height: 14px;
+    content: '';
+    background: linear-gradient(180deg, var(--g-gold), var(--g-blue));
+    border-radius: 2px;
+  }
+
+  .db-about__block :deep(.ant-descriptions-view) {
     overflow: hidden;
-    background: var(--g-card-bg);
+    background: transparent;
     border: 1px solid var(--g-card-border);
-    border-radius: 12px;
-    box-shadow: var(--g-card-shadow);
+    border-radius: 10px;
+    box-shadow: none;
   }
 
-  .db-about :deep(.ant-descriptions-bordered .ant-descriptions-view) {
+  .db-about__block :deep(.ant-descriptions-row > th),
+  .db-about__block :deep(.ant-descriptions-row > td) {
+    padding: 9px 12px;
     border-color: var(--g-card-border);
   }
 
-  .db-about :deep(.ant-descriptions-row > th),
-  .db-about :deep(.ant-descriptions-row > td) {
-    border-color: var(--g-card-border);
-  }
-
-  .db-about :deep(.ant-descriptions-item-label) {
+  .db-about__block :deep(.ant-descriptions-item-label) {
     font-size: 12px;
     color: var(--g-text-mute);
     background: var(--g-card-bg-soft);
   }
 
-  .db-about :deep(.ant-descriptions-item-content) {
+  .db-about__block :deep(.ant-descriptions-item-content) {
     font-size: 12.5px;
     color: var(--g-text-sub);
   }
 
-  .db-about :deep(.ant-descriptions-item-content .ant-tag) {
+  /* 依赖名/版本号用等宽字体，扫读对齐 */
+  .db-about__deps :deep(.ant-descriptions-item-label),
+  .db-about__deps :deep(.ant-descriptions-item-content) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .db-about__block :deep(.ant-descriptions-item-content .ant-tag) {
     padding: 0 7px;
     font-size: 11px;
     font-weight: 550;
@@ -195,7 +220,13 @@
     border-radius: 5px;
   }
 
-  .db-about :deep(.ant-descriptions-item-content a) {
+  .db-about__block :deep(.ant-descriptions-item-content a) {
     color: var(--g-blue);
+  }
+
+  @media (max-width: 900px) {
+    .db-about__block :deep(.ant-descriptions-view) {
+      overflow-x: auto;
+    }
   }
 </style>
