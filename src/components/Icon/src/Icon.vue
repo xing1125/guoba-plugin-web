@@ -9,6 +9,15 @@
   import Iconify from '@purge-icons/generated';
   import { isString } from '/@/utils/is';
   import { propTypes } from '/@/utils/propTypes';
+  import { GM_COLLECTION } from '/@/design/gmIcons';
+
+  // 自绘 duotone 菜单图标集（gm 前缀，后端菜单下发），模块加载即注册，先于任何渲染
+  // 注意：源码里不要出现「前缀:名称」形式的字面量，否则 purge-icons 会误收集整批失败
+  try {
+    Iconify.addCollection(GM_COLLECTION as any);
+  } catch (e) {
+    console.warn('[gm-icons] 注册失败', e);
+  }
 
   const SVG_END_WITH_FLAG = '|svg';
   export default defineComponent({
