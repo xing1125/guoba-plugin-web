@@ -722,6 +722,37 @@ html[data-theme='dark'] {
   .ant-pagination-next {
     color: var(--g-text-sub);
   }
+
+  /* 全局提示 / 通知 / 文字气泡：antd 暗色表没覆盖到，会留浅底 */
+  .ant-message-notice-content {
+    background: var(--g-card-bg);
+    color: var(--g-text);
+    border: 1px solid var(--g-card-border);
+    box-shadow: var(--g-card-shadow);
+  }
+
+  .ant-notification-notice {
+    background: var(--g-card-bg);
+    border: 1px solid var(--g-card-border);
+    box-shadow: var(--g-card-shadow);
+  }
+
+  .ant-notification-notice-message {
+    color: var(--g-text);
+  }
+
+  .ant-notification-notice-description {
+    color: var(--g-text-sub);
+  }
+
+  .ant-notification-notice-close {
+    color: var(--g-text-mute);
+  }
+
+  /* tooltip 保持深底浅字（浅色主题下本来如此），只把边框/阴影调柔和 */
+  .ant-tooltip-inner {
+    box-shadow: 0 6px 20px rgb(0 0 0 / 35%);
+  }
 }
 
 /* ------------------------------ 装饰点缀 ------------------------------ */
@@ -890,3 +921,65 @@ html[data-theme='dark'] ::selection {
  * 输入框 / 选择器 / 数字 / 文本域 / 日期的统一外观已迁到 design/guoba-controls.less，
  * 由 --g-* 变量驱动，light / dark 共用一套规则，此处不再单独覆盖暗色。
  */
+
+/* ------------------------------ 浮层圆角与反馈微调 ------------------------------ */
+/*
+ * antd 3.2.9 的 Tooltip / Message / Notification 圆角是硬编码小圆角（2~4px），
+ * 与全站 10~12px 的卡片语言不搭；用 :root:root 提权避免被 cssinjs 运行时注入覆盖。
+ * 深色底色接管见上方「浮层组件」暗色块。
+ */
+:root:root {
+  .ant-tooltip {
+    font-size: 12px;
+    max-width: 320px;
+  }
+
+  .ant-tooltip-inner {
+    min-height: 28px;
+    padding: 5px 11px;
+    border-radius: 8px;
+  }
+
+  .ant-message .ant-message-notice-content {
+    padding: 9px 16px;
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgb(0 0 0 / 10%);
+  }
+
+  .ant-notification-notice {
+    border-radius: 12px;
+  }
+
+  .ant-notification-notice-content {
+    border-radius: 12px;
+  }
+
+  .ant-dropdown-menu {
+    border-radius: 10px;
+  }
+
+  .ant-popover-inner {
+    border-radius: 12px;
+  }
+}
+
+/* ------------------------------ 空状态降噪 ------------------------------ */
+/*
+ * 全站表格 / 卡片的空态：插画缩小降透明、文案弱化，让「无数据」更安静。
+ */
+:root:root {
+  .ant-empty {
+    padding: 26px 0;
+  }
+
+  .ant-empty-image svg {
+    width: 58px;
+    height: 58px;
+    opacity: 0.72;
+  }
+
+  .ant-empty-description {
+    font-size: 12.5px;
+    color: var(--g-text-mute);
+  }
+}
