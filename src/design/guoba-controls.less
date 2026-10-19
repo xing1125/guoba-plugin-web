@@ -34,8 +34,8 @@
   .ant-picker,
   .ant-select:not(.ant-select-customize-input) .ant-select-selector {
     color: var(--g-text);
-    background-color: var(--g-card-bg-soft);
-    border-color: var(--g-card-border);
+    background-color: var(--g-field-bg);
+    border-color: var(--g-field-border);
     border-radius: @ctl-radius;
     transition: border-color @ctl-dur ease, box-shadow @ctl-dur ease, background @ctl-dur ease;
   }
@@ -46,6 +46,24 @@
   .ant-input-number,
   .ant-picker {
     height: @ctl-h;
+  }
+
+  /* 带前后缀的输入框：内层 input 必须「透明化」。
+   * 否则它会画一块自己的白底，盖住容器下边框，在圆角处留下断续的直线。 */
+  .ant-input-affix-wrapper > input.ant-input {
+    height: auto;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .ant-input-affix-wrapper > input.ant-input:hover,
+  .ant-input-affix-wrapper > input.ant-input:focus {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
   }
 
   .ant-input-sm:not(textarea),
@@ -102,7 +120,7 @@
   .ant-input-number:hover,
   .ant-picker:hover,
   .ant-select:not(.ant-select-disabled):hover .ant-select-selector {
-    border-color: var(--g-card-border-strong);
+    border-color: var(--g-field-border-hover);
   }
 
   .ant-input:focus,
@@ -183,7 +201,7 @@
   .ant-input-number-status-error,
   .ant-picker-status-error,
   .ant-select-status-error:not(.ant-select-disabled):not(.ant-select-customize-input) .ant-select-selector {
-    background: var(--g-card-bg-soft);
+    background: var(--g-field-bg);
     border-color: var(--g-red) !important;
   }
 
@@ -1042,4 +1060,29 @@
   }
 
   /* ---- 尾部：闭合 :root:root 块 ---- */
+}
+
+/* ------------------------------ 12. 深色主题的主按钮 ------------------------------ */
+/* antd 的 primary-color 是构建期固定值（#2F86C4），在深底上偏闷；
+ * 深色下让主按钮跟 --g-blue(#62a8ea)，与设计规范「主色随主题换值」对齐。
+ * 注意：必须写在 :root:root 块外——块内用 `html[...] &` 会被 less 拼成
+ * `:root:root html[...] ...`，选择器永远不命中。这里用 body 多加一级权重压过 antd 暗色表(0,2,1)。 */
+html[data-theme='dark'] body .ant-btn-primary:not(.ant-btn-dangerous) {
+  background: var(--g-blue);
+  border-color: var(--g-blue);
+}
+
+/* 浅蓝底配白字对比只有 2.4:1，深色下主按钮统一改深色文字（≈8:1）。
+ * antd 在暗色表里对 color 另有声明，这里必须 !important 才压得住。 */
+html[data-theme='dark'] body .ant-btn-primary:not(.ant-btn-dangerous),
+html[data-theme='dark'] body .ant-btn-primary:not(.ant-btn-dangerous) > span,
+html[data-theme='dark'] body .ant-btn-primary:not(.ant-btn-dangerous) .anticon {
+  color: #06131f !important;
+}
+
+html[data-theme='dark'] body .ant-btn-primary:not(.ant-btn-dangerous):hover,
+html[data-theme='dark'] body .ant-btn-primary:not(.ant-btn-dangerous):focus {
+  background: var(--g-blue);
+  border-color: var(--g-blue);
+  filter: brightness(1.1);
 }

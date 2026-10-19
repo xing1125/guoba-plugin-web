@@ -186,22 +186,22 @@
   /* 登录方式切换 */
   .glf__modes {
     display: flex;
-    gap: 6px;
-    padding: 3px;
-    margin-bottom: 18px;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 16px;
     background: var(--g-card-bg-soft);
-    border: 1px solid var(--g-card-border);
-    border-radius: 9px;
+    border: 1px solid var(--g-field-border);
+    border-radius: 12px;
   }
 
   .glf__mode {
     flex: 1;
-    padding: 6px 0;
-    font-size: 12.5px;
+    padding: 8px 0;
+    font-size: 13px;
     color: var(--g-text-sub);
     text-align: center;
     cursor: pointer;
-    border-radius: 7px;
+    border-radius: 9px;
     transition: all 0.18s ease;
     user-select: none;
   }

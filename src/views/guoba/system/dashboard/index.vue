@@ -336,7 +336,7 @@
   const modules = computed(() => {
     const p = palette.value;
     return [
-      { label: '游戏签到', desc: '每日签到汇总', path: '/sign', value: '', icon: 'ant-design:calendar-check-outlined', color: p.green[0], soft: hexToRgba(p.green[0], 0.14) },
+      { label: '游戏签到', desc: '每日签到汇总', path: '/sign', value: '', icon: 'mdi:calendar-check-outline', color: p.green[0], soft: hexToRgba(p.green[0], 0.14) },
       { label: '米游社账号', desc: 'CK 状态与绑定', path: '/account', value: '', icon: 'ant-design:key-outlined', color: p.amber[0], soft: hexToRgba(p.amber[0], 0.14) },
       { label: '游戏 UID', desc: '六游戏归属', path: '/uid', value: '', icon: 'ant-design:fund-outlined', color: p.rose[0], soft: hexToRgba(p.rose[0], 0.14) },
       { label: '群数据', desc: '消息量与活跃榜', path: '/groups', value: `${overview.value.groupCount} 群`, icon: 'ant-design:appstore-outlined', color: p.green[0], soft: hexToRgba(p.green[0], 0.14) },

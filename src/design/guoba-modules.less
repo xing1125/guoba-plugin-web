@@ -779,20 +779,15 @@ html[data-theme='light'] .db-hero::before {
   cursor: pointer;
 }
 
+/* 可点的指标卡当筛选器用时：选中态走主色，不用金色（金色在本套设计里等于「提醒/警告」） */
 .db-kpi__card.is-active {
-  border-color: var(--g-gold);
-  box-shadow: 0 0 0 1px var(--g-gold), 0 10px 26px -18px rgb(0 0 0 / 45%);
+  border-color: var(--g-blue);
+  box-shadow: 0 0 0 3px var(--g-blue-soft), 0 10px 26px -18px rgb(0 0 0 / 35%);
 }
 
-.db-kpi__card.is-active::after {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 6px;
-  height: 6px;
-  content: '';
-  background: var(--g-gold);
-  border-radius: 50%;
+.db-kpi__card.is-active .db-kpi__label {
+  color: var(--g-blue);
+  font-weight: 600;
 }
 
 .db-kpi__icon {
@@ -1037,6 +1032,18 @@ html[data-theme='light'] .db-hero::before {
 
 .db-cfg__body {
   min-width: 0;
+  /* 右下角悬浮「保存全部」是 fixed 定位，给内容留出等高的安全区，避免压住最后一个字段 */
+  padding-bottom: 64px;
+}
+
+/* 配置项：label 与控件之间留白（vben 表单默认几乎贴在一起） */
+.db-cfg .ant-form-item-label,
+.db-cfg .ant-form-item-label > label {
+  padding-right: 10px;
+}
+
+.db-cfg .ant-form-item {
+  margin-bottom: 18px;
 }
 
 /* 吸顶操作条：分组名 + 统计 + 全局动作（展开/保存） */

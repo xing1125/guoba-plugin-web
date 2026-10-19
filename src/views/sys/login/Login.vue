@@ -295,16 +295,30 @@
 
   /* ---------------- 卡内表单（ant 组件） ---------------- */
   .@{prefix-cls}__card {
-    .ant-input {
+    /* 控件外观交给 design/guoba-controls.less（白底 + 46% 描边 + 聚焦 3px 软环），
+     * 这里只放大字号、加宽左右内边距，避免和全局权重打架。 */
+    .ant-input,
+    .ant-input-affix-wrapper {
       min-width: 0 !important;
-      background: var(--g-card-bg-soft);
-      border-color: var(--g-card-border);
+      padding: 0 13px;
+      font-size: 13.5px;
+      border-radius: 11px;
     }
 
-    .ant-input:focus,
-    .ant-input-focused {
-      border-color: var(--g-blue);
-      box-shadow: none;
+    /* affix 容器的内层 input 不占内边距，否则左右会多出一截 */
+    .ant-input-affix-wrapper > input.ant-input {
+      padding: 0;
+    }
+
+    .ant-input::placeholder,
+    .ant-input-affix-wrapper .ant-input::placeholder {
+      font-size: 13px;
+      color: var(--g-text-mute);
+    }
+
+    /* 密码框里的眼睛图标让出右侧空间，避免和圆角挤在一起 */
+    .ant-input-affix-wrapper .ant-input-suffix {
+      margin-left: 10px;
     }
 
     .ant-divider {
@@ -335,9 +349,11 @@
     }
 
     .ant-btn-block {
-      height: 40px;
+      height: 42px;
+      margin-top: 4px;
       font-weight: 600;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
+      border-radius: 11px;
     }
   }
 

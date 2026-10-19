@@ -41,3 +41,7 @@ package-lock.json
 
 *.psd
 /.history
+
+# vditor 离线资源（Markdown 预览用，目录名 dist 是 vditor 的 cdn 约定，需要提交）
+!/public/vditor/dist/
+!/public/vditor/dist/**

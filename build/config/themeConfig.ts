@@ -1,6 +1,7 @@
 import { generate } from '@ant-design/colors';
 
-export const primaryColor = '#6495ED';
+// 后台主色统一走设计规范 §1.1：浅色 --g-blue #2F86C4（白字对比 4.7:1，达 AA）
+export const primaryColor = '#2F86C4';
 
 export const darkMode = 'light';
 

@@ -2,28 +2,72 @@
   <PageWrapper title="">
     <div class="ya">
       <!-- 页头 -->
-      <section class="ya-hero">
-        <div>
-          <div class="ya-hero__eyebrow">YING AI · PRIVATE</div>
-          <div class="ya-hero__title">荧 · 私聊管理</div>
-          <div class="ya-hero__desc">
+      <section class="db-hero">
+        <div class="db-hero__main">
+          <div class="db-hero__eyebrow">YING AI · PRIVATE</div>
+          <div class="db-hero__title">荧 · 私聊管理</div>
+          <div class="db-hero__desc">
             用户关系、聊天记录与回复风格智能诊断
-            <Tag :color="overview.globalEnabled ? 'green' : 'default'" class="ya-hero__tag">
-              全局私聊{{ overview.globalEnabled ? '已开启' : '已关闭' }}
-            </Tag>
+            <span class="g-chip ya-hero__chip" :class="overview.globalEnabled ? 'is-on' : 'is-off'">
+              <span class="ya-hero__dot" />全局私聊{{ overview.globalEnabled ? '已开启' : '已关闭' }}
+            </span>
           </div>
         </div>
-        <Button size="small" :loading="loading" @click="loadAll">刷新</Button>
+        <div class="db-hero__side">
+          <span class="ya-updated">更新于 {{ overview.updatedAt || '—' }}</span>
+          <Button size="small" :loading="loading" @click="loadAll">刷新</Button>
+        </div>
       </section>
 
       <!-- KPI -->
       <section class="ya-kpi">
-        <div v-for="c in kpiCards" :key="c.label" class="ya-kpi__card">
-          <div class="ya-kpi__label">{{ c.label }}</div>
-          <div class="ya-kpi__value">
-            {{ c.value }}<small v-if="c.unit">{{ c.unit }}</small>
+        <div v-for="c in kpiCards" :key="c.label" class="g-stat" :class="c.tone">
+          <div class="g-stat__label">
+            <span class="g-stat__dot" />{{ c.label }}
           </div>
-          <div class="ya-kpi__foot">{{ c.foot }}</div>
+          <div class="g-stat__value">
+            {{ c.value }}<span v-if="c.unit" class="g-stat__unit">{{ c.unit }}</span>
+          </div>
+          <div class="g-stat__foot">{{ c.foot }}</div>
+        </div>
+      </section>
+
+      <!-- 关系与消息分布 -->
+      <section class="ya-viz">
+        <div class="g-card ya-panel ya-viz__donut">
+          <div class="gm-panel__head">
+            <div class="gm-panel__title"><i><Icon icon="ant-design:pie-chart-outlined" :size="13" /></i>阶段分布</div>
+            <span class="gm-panel__extra">按关系阶段</span>
+          </div>
+          <div ref="stageRef" class="ya-chart ya-chart--donut" />
+          <div v-if="!stageData.length" class="g-empty ya-chart__empty">
+            <div class="g-empty__title">暂无关系阶段</div>
+            <div class="g-empty__desc">用户与荧聊过天后才会归档阶段</div>
+          </div>
+        </div>
+
+        <div class="g-card ya-panel ya-viz__scatter">
+          <div class="gm-panel__head">
+            <div class="gm-panel__title"><i><Icon icon="ant-design:dot-chart-outlined" :size="13" /></i>亲密 × 熟悉</div>
+            <span class="gm-panel__extra">点越大消息越多 · 共 {{ distRows.length }} 位</span>
+          </div>
+          <div ref="scatterRef" class="ya-chart ya-chart--scatter" />
+          <div v-if="!distRows.length" class="g-empty ya-chart__empty">
+            <div class="g-empty__title">暂无关系数据</div>
+            <div class="g-empty__desc">关系值来自私聊记忆里的 closeness / familiarity</div>
+          </div>
+        </div>
+
+        <div class="g-card ya-panel ya-viz__rank">
+          <div class="gm-panel__head">
+            <div class="gm-panel__title"><i><Icon icon="ant-design:bar-chart-outlined" :size="13" /></i>消息量 TOP 8</div>
+            <span class="gm-panel__extra">用户 / 荧</span>
+          </div>
+          <div ref="rankRef" class="ya-chart ya-chart--rank" />
+          <div v-if="!rankData.length" class="g-empty ya-chart__empty">
+            <div class="g-empty__title">暂无消息</div>
+            <div class="g-empty__desc">私聊会话窗口内还没有收发记录</div>
+          </div>
         </div>
       </section>
 
@@ -71,6 +115,9 @@
             <template v-else-if="column.key === 'rel'">
               <span class="ya-num">{{ (record.closeness * 100).toFixed(0) }}</span>
               <span class="ya-sub">亲密</span>
+            </template>
+            <template v-else-if="column.key === 'mood'">
+              <span class="ya-mood" :class="`is-${record.mood}`">{{ moodLabel(record.mood) }}</span>
             </template>
             <template v-else-if="column.key === 'msgs'">
               {{ record.userMsgs }}<span class="ya-sub"> / {{ record.aiMsgs }}</span>
@@ -180,7 +227,7 @@
         <div v-if="chat.user" class="ya-chat__meta">
           <Tag>{{ stageLabel(chat.user.stage) }}</Tag>
           <span>亲密 {{ (chat.user.closeness * 100).toFixed(0) }}</span>
-          <span>情绪 {{ chat.user.mood }}</span>
+          <span>情绪 {{ moodLabel(chat.user.mood) }}</span>
           <span>平均回复 {{ chat.user.style.avgLen }} 字</span>
           <span>问号率 {{ Math.round(chat.user.style.questionRate * 100) }}%</span>
         </div>
@@ -212,7 +259,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref } from 'vue';
+  import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
   import { Button, Table, Tag, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import GModal from '../_shared/dialog/GModal.vue';
@@ -220,8 +267,18 @@
   import GSegmented from '../_shared/form/GSegmented.vue';
   import GSwitch from '../_shared/form/GSwitch.vue';
   import { Icon } from '/@/components/Icon';
+  import { useECharts } from '/@/hooks/web/useECharts';
+  import { useRootSetting } from '/@/hooks/setting/useRootSetting';
+  import { ThemeEnum } from '/@/enums/appEnum';
+  import { chartBase, chartColors, hexToRgba } from '../_shared/stats';
   import type { YingCompare, YingCompareRow, YingInsights, YingMessage, YingOverview, YingUserRow } from './api';
   import { yingaiApi } from './api';
+
+  defineOptions({ name: 'YingAi' });
+
+  const { getDarkMode } = useRootSetting();
+  const isDark = computed(() => unref(getDarkMode) === ThemeEnum.DARK);
+  const palette = computed(() => chartColors(isDark.value));
 
   const loading = ref(false);
   const tableLoading = ref(false);
@@ -258,21 +315,24 @@
     { title: '用户', key: 'user', width: 200 },
     { title: '阶段', key: 'stage', width: 90 },
     { title: '关系', key: 'rel', width: 90 },
-    { title: '情绪', dataIndex: 'mood', key: 'mood', width: 90 },
+    { title: '情绪', key: 'mood', width: 90 },
     { title: '消息 用户/荧', key: 'msgs', width: 120 },
     { title: '最后互动', key: 'last', width: 150 },
     { title: '聊天', key: 'enabled', width: 80 },
     { title: '', key: 'ops', width: 90 },
   ];
 
+  /** 比率字段后端给 0~1，表格统一按百分比展示 */
+  const pct = (v: any) => `${Math.round(Number(v || 0) * 100)}%`;
+
   const compareColumns = [
     { title: '用户', key: 'who', width: 190 },
     { title: '条数', key: 'n', width: 100 },
     { title: '均长', dataIndex: 'avg', key: 'avg', width: 70 },
-    { title: '超40字', dataIndex: 'over40', key: 'over40', width: 80 },
-    { title: '问号', dataIndex: 'question', key: 'question', width: 70 },
-    { title: '换行', dataIndex: 'multi', key: 'multi', width: 70 },
-    { title: '模板句', dataIndex: 'tpl', key: 'tpl', width: 75 },
+    { title: '超40字', dataIndex: 'over40', key: 'over40', width: 80, customRender: ({ text }: any) => pct(text) },
+    { title: '问号', dataIndex: 'question', key: 'question', width: 70, customRender: ({ text }: any) => pct(text) },
+    { title: '换行', dataIndex: 'multi', key: 'multi', width: 70, customRender: ({ text }: any) => pct(text) },
+    { title: '模板句', dataIndex: 'tpl', key: 'tpl', width: 75, customRender: ({ text }: any) => pct(text) },
     { title: '优先级', key: 'score', width: 80 },
   ];
 
@@ -308,11 +368,17 @@
   }));
 
   const kpiCards = computed(() => [
-    { label: '用户总数', value: overview.value.users, unit: '位', foot: `${overview.value.withChat} 位有聊天记录` },
-    { label: '已开启私聊', value: overview.value.enabled, unit: '位', foot: `近 7 天活跃 ${overview.value.active7d} 位` },
-    { label: '消息总量', value: overview.value.totalMsgs, unit: '条', foot: '会话窗口内最近消息' },
-    { label: '平均回复', value: overview.value.avgAiLen, unit: '字', foot: `问号率 ${Math.round(overview.value.questionRate * 100)}%` },
-    { label: '换行/模板率', value: `${Math.round(overview.value.multiLineRate * 100)}/${Math.round(overview.value.repeatOpenRate * 100)}`, unit: '%', foot: '越低越像真人' },
+    { label: '用户总数', value: overview.value.users, unit: '位', foot: `${overview.value.withChat} 位有聊天记录`, tone: 'g-stat--blue' },
+    { label: '已开启私聊', value: overview.value.enabled, unit: '位', foot: `近 7 天活跃 ${overview.value.active7d} 位`, tone: 'g-stat--green' },
+    { label: '消息总量', value: overview.value.totalMsgs, unit: '条', foot: '会话窗口内最近消息', tone: 'g-stat--cyan' },
+    { label: '平均回复', value: overview.value.avgAiLen, unit: '字', foot: `问号率 ${Math.round(overview.value.questionRate * 100)}%`, tone: 'g-stat--violet' },
+    {
+      label: '风格偏离',
+      value: `${Math.round(overview.value.multiLineRate * 100)}% / ${Math.round(overview.value.repeatOpenRate * 100)}%`,
+      unit: '',
+      foot: '换行率 / 模板句率，越低越像真人',
+      tone: 'g-stat--amber',
+    },
   ]);
 
   const metricCards = computed(() => {
@@ -338,6 +404,25 @@
 
   function stageLabel(s: string) {
     return ({ stranger: '陌生', acquaintance: '初识', familiar: '熟悉', close: '亲近', intimate: '亲密' } as any)[s] || s;
+  }
+  /** 荧的记忆里情绪是英文枚举，界面上统一转中文 */
+  function moodLabel(m: string) {
+    return (
+      ({
+        neutral: '平静',
+        calm: '平静',
+        happy: '愉快',
+        joyful: '愉快',
+        excited: '兴奋',
+        sad: '低落',
+        tired: '疲惫',
+        angry: '烦躁',
+        annoyed: '烦躁',
+        anxious: '不安',
+        shy: '害羞',
+        curious: '好奇',
+      } as any)[String(m || '').toLowerCase()] || m || '—'
+    );
   }
   function stageColor(s: string) {
     return ({ stranger: 'default', acquaintance: 'blue', familiar: 'cyan', close: 'green', intimate: 'magenta' } as any)[s] || 'default';
@@ -373,7 +458,8 @@
       compare.value = cmp;
       // 视角失效（用户被删/改 uid）→ 回落到全体，避免诊断卡停在空状态
       if (scope.value && !cmp.list.some((r) => r.uid === scope.value)) scope.value = '';
-      await loadUsers();
+      await Promise.all([loadUsers(), loadDist()]);
+      renderViz();
     } finally {
       loading.value = false;
     }
@@ -440,30 +526,212 @@
     await loadMessages(1);
   }
 
+  /* ------------------------------ 分布可视化 ------------------------------ */
+
+  /** 全量用户（不受表格分页影响），只用于图表 */
+  const distRows = ref<YingUserRow[]>([]);
+
+  const STAGE_META: Record<string, { label: string; color: string }> = {
+    stranger: { label: '陌生', color: '#7f97ab' },
+    acquaintance: { label: '初识', color: '#4fa8d8' },
+    familiar: { label: '熟悉', color: '#45b97c' },
+    close: { label: '亲近', color: '#d3a13f' },
+    intimate: { label: '亲密', color: '#e0698e' },
+  };
+
+  const stageData = computed(() =>
+    Object.entries(overview.value.stageDist || {})
+      .filter(([, n]) => Number(n) > 0)
+      .map(([k, n]) => ({ name: STAGE_META[k]?.label || k, value: Number(n), color: STAGE_META[k]?.color || '#7f97ab' })),
+  );
+
+  const rankData = computed(() =>
+    [...distRows.value]
+      .sort((a, b) => b.msgs - a.msgs)
+      .slice(0, 8)
+      .map((r) => ({ name: r.name || r.uid.slice(0, 8), user: r.userMsgs, ai: r.aiMsgs })),
+  );
+
+  const stageRef = ref<HTMLDivElement | null>(null);
+  const scatterRef = ref<HTMLDivElement | null>(null);
+  const rankRef = ref<HTMLDivElement | null>(null);
+  const stageChart = useECharts(stageRef);
+  const scatterChart = useECharts(scatterRef);
+  const rankChart = useECharts(rankRef);
+
+  function renderStage() {
+    const base = chartBase(isDark.value);
+    stageChart.setOptions({
+      tooltip: { ...base.tooltip, trigger: 'item', formatter: '{b}：{c} 位（{d}%）' },
+      legend: {
+        orient: 'vertical',
+        right: 4,
+        top: 'center',
+        itemWidth: 8,
+        itemHeight: 8,
+        icon: 'circle',
+        textStyle: { color: base.text, fontSize: 11.5 },
+      },
+      series: [
+        {
+          type: 'pie',
+          radius: ['58%', '82%'],
+          center: ['36%', '50%'],
+          avoidLabelOverlap: true,
+          itemStyle: { borderColor: 'transparent', borderWidth: 2, borderRadius: 4 },
+          label: { show: false },
+          emphasis: { scale: true, scaleSize: 4 },
+          data: stageData.value.map((d) => ({ name: d.name, value: d.value, itemStyle: { color: d.color } })),
+        },
+      ],
+    });
+  }
+
+  function renderScatter() {
+    const base = chartBase(isDark.value);
+    const list = distRows.value;
+    scatterChart.setOptions({
+      grid: { top: 14, right: 18, bottom: 30, left: 40 },
+      tooltip: {
+        ...base.tooltip,
+        formatter: (p: any) => {
+          const r = list[p.dataIndex];
+          return `${r?.name || ''}<br/>亲密 ${Math.round((r?.closeness || 0) * 100)} · 熟悉 ${Math.round((r?.familiarity || 0) * 100)}<br/>消息 ${r?.msgs || 0} 条`;
+        },
+      },
+      xAxis: {
+        type: 'value',
+        min: 0,
+        max: 100,
+        name: '亲密',
+        nameTextStyle: { color: base.text, fontSize: 10 },
+        axisLabel: base.axisLabel,
+        splitLine: base.splitLine,
+      },
+      yAxis: {
+        type: 'value',
+        min: 0,
+        max: 100,
+        name: '熟悉',
+        nameTextStyle: { color: base.text, fontSize: 10 },
+        axisLabel: base.axisLabel,
+        splitLine: base.splitLine,
+      },
+      series: [
+        {
+          type: 'scatter',
+          data: list.map((r) => ({
+            value: [Math.round(r.closeness * 100), Math.round(r.familiarity * 100)],
+            msgs: r.msgs,
+            name: r.name,
+          })),
+          // 点大小随消息量走（4~18px），小样本不抢视觉
+          symbolSize: (v: any, p: any) => {
+            const n = Number(p?.data?.msgs || 0);
+            return Math.max(5, Math.min(18, 5 + Math.sqrt(n) * 1.6));
+          },
+          itemStyle: { color: hexToRgba(palette.value[0], 0.6), borderColor: palette.value[0], borderWidth: 1 },
+          emphasis: { itemStyle: { color: palette.value[0] } },
+        },
+      ],
+    });
+  }
+
+  function renderRank() {
+    const base = chartBase(isDark.value);
+    const rows = rankData.value;
+    rankChart.setOptions({
+      grid: { top: 26, right: 18, bottom: 4, left: 6, containLabel: true },
+      tooltip: { ...base.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
+      legend: {
+        data: ['用户', '荧'],
+        right: 0,
+        top: 0,
+        itemWidth: 9,
+        itemHeight: 9,
+        icon: 'circle',
+        textStyle: { color: base.text, fontSize: 11 },
+      },
+      xAxis: { type: 'value', axisLabel: base.axisLabel, splitLine: base.splitLine },
+      yAxis: {
+        type: 'category',
+        inverse: true,
+        data: rows.map((r) => r.name),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: base.text, fontSize: 11, width: 82, overflow: 'truncate' },
+      },
+      series: [
+        {
+          name: '用户',
+          type: 'bar',
+          stack: 'msg',
+          barWidth: 10,
+          itemStyle: { color: palette.value[0], borderRadius: [0, 0, 0, 0] },
+          data: rows.map((r) => r.user),
+        },
+        {
+          name: '荧',
+          type: 'bar',
+          stack: 'msg',
+          barWidth: 10,
+          itemStyle: { color: palette.value[1], borderRadius: [0, 3, 3, 0] },
+          data: rows.map((r) => r.ai),
+        },
+      ],
+    });
+  }
+
+  function renderViz() {
+    nextTick(() => {
+      renderStage();
+      renderScatter();
+      renderRank();
+    });
+  }
+
+  watch(isDark, renderViz);
+  watch([stageData, rankData, distRows], renderViz);
+
+  async function loadDist() {
+    try {
+      const r = await yingaiApi.getUsers({ page: 1, size: 200 });
+      distRows.value = r.list || [];
+    } catch {
+      distRows.value = [];
+    }
+  }
+
   onMounted(loadAll);
 </script>
 
 <style scoped lang="less">
   .ya { display: flex; flex-direction: column; gap: 14px; }
 
-  .ya-hero {
-    display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
-    padding: 18px 22px; border-radius: 14px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(236, 72, 153, 0.10));
-    border: 1px solid rgba(127, 127, 160, 0.18);
+  .ya-hero__chip {
+    margin-left: 8px;
+    padding: 1px 8px;
+    font-size: 11px;
+    border: 1px solid transparent;
   }
-  .ya-hero__eyebrow { font-size: 11px; letter-spacing: 0.18em; opacity: 0.55; }
-  .ya-hero__title { font-size: 22px; font-weight: 700; margin-top: 4px; }
-  .ya-hero__desc { font-size: 12px; opacity: 0.65; margin-top: 4px; }
-  .ya-hero__tag { margin-left: 8px; }
+  .ya-hero__chip.is-on { color: var(--g-green); background: rgb(69 185 124 / 13%); border-color: rgb(69 185 124 / 26%); }
+  .ya-hero__chip.is-off { color: var(--g-text-mute); background: var(--g-chip-bg); border-color: var(--g-card-border); }
+  .ya-hero__dot { width: 5px; height: 5px; border-radius: 50%; background: currentcolor; }
+  .ya-updated { font-size: 11.5px; color: var(--g-text-mute); font-variant-numeric: tabular-nums; }
 
+  /* KPI：直接复用 g-stat，五列在此收口 */
   .ya-kpi { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
-  @media (max-width: 1100px) { .ya-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  .ya-kpi__card { padding: 14px 16px; border-radius: 12px; background: rgba(127, 127, 160, 0.07); border: 1px solid rgba(127, 127, 160, 0.14); }
-  .ya-kpi__label { font-size: 12px; opacity: 0.65; }
-  .ya-kpi__value { font-size: 24px; font-weight: 700; line-height: 1.3; }
-  .ya-kpi__value small { font-size: 12px; font-weight: 400; opacity: 0.6; margin-left: 2px; }
-  .ya-kpi__foot { font-size: 11px; opacity: 0.5; margin-top: 2px; }
+  @media (max-width: 1180px) { .ya-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 900px) { .ya-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 620px) { .ya-kpi { grid-template-columns: minmax(0, 1fr); } }
+
+  /* 分布可视化：环形 + 散点 + 排行 */
+  .ya-viz { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.1fr); gap: 12px; }
+  @media (max-width: 1180px) { .ya-viz { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .ya-viz__rank { grid-column: 1 / -1; } }
+  @media (max-width: 900px) { .ya-viz { grid-template-columns: minmax(0, 1fr); } .ya-viz__rank { grid-column: auto; } }
+  .ya-chart { width: 100%; height: 188px; }
+  .ya-chart__empty { padding: 24px 0 30px; }
+  .ya-chart__empty + .ya-chart { display: none; }
 
   .ya-panel { padding: 16px 18px; }
   .ya-panel__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -471,9 +739,16 @@
   .ya-panel__tools { display: flex; align-items: center; gap: 10px; }
   .ya-panel__extra { font-size: 12px; opacity: 0.55; }
 
-  .ya-seg { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid rgba(127, 127, 160, 0.22); }
-  .ya-seg__item { padding: 2px 10px; font-size: 12px; cursor: pointer; opacity: 0.7; }
-  .ya-seg__item.is-active { background: rgba(99, 102, 241, 0.18); opacity: 1; font-weight: 600; }
+  .ya-seg { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--g-card-border-strong); }
+  .ya-seg__item { padding: 3px 11px; font-size: 12px; color: var(--g-text-sub); cursor: pointer; }
+  .ya-seg__item.is-active { background: var(--g-blue-soft); color: var(--g-blue); font-weight: 600; }
+
+  /* 情绪：按语义走设计色，未知值保持中性 */
+  .ya-mood { font-size: 12px; color: var(--g-text-sub); }
+  .ya-mood.is-happy, .ya-mood.is-joyful, .ya-mood.is-excited { color: var(--g-green); }
+  .ya-mood.is-sad, .ya-mood.is-tired { color: var(--g-text-mute); }
+  .ya-mood.is-angry, .ya-mood.is-annoyed { color: var(--g-rose); }
+  .ya-mood.is-shy, .ya-mood.is-curious { color: var(--g-violet); }
 
   .ya-user { display: flex; flex-direction: column; line-height: 1.3; }
   .ya-user__name { font-weight: 600; }
@@ -482,20 +757,20 @@
   .ya-num { font-weight: 600; margin-right: 4px; }
   .ya-sub { font-size: 11px; opacity: 0.5; }
   /* 当前诊断视角对应的对比行（customRow 加在 tr 上，需穿透 scoped） */
-  :deep(.ya-cmp-on) > td { background: rgba(99, 102, 241, 0.14) !important; }
+  :deep(.ya-cmp-on) > td { background: var(--g-blue-soft) !important; }
 
   .ya-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 10px; margin-bottom: 14px; }
-  .ya-metric { padding: 10px 12px; border-radius: 10px; background: rgba(127, 127, 160, 0.07); text-align: center; }
-  .ya-metric__value { font-size: 18px; font-weight: 700; }
-  .ya-metric__label { font-size: 11px; opacity: 0.55; margin-top: 2px; }
+  .ya-metric { padding: 10px 12px; border-radius: 10px; background: var(--g-card-bg-soft); border: 1px solid var(--g-card-border); text-align: center; }
+  .ya-metric__value { font-size: 18px; font-weight: 650; color: var(--g-text); font-variant-numeric: tabular-nums; }
+  .ya-metric__label { font-size: 11px; color: var(--g-text-mute); margin-top: 2px; }
 
   .ya-issues { display: flex; flex-direction: column; gap: 10px; }
-  .ya-issue { padding: 10px 14px; border-radius: 10px; border-left: 3px solid rgba(127, 127, 160, 0.3); background: rgba(127, 127, 160, 0.06); }
-  .ya-issue.is-warn { border-left-color: #fa8c16; background: rgba(250, 140, 22, 0.08); }
-  .ya-issue.is-info { border-left-color: #1677ff; background: rgba(22, 119, 255, 0.06); }
-  .ya-issue__title { font-weight: 600; display: flex; align-items: center; gap: 6px; }
-  .ya-issue__detail { font-size: 12px; opacity: 0.75; margin-top: 4px; }
-  .ya-issue__sug { font-size: 12px; margin-top: 4px; color: #1677ff; }
+  .ya-issue { padding: 10px 14px; border-radius: 10px; border-left: 3px solid var(--g-card-border-strong); background: var(--g-card-bg-soft); }
+  .ya-issue.is-warn { border-left-color: var(--g-gold); background: rgb(211 188 141 / 10%); }
+  .ya-issue.is-info { border-left-color: var(--g-blue); background: rgb(98 168 234 / 8%); }
+  .ya-issue__title { font-weight: 600; display: flex; align-items: center; gap: 6px; color: var(--g-text); }
+  .ya-issue__detail { font-size: 12px; color: var(--g-text-sub); margin-top: 4px; }
+  .ya-issue__sug { font-size: 12px; margin-top: 4px; color: var(--g-blue); }
   .ya-openings { margin-top: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .ya-openings__label { font-size: 12px; opacity: 0.55; }
   .ya-empty { font-size: 12px; opacity: 0.5; padding: 8px 0; }

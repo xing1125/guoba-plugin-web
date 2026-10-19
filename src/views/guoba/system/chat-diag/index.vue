@@ -83,7 +83,7 @@
     }
     &__desc {
       font-size: 12px;
-      color: var(--g-text-dim);
+      color: var(--g-text-mute);
       margin-top: 4px;
     }
     &__main {
@@ -98,14 +98,15 @@
 
   .cd-frame-wrap {
     position: relative;
-    flex: 1;
-    min-height: 0;
+    /* 不用 flex:1 —— 父级高度是 auto，basis 0% 会把 iframe 压成 150px 内联高度 */
+    flex: 0 0 auto;
+    height: calc(100vh - 210px);
+    min-height: 520px;
     margin-top: 12px;
     border: 1px solid var(--g-card-border);
     border-radius: 14px;
     overflow: hidden;
     background: #0a0c14;
-    height: calc(100vh - 210px);
   }
 
   .cd-frame {

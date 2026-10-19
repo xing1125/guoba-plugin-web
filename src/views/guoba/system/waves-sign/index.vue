@@ -104,7 +104,7 @@
     }
     &__desc {
       font-size: 12px;
-      color: var(--g-text-dim);
+      color: var(--g-text-mute);
       margin-top: 4px;
     }
     &__main {
@@ -119,14 +119,15 @@
 
   .ws-frame-wrap {
     position: relative;
-    flex: 1;
-    min-height: 0;
+    /* 同 chat-diag：父级高度 auto 时 flex:1 会把 iframe 压成内联高度 */
+    flex: 0 0 auto;
+    height: calc(100vh - 230px);
+    min-height: 520px;
     margin-top: 12px;
     border: 1px solid var(--g-card-border);
     border-radius: 14px;
     overflow: hidden;
     background: var(--g-card-bg);
-    height: calc(100vh - 230px);
   }
 
   .ws-frame {
@@ -160,7 +161,7 @@
     }
     &__sub {
       font-size: 12px;
-      color: var(--g-text-dim);
+      color: var(--g-text-mute);
     }
   }
 </style>

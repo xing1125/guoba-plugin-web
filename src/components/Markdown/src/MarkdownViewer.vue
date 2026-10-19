@@ -13,6 +13,10 @@
     class: { type: String },
   });
   const emit = defineEmits(['initOk']);
+
+  /** Vditor 默认从 unpkg 拉 lute / hljs，内网离线环境会卡住；
+   *  构建时已把所需资源拷进 public/vditor/dist，这里指向本站。 */
+  const vditorCdn = `${import.meta.env.BASE_URL}/vditor`.replace(/\/{2,}/g, '/');
   const viewerRef = ref<ElRef>(null);
   const vditorPreviewRef = ref(null) as Ref<Nullable<VditorPreview>>;
   const { getDarkMode } = useRootSetting();
@@ -20,6 +24,7 @@
   async function init() {
     const viewerEl = unref(viewerRef) as HTMLElement;
     vditorPreviewRef.value = await VditorPreview.preview(viewerEl, props.value, {
+      cdn: vditorCdn,
       mode: getTheme(getDarkMode.value, 'content'),
       theme: {
         // 设置内容主题

@@ -118,11 +118,20 @@
                   <template v-else-if="column.key === 'action'">
                     <span class="ws-acts">
                       <a v-if="!record.dir && record.editable" @click="openEdit(record.path)">编辑</a>
-                      <a :href="downloadHref(record.path)" target="_blank" @click.stop>
-                        <DownloadOutlined /> 下载
-                      </a>
-                      <a @click="openRename(record)"><EditOutlined /> 重命名</a>
-                      <a class="is-danger" @click="askRemove(record)"><DeleteOutlined /> 删除</a>
+                      <a :href="downloadHref(record.path)" target="_blank" @click.stop>下载</a>
+                      <Dropdown :trigger="['click']" placement="bottomRight">
+                        <a class="ws-acts__more" @click.stop>更多<DownOutlined /></a>
+                        <template #overlay>
+                          <Menu>
+                            <Menu.Item key="rename" @click="openRename(record)">
+                              <EditOutlined /> 重命名
+                            </Menu.Item>
+                            <Menu.Item key="remove" danger @click="askRemove(record)">
+                              <DeleteOutlined /> 删除
+                            </Menu.Item>
+                          </Menu>
+                        </template>
+                      </Dropdown>
                     </span>
                   </template>
                 </template>
@@ -249,12 +258,12 @@
 
 <script setup lang="ts">
   import { computed, onBeforeUnmount, onMounted, reactive, ref, unref } from 'vue';
-  import { Button, Input, Modal, Table, Tree, message } from 'ant-design-vue';
+  import { Button, Dropdown, Input, Menu, Modal, Table, Tree, message } from 'ant-design-vue';
   import {
     ArrowLeftOutlined,
     ClearOutlined,
     DeleteOutlined,
-    DownloadOutlined,
+    DownOutlined,
     EditOutlined,
     FileExcelOutlined,
     FileImageOutlined,
@@ -1075,6 +1084,18 @@
 
       &.is-danger {
         color: #ef4444;
+      }
+    }
+
+    &__more {
+      display: inline-flex;
+      gap: 2px;
+      align-items: center;
+      color: var(--g-text-mute) !important;
+
+      :deep(svg) {
+        width: 10px;
+        height: 10px;
       }
     }
   }

@@ -22,6 +22,9 @@ import { Persistent } from '/@/utils/cache/persistent';
 import { deepMerge } from '/@/utils';
 import { ThemeEnum } from '/@/enums/appEnum';
 
+/** 历史主色（浅蓝），命中即迁移到当前主色 */
+const LEGACY_THEME_COLORS = ['#6495ed', '#7180ff'];
+
 // Initial project configuration
 export function initAppConfigStore() {
   const localeStore = useLocaleStore();
@@ -30,6 +33,10 @@ export function initAppConfigStore() {
   projCfg = deepMerge(projectSetting, projCfg || {});
   // 强制开启深浅色切换按钮：老版本 localStorage 里缓存的 false 会覆盖默认值
   projCfg.showDarkModeToggle = true;
+  // 主色换代：旧版本缓存里仍是 #6495ED（偏浅、白字对比不足），直接升到新主色
+  if (LEGACY_THEME_COLORS.includes(String(projCfg.themeColor).toLowerCase())) {
+    projCfg.themeColor = primaryColor;
+  }
   const darkMode = appStore.getDarkMode;
   const {
     colorWeak,
