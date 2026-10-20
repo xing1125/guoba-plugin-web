@@ -69,14 +69,27 @@
         </div>
         <p v-if="!backups.length" class="dh-empty">还没有备份，点右上角「立即备份」创建第一份</p>
       </section>
+
+      <GConfirmModal
+        v-model:visible="restoreModal.visible"
+        title="确认恢复这份备份？"
+        :content="restoreModal.content"
+        hint="恢复会覆盖当前库文件，建议完成后重启 Bot"
+        danger
+        :loading="!!restoring"
+        ok-text="确认恢复"
+        @ok="doRestore"
+      />
     </div>
   </PageWrapper>
 </template>
 
 <script setup lang="ts">
   import { onMounted, ref } from 'vue';
-  import { Button, Modal, message } from 'ant-design-vue';
+  import { Button, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
+  import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
+  import { fmtDateTime } from '/@/utils/localTime';
   import {
     dbApi,
     type BackupItem,
@@ -105,9 +118,9 @@
     return (d.tables || []).reduce((s, t) => s + (t.rows || 0), 0);
   }
 
+  /** 统一走 localTime：后端给 ISO UTC，直切会差 8 小时 */
   function shortTime(at?: string | null) {
-    if (!at) return '';
-    return at.slice(0, 16).replace('T', ' ');
+    return fmtDateTime(at) || '';
   }
 
   async function reload() {
@@ -162,28 +175,32 @@
     }
   }
 
+  const restoreModal = ref({ visible: false, ts: '', content: '' });
+
   function askRestore(b: BackupItem) {
-    Modal.confirm({
-      title: '确认恢复这份备份？',
-      content: `将把 ${b.ts} 的数据库覆盖回当前文件。Bot 正在写入时可能转为暂存（*.restore-pending），需要停机后手动替换。建议恢复后重启 Bot。`,
-      okText: '确认恢复',
-      okType: 'danger',
-      cancelText: '取消',
-      onOk: async () => {
-        restoring.value = b.ts;
-        try {
-          const r: any = await dbApi.restore(b.ts, true);
-          const direct = (r?.results || []).filter((x: any) => x.mode === 'direct').length;
-          const pending = (r?.results || []).filter((x: any) => x.mode === 'pending').length;
-          message.success(`恢复完成：直接覆盖 ${direct} 个，暂存 ${pending} 个（建议重启 Bot）`);
-          await reload();
-        } catch (e: any) {
-          message.error(e?.message || '恢复失败');
-        } finally {
-          restoring.value = '';
-        }
-      },
-    });
+    restoreModal.value = {
+      visible: true,
+      ts: b.ts,
+      content: `将把 ${b.ts} 的数据库覆盖回当前文件。Bot 正在写入时可能转为暂存（*.restore-pending），需要停机后手动替换。`,
+    };
+  }
+
+  async function doRestore() {
+    const ts = restoreModal.value.ts;
+    if (!ts) return;
+    restoring.value = ts;
+    try {
+      const r: any = await dbApi.restore(ts, true);
+      const direct = (r?.results || []).filter((x: any) => x.mode === 'direct').length;
+      const pending = (r?.results || []).filter((x: any) => x.mode === 'pending').length;
+      message.success(`恢复完成：直接覆盖 ${direct} 个，暂存 ${pending} 个（建议重启 Bot）`);
+      restoreModal.value.visible = false;
+      await reload();
+    } catch (e: any) {
+      message.error(e?.message || '恢复失败');
+    } finally {
+      restoring.value = '';
+    }
   }
 
   onMounted(reload);
