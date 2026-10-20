@@ -186,8 +186,7 @@
               <span class="sign-date">{{ record.date }}</span>
               <span
                 v-if="record.date === (scope === 'mys' ? overview.today?.date : wOverview.today?.date)"
-                class="gm-chip"
-                style="margin-left: 6px"
+                class="g-chip is-signed sign-today"
                 >今天</span
               >
             </template>
@@ -224,7 +223,7 @@
               <span :class="record.omission ? 'sign-fail' : 'g-muted'">{{ record.omission }}</span>
             </template>
             <template v-else-if="column.key === 'action'">
-              <Button type="link" size="small" @click="openDay(record.date)">明细</Button>
+              <button type="button" class="g-link" @click="openDay(record.date)">明细</button>
             </template>
           </template>
         </Table>
@@ -281,55 +280,64 @@
             <!-- 游戏签到 -->
             <template v-if="scope === 'mys'">
               <template v-if="column.key === 'time'">
-                <div class="sign-date">{{ record.time.slice(11, 19) }}</div>
-                <div class="g-muted">{{ record.date }}</div>
+                <div class="g-cell-stack">
+                  <span class="g-cell-stack__main">{{ record.time.slice(11, 19) }}</span>
+                  <span class="g-cell-stack__sub">{{ record.date }}</span>
+                </div>
               </template>
               <template v-else-if="column.key === 'qq'">
-                <div class="sign-user">{{ userName(record.qq) }}</div>
-                <div class="g-muted mono">{{ record.qq }}</div>
+                <div class="g-cell-stack">
+                  <span class="g-cell-stack__main">{{ userName(record.qq) }}</span>
+                  <span class="g-cell-stack__sub mono">{{ record.qq }}</span>
+                </div>
               </template>
               <template v-else-if="column.key === 'result'">
-                <span class="gm-chip" :class="record.ok ? 'sign-chip--ok' : 'sign-chip--fail'">
+                <span class="g-status" :class="record.ok ? 'is-ok' : 'is-err'">
                   {{ record.ok ? '成功' : '失败' }}
                 </span>
-                <span class="g-muted" style="margin-left: 6px">{{ record.source }}</span>
+                <span v-if="record.source" class="g-chip sign-source">{{ record.source }}</span>
               </template>
               <template v-else-if="column.key === 'games'">
-                <div class="sign-tags">
+                <div class="g-chip-row">
                   <span
                     v-for="g in record.games"
                     :key="g.key"
-                    class="sign-tag"
+                    class="g-chip"
                     :class="`is-${g.status}`"
                     :title="g.text"
                   >
                     {{ gameShort(g.key) }}
                     <em v-if="g.status === 'signed' && g.days">{{ g.days }}d</em>
                   </span>
-                  <span v-if="!record.games.length" class="g-muted">—</span>
+                  <span v-if="!record.games.length" class="g-status is-mute">无记录</span>
                 </div>
               </template>
               <template v-else-if="column.key === 'coins'">
-                <span v-if="record.coins?.current != null">{{ thousands(record.coins.current) }}</span>
-                <span v-else class="g-muted">—</span>
+                <span class="g-cell-stack__main">
+                  {{ record.coins?.current != null ? thousands(record.coins.current) : '—' }}
+                </span>
               </template>
               <template v-else-if="column.key === 'action'">
-                <Button type="link" size="small" @click="openRecord(record)">查看</Button>
+                <button type="button" class="g-link" @click="openRecord(record)">查看</button>
               </template>
             </template>
 
             <!-- 鸣潮签到 -->
             <template v-else>
               <template v-if="column.key === 'time'">
-                <div class="sign-date">{{ record.time }}</div>
-                <div class="g-muted">{{ record.date }}</div>
+                <div class="g-cell-stack">
+                  <span class="g-cell-stack__main">{{ record.time }}</span>
+                  <span class="g-cell-stack__sub">{{ record.date }}</span>
+                </div>
               </template>
               <template v-else-if="column.key === 'account'">
-                <div class="sign-user">{{ record.name || record.qq }}</div>
-                <div class="g-muted mono">{{ record.roleId || record.qq }}</div>
+                <div class="g-cell-stack">
+                  <span class="g-cell-stack__main">{{ record.name || record.qq }}</span>
+                  <span class="g-cell-stack__sub mono">{{ record.roleId || record.qq }}</span>
+                </div>
               </template>
               <template v-else-if="column.key === 'result'">
-                <span class="gm-chip" :class="record.ok ? 'sign-chip--ok' : 'sign-chip--fail'">
+                <span class="g-status" :class="record.ok ? 'is-ok' : 'is-err'">
                   {{ record.ok ? '成功' : '失败' }}
                 </span>
               </template>
@@ -343,7 +351,7 @@
                 <span class="ws-reward" :title="record.rewardText">{{ record.rewardText || '—' }}</span>
               </template>
               <template v-else-if="column.key === 'action'">
-                <Button type="link" size="small" @click="openRecord(record)">查看</Button>
+                <button type="button" class="g-link" @click="openRecord(record)">查看</button>
               </template>
             </template>
           </template>
@@ -447,14 +455,14 @@
                   <span class="sign-acct-no">#{{ record.accountNo }}</span>
                   {{ record.name || userName(record.qq) }}
                 </div>
-                <div class="g-muted mono">{{ record.qq }}</div>
+                <div class="g-cell-stack__sub mono">{{ record.qq }}</div>
                 <div class="sign-acct-meta">
                   <span v-if="record.days">连续 {{ record.days }} 天</span>
                   <span v-if="record.coins != null">米游币 {{ thousands(record.coins) }}</span>
                 </div>
               </template>
               <template v-else-if="column.key === 'result'">
-                <span class="gm-chip" :class="record.fail ? 'sign-chip--fail' : 'sign-chip--ok'">
+                <span class="g-status" :class="record.fail ? 'is-err' : 'is-ok'">
                   {{ record.fail ? '失败' : '成功' }}
                 </span>
                 <span v-if="record.count > 1" class="sign-acct-ratio">{{ record.ok }}/{{ record.count }}</span>
@@ -463,11 +471,11 @@
                 </span>
               </template>
               <template v-else-if="column.key === 'games'">
-                <div class="sign-tags">
-                  <span v-for="k in record.signedGames" :key="k" class="sign-tag is-signed">
+                <div class="g-chip-row">
+                  <span v-for="k in record.signedGames" :key="k" class="g-chip is-signed">
                     {{ gameShort(k) }}<em v-if="record.games[k]">{{ record.games[k] }}d</em>
                   </span>
-                  <span v-if="!record.signedGames.length" class="g-muted">—</span>
+                  <span v-if="!record.signedGames.length" class="g-status is-mute">无</span>
                 </div>
               </template>
               <template v-else-if="column.key === 'reasons'">
@@ -531,10 +539,10 @@
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'account'">
                 <div class="sign-user">{{ record.name || record.qq }}</div>
-                <div class="g-muted mono">{{ record.roleId || record.qq }}</div>
+                <div class="g-cell-stack__sub mono">{{ record.roleId || record.qq }}</div>
               </template>
               <template v-else-if="column.key === 'result'">
-                <span class="gm-chip" :class="record.ok ? 'sign-chip--ok' : 'sign-chip--fail'">
+                <span class="g-status" :class="record.ok ? 'is-ok' : 'is-err'">
                   {{ record.ok ? '成功' : '失败' }}
                 </span>
               </template>
@@ -601,9 +609,9 @@
                 {{ record.uidCount || 0 }}
               </template>
               <template v-else-if="column.key === 'games'">
-                <div class="sign-tags">
-                  <span v-for="g in record.games" :key="g" class="sign-tag is-signed">{{ g }}</span>
-                  <span v-if="!record.games.length" class="g-muted">无绑定</span>
+                <div class="g-chip-row">
+                  <span v-for="g in record.games" :key="g" class="g-chip is-signed">{{ g }}</span>
+                  <span v-if="!record.games.length" class="g-status is-mute">无绑定</span>
                 </div>
               </template>
               <template v-else-if="column.key === 'binds'">
@@ -684,7 +692,7 @@
                 <div class="g-muted mono">{{ record.qq }}</div>
               </template>
               <template v-else-if="column.key === 'stat'">
-                <span class="gm-chip" :class="record.allFail ? 'sign-chip--fail' : 'sign-chip--ok'">
+                <span class="g-status" :class="record.allFail ? 'is-err' : 'is-warn'">
                   {{ record.ok }}/{{ record.total }}
                 </span>
                 <span v-if="record.allFail" class="sign-acct-ratio is-fail">全失败</span>
@@ -1827,53 +1835,17 @@
     transition: width 0.45s;
   }
 
-  /* 游戏徽标 */
-  .sign-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-
-  .sign-tag {
-    display: inline-flex;
-    gap: 3px;
-    align-items: center;
-    padding: 1px 6px;
-    font-size: 11px;
-    color: var(--g-text-sub);
-    background: var(--g-chip-bg);
-    border-radius: 5px;
-  }
-
-  .sign-tag em {
-    font-style: normal;
+  /* 单元格细节（状态点 / 标签 / 链接走 design/guoba-table.less 的公共原语） */
+  .sign-source {
+    margin-left: 8px;
+    font-weight: 500;
     color: var(--g-text-mute);
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--g-card-border);
   }
 
-  .sign-tag.is-signed {
-    color: var(--g-green);
-    background: rgb(69 185 124 / 12%);
-  }
-
-  .sign-tag.is-unbound {
-    color: var(--g-text-mute);
-    background: var(--g-chip-bg);
-    opacity: 0.75;
-  }
-
-  .sign-tag.is-failed {
-    color: #e0664a;
-    background: rgb(224 102 74 / 12%);
-  }
-
-  .sign-chip--ok {
-    color: var(--g-green);
-    background: rgb(69 185 124 / 14%);
-  }
-
-  .sign-chip--fail {
-    color: #e0664a;
-    background: rgb(224 102 74 / 14%);
+  .sign-today {
+    margin-left: 6px;
   }
 
   /* 鸣潮：最近流水 / 奖励 */

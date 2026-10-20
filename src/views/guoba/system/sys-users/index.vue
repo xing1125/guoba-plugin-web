@@ -41,13 +41,13 @@
         </template>
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'role'">
-            <Tag :color="roleColor(record.role)">{{ roleName(record.role) }}</Tag>
+            <span class="g-chip">{{ roleName(record.role) }}</span>
           </template>
           <template v-else-if="column.key === 'status'">
-            <Tag :color="record.status === 'active' ? 'green' : 'red'">
+            <span class="g-status" :class="record.status === 'active' ? 'is-ok' : 'is-err'">
               {{ record.status === 'active' ? '启用' : '停用' }}
-            </Tag>
-            <Tag v-if="record.must_change" color="orange">待改密</Tag>
+            </span>
+            <span v-if="record.must_change" class="g-chip is-warn" style="margin-left: 8px">待改密</span>
           </template>
           <template v-else-if="column.key === 'last'">
             <span class="gu-mute">{{ shortTime(record.last_login_at) }}</span>
@@ -87,7 +87,7 @@
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'name'">
             {{ record.name }}
-            <Tag v-if="record.builtin" color="blue" style="margin-left: 6px">内置</Tag>
+            <span v-if="record.builtin" class="g-chip" style="margin-left: 6px">内置</span>
           </template>
           <template v-else-if="column.key === 'menus'">
             <span class="gu-mute">{{ record.menus.includes('*') ? '全部' : `${record.menus.length} 项` }}</span>
@@ -145,7 +145,7 @@
         </template>
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'success'">
-            <Tag :color="record.success ? 'green' : 'red'">{{ record.success ? '成功' : '失败' }}</Tag>
+            <span class="g-status" :class="record.success ? 'is-ok' : 'is-err'">{{ record.success ? '成功' : '失败' }}</span>
           </template>
           <template v-else-if="column.key === 'ua'">
             <span class="gu-mute gu-ellipsis">{{ record.ua || '-' }}</span>
@@ -227,7 +227,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue';
-  import { Button, Modal, Tag } from 'ant-design-vue';
+  import { Button, Modal } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { usePermissionStore } from '/@/store/modules/permission';
@@ -336,10 +336,6 @@
 
   function roleName(role: string): string {
     return roles.value.find((r) => r.role === role)?.name || role;
-  }
-
-  function roleColor(role: string): string {
-    return role === 'super' ? 'red' : role === 'admin' ? 'blue' : 'default';
   }
 
   /* ------------------------------ 登录日志 ------------------------------ */

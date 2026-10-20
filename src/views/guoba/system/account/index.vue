@@ -1081,25 +1081,7 @@
     border-radius: 10px;
   }
 
-  :deep(.ant-table-thead > tr > th) {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--g-text-mute) !important;
-    background: var(--g-card-bg-soft) !important;
-    border-bottom: 1px solid var(--g-card-border) !important;
-
-    &::before {
-      display: none !important;
-    }
-  }
-
-  :deep(.ant-table-tbody > tr > td) {
-    border-bottom: 1px solid var(--g-card-border);
-  }
-
-  :deep(.ant-table-tbody > tr:hover > td) {
-    background: var(--g-hover) !important;
-  }
+  /* 表格样式统一由 design/guoba-table.less 接管 */
 
   @media (max-width: 1180px) {
     .ac-body {

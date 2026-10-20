@@ -583,41 +583,10 @@
     padding: 4px 6px 0;
   }
 
-  :deep(.ant-table) {
-    background: transparent;
-  }
-
-  :deep(.ant-table-thead > tr > th) {
-    height: 36px;
-    padding: 8px 12px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--g-text-mute);
-    letter-spacing: 0.4px;
-    background: var(--g-card-bg-soft) !important;
-    border-bottom: 1px solid var(--g-card-border);
-  }
-
-  :deep(.ant-table-thead > tr > th::before) {
-    display: none;
-  }
-
-  :deep(.ant-table-tbody > tr > td) {
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--g-card-border);
-  }
-
+  /* 表格样式统一由 design/guoba-table.less 接管，这里只保留插件行的可点击语义 */
   :deep(.ant-table-tbody > tr) {
     cursor: pointer;
     transition: background 0.16s ease;
-  }
-
-  :deep(.ant-table-tbody > tr:hover > td) {
-    background: var(--g-hover) !important;
-  }
-
-  :deep(.ant-table-column-sorters) {
-    font-size: 11.5px;
   }
 
   /* 插件单元 */

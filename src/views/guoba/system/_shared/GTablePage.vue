@@ -184,57 +184,28 @@
     padding: 6px 0;
   }
 
+  /* 左密度、中分页的三段式：分页居中，密度条绝对定位贴左，互不挤压 */
   .gtp__foot {
+    position: relative;
     display: flex;
-    gap: 12px;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     padding-top: 2px;
   }
 
+  .gtp__foot :deep(.ant-pagination) {
+    padding-top: 0;
+  }
+
   .gtp__density {
+    position: absolute;
+    left: 0;
+    display: flex;
+    gap: 6px;
+    align-items: center;
     font-size: 12px;
     color: var(--g-text-mute);
   }
 
-  :deep(.ant-table) {
-    background: transparent;
-  }
-
-  :deep(.ant-table-thead > tr > th) {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--g-text-sub);
-    background: var(--g-card-bg-soft);
-    border-bottom: 1px solid var(--g-card-border);
-  }
-
-  :deep(.ant-table-tbody > tr > td) {
-    font-size: 12.5px;
-    color: var(--g-text);
-    border-bottom: 1px solid var(--g-card-border);
-  }
-
-  :deep(.ant-table-tbody > tr:hover > td) {
-    background: var(--g-hover);
-  }
-
-  /* 输入类控件的底色/描边统一由 design/guoba-controls.less 接管，这里不再重复覆盖 */
-
-  :deep(.ant-pagination-item) {
-    background: var(--g-card-bg-soft);
-    border-color: var(--g-card-border);
-
-    a {
-      color: var(--g-text-sub);
-    }
-  }
-
-  :deep(.ant-pagination-item-active) {
-    border-color: var(--g-blue);
-
-    a {
-      color: var(--g-blue);
-    }
-  }
+  /* 表格与分页样式统一由 design/guoba-table.less 接管，页面不再各自覆盖 */
 </style>

@@ -767,61 +767,13 @@ html[data-theme='dark'] ::selection {
   background: rgb(98 168 234 / 60%);
 }
 
-/* ------------------------------ 表格统一打磨 ------------------------------ */
+/* ------------------------------ 表格 ------------------------------ */
 /*
- * 全站列表表格：圆角容器、表头软底强调、行 hover / 斑马纹、单元格留白。
- * 深浅主题都走 --g-* 令牌。
+ * 表格样式已抽到 design/guoba-table.less（表头带 / 分隔线 / 状态点 / 标签 / 分页）。
+ * 这里只保留卡片内表格的底色兜底，避免与那边重复定义互相打架。
  */
-.ant-table-wrapper .ant-table {
-  border-radius: 12px;
-}
-
-.ant-table-wrapper .ant-table-container,
-.ant-table-wrapper .ant-table-content {
-  border-radius: 12px;
-}
-
-.ant-table-wrapper .ant-table-thead > tr > th {
-  padding: 11px 14px;
-  font-size: 12.5px;
-  font-weight: 650;
-  letter-spacing: 0.4px;
-  color: var(--g-text-sub);
-  background: var(--g-chip-bg);
-  border-bottom: 1px solid var(--g-card-border);
-
-  &::before {
-    display: none; /* 去掉表头列间默认竖线 */
-  }
-}
-
 .ant-table-wrapper .ant-table-tbody > tr > td {
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--g-card-border);
-  transition: background 0.18s;
-}
-
-/* 斑马纹（极淡，仅托底阅读动线） */
-.ant-table-wrapper .ant-table-tbody > tr:nth-child(even) > td {
-  background: var(--g-zebra);
-}
-
-.ant-table-wrapper .ant-table-tbody > tr:hover > td {
-  background: var(--g-hover);
-}
-
-.ant-table-wrapper .ant-table-tbody > tr:last-child > td {
-  border-bottom: none;
-}
-
-/* 固定列 / 滚动阴影柔化 */
-.ant-table-wrapper .ant-table-cell-fix-right,
-.ant-table-wrapper .ant-table-cell-fix-left {
-  background: var(--g-card-bg);
-}
-
-.ant-table-wrapper .ant-pagination {
-  padding-top: 6px;
+  color: var(--g-text-sub);
 }
 
 /* ------------------------------ 弹窗统一打磨 ------------------------------ */

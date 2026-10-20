@@ -159,10 +159,10 @@
 
             <!-- 活跃榜 -->
             <template v-else-if="column.key === 'active'">
-              <div v-if="hasActive(record)" class="actline">
-                <span v-if="record.active?.N" class="act is-day">日<b>{{ record.active.N }}</b></span>
-                <span v-if="record.active?.W" class="act is-week">周<b>{{ record.active.W }}</b></span>
-                <span v-if="record.active?.M" class="act is-month">月<b>{{ record.active.M }}</b></span>
+              <div v-if="hasActive(record)" class="g-chip-row">
+                <span v-if="record.active?.N" class="g-chip">日 <em>{{ record.active.N }}</em></span>
+                <span v-if="record.active?.W" class="g-chip">周 <em>{{ record.active.W }}</em></span>
+                <span v-if="record.active?.M" class="g-chip">月 <em>{{ record.active.M }}</em></span>
               </div>
               <span v-else class="mute-cell">暂无活跃榜</span>
             </template>
@@ -1573,7 +1573,7 @@
 
   .mcell__bar {
     display: flex;
-    gap: 2px;
+    gap: 0; /* 两段宽度相加正好 100%，加 gap 会多出 2px 把末段挤掉 */
     height: 5px;
     margin-top: 6px;
     overflow: hidden;
@@ -1581,11 +1581,12 @@
     background: var(--g-track);
   }
 
+  /* 条形内部不各自圆角：容器已有 overflow:hidden + 3px 圆角，
+     小占比的末段自己加圆角会被挤成一个凸起的「圆点」 */
   .mcell__bar i,
   .mcell__legend i {
     display: block;
     height: 100%;
-    border-radius: 3px;
   }
 
   .mcell__bar .is-recv,
@@ -1620,11 +1621,13 @@
   }
 
   .spk {
+    overflow: hidden; /* 折线/渐变填充会略微超出 viewBox，不裁会压到右邻列 */
+
     svg {
       display: block;
       width: 100%;
       height: 34px;
-      overflow: visible;
+      overflow: hidden;
     }
   }
 
@@ -1643,45 +1646,7 @@
     }
   }
 
-  .actline {
-    display: flex;
-    gap: 6px;
-  }
-
-  .act {
-    display: inline-flex;
-    gap: 2px;
-    align-items: center;
-    padding: 2px 6px;
-    font-size: 10.5px;
-    color: var(--g-text-sub);
-    background: var(--g-chip-bg);
-    border: 1px solid transparent;
-    border-radius: 6px;
-
-    b {
-      font-size: 11.5px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    &.is-day {
-      color: var(--g-green);
-      background: rgb(69 185 124 / 11%);
-      border-color: rgb(69 185 124 / 22%);
-    }
-
-    &.is-week {
-      color: var(--g-blue);
-      background: rgb(98 168 234 / 11%);
-      border-color: rgb(98 168 234 / 22%);
-    }
-
-    &.is-month {
-      color: var(--g-violet);
-      background: rgb(157 141 240 / 11%);
-      border-color: rgb(157 141 240 / 22%);
-    }
-  }
+  /* 活跃榜标签：走 design/guoba-table.less 的通用 .g-chip / .g-chip-row 原语 */
 
   .metaline {
     display: flex;
@@ -1783,43 +1748,10 @@
     opacity: 0.7;
   }
 
-  /* 表头与行：去掉 antd 默认粗分隔，改成细线 + hover 层次 */
-  :deep(.ant-table-thead > tr > th) {
-    height: 40px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--g-text-mute) !important;
-    letter-spacing: 0.3px;
-    background: var(--g-card-bg-soft) !important;
-    border-bottom: 1px solid var(--g-card-border) !important;
-
-    &::before {
-      display: none !important;
-    }
-  }
-
+  /* 表格骨架统一由 design/guoba-table.less 接管，这里只留群管页特有点 */
   /* 去掉表头多选列右侧那个“全选下拉”箭头，容易误认成排序 */
   :deep(.ant-table-selection-extra) {
     display: none;
-  }
-
-  :deep(.ant-table-tbody > tr > td) {
-    border-bottom: 1px solid var(--g-card-border);
-  }
-
-  :deep(.ant-table-tbody > tr:hover > td) {
-    background: var(--g-hover) !important;
-  }
-
-  /* 固定列要有实心背景，否则滚动时会透出内容 */
-  :deep(.ant-table-cell-fix-left),
-  :deep(.ant-table-cell-fix-right) {
-    background: var(--g-card-bg);
-  }
-
-  :deep(.ant-table-tbody > tr:hover > td.ant-table-cell-fix-left),
-  :deep(.ant-table-tbody > tr:hover > td.ant-table-cell-fix-right) {
-    background: var(--g-card-bg-soft) !important;
   }
 
   :deep(.ant-table-tbody > tr:hover .row-more) {

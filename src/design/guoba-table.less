@@ -1,0 +1,403 @@
+/**
+ * 表格设计系统（v2.3.18）
+ *
+ * 参考企业级后台列表的成熟做法，替换掉「斑马纹 + 重描边 + 彩色药丸」的土味组合：
+ *   1. 表头 = 浅蓝灰底带 + 小字号 + 字距，作为「列名层」而不是「另一行数据」；
+ *   2. 行之间只用 1px 细分隔线，去掉斑马纹（宽表斑马纹会让固定列出现色块断层）；
+ *   3. hover 用实色底，固定列同步跟随，避免 sticky 单元格露底色；
+ *   4. 状态语义统一成「圆点 + 文案」（.g-status），比彩色药丸更省视觉噪音；
+ *   5. 标签统一高度 18px / 圆角 5px（.g-chip），保证一行内高低不齐的乱象消失；
+ *   6. 分页居中、28px 方块、当前页实心品牌色。
+ *
+ * 深浅两套都走 --g-* 令牌，不写死颜色。
+ */
+
+/* ------------------------------ 令牌 ------------------------------ */
+
+html[data-theme='light'] {
+  --g-thead-bg: #eef3fa;
+  --g-thead-text: #647a8f;
+  --g-row-sep: rgb(120 150 180 / 15%);
+  --g-row-hover: #f5f9fd;
+  --g-row-selected: rgb(47 134 196 / 9%);
+  --g-table-foot-bg: #f7fafd;
+}
+
+html[data-theme='dark'] {
+  --g-thead-bg: rgb(255 255 255 / 6%);
+  --g-thead-text: #93a9bd;
+  --g-row-sep: rgb(255 255 255 / 9%);
+  --g-row-hover: #183751;
+  --g-row-selected: rgb(98 168 234 / 14%);
+  --g-table-foot-bg: rgb(255 255 255 / 4%);
+}
+
+/* ------------------------------ 表格骨架 ------------------------------ */
+/*
+ * 权重说明（别随便改这几个前缀）：
+ *   1. antd 的 size 变体选择器是 `.ant-table.ant-table-middle .ant-table-thead>tr>th`（3 类 3 元素），
+ *      单层 `.ant-table-wrapper` 只有 2 类，会被它压掉 padding —— 实测表头被撑到 65px；
+ *   2. 暗色主题插件还会另抽一份 `html[data-theme='dark'] .ant-table.ant-table-middle .ant-table-thead>tr>th`
+ *      的版本（4 类 4 元素），把表头底色刷回 #1d1d1d。
+ *   所以固定前缀写成 `html body`（2 元素）+ 三层 `.ant-table-wrapper`（3 类），
+ *   表头再加上 `th.ant-table-cell` 多拿一类，合计 (0,5,4)，稳定压住上面两种。
+ *   表体那一组另有递增要求，见下方「表体底色分四级」的注释。
+ *
+ *   ⚠️ 三层 wrapper 是同一个元素上的重复类名，不要删成一层，也不要去掉类名的点。
+ */
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table {
+  background: transparent;
+  border-radius: 12px;
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-container,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-content {
+  border-radius: 12px;
+}
+
+/* 表头：浅色底带，作为列名层。
+ * 末尾的 th.ant-table-cell 是为了多拿一个类名（(0,5,4)），
+ * 否则会和暗色插件抽出的 html[data-theme] 版本打成平手，只能靠书写顺序赌运气。 */
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-thead > tr > th.ant-table-cell {
+  height: 40px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 40px;
+  letter-spacing: 0.3px;
+  color: var(--g-thead-text);
+  white-space: nowrap;
+  background: var(--g-thead-bg);
+  border-bottom: 1px solid var(--g-card-border);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-thead > tr > th::before {
+  display: none; /* 去掉列间竖线 */
+}
+
+/* 表头里的排序/筛选图标降到同色，不要跳出来 */
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-column-sorter,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-filter-trigger {
+  color: var(--g-thead-text);
+}
+
+/*
+ * 表体底色分四级，权重必须严格递增，否则会出现「偶数列白一块 / 固定列透明」：
+ *   基底 td (0,4,4) < 固定列 (0,5,3) < hover td (0,5,4) < hover 固定列 (0,6,3)
+ *   < 选中 td (0,5,4，靠书写顺序压 hover) < 选中固定列 (0,6,3，同上)。
+ * ⚠️ 千万不要再用 `tr:nth-child(even) > td { background: transparent }` 去「去斑马纹」——
+ *    它的权重 (0,5,4) 会反压固定列规则，实测结果是奇数行白、偶数行透明。
+ */
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr > td {
+  padding: 10px 14px;
+  background: transparent;
+  border-bottom: 1px solid var(--g-row-sep);
+  transition: background 0.16s ease;
+}
+
+/* antd 的测量行（.ant-table-measure-row）会给 td 补上 20px 假高度，直接归零 */
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr.ant-table-measure-row > td {
+  height: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* 固定列：实色底与卡片底一致；hover / 选中时同步，否则会露出一块「色块」 */
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr > .ant-table-cell-fix-left,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr > .ant-table-cell-fix-right {
+  background: var(--g-card-bg);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr:hover > td {
+  background: var(--g-row-hover);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr:hover > .ant-table-cell-fix-left,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr:hover > .ant-table-cell-fix-right {
+  background: var(--g-row-hover);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: var(--g-row-selected);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > .ant-table-cell-fix-left,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > .ant-table-cell-fix-right {
+  background: var(--g-row-selected);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr:last-child > td {
+  border-bottom: none;
+}
+
+/* 空状态 */
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr.ant-table-placeholder > td {
+  background: transparent;
+  border-bottom: none;
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-placeholder .ant-empty-description {
+  font-size: 12.5px;
+  color: var(--g-text-mute);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-spin-blur {
+  opacity: 0.35;
+}
+
+/* ------------------------------ 分页 ------------------------------ */
+/*
+ * 前缀故意不用 .ant-table-wrapper —— 表格外还有两类分页（GTablePage 的 footer、
+ * 弹窗里的分页），这里统一定义一次，所有页面自动一致。
+ * 用两个 .ant-pagination 叠类名是为了压住 antd 的 size="small" 变体。
+ */
+
+html body .ant-pagination.ant-pagination {
+  justify-content: center;
+  padding-top: 14px;
+  margin: 0;
+}
+
+html body .ant-pagination.ant-pagination .ant-pagination-item,
+html body .ant-pagination.ant-pagination .ant-pagination-prev .ant-pagination-item-link,
+html body .ant-pagination.ant-pagination .ant-pagination-next .ant-pagination-item-link,
+html body .ant-pagination.ant-pagination .ant-pagination-jump-prev .ant-pagination-item-link,
+html body .ant-pagination.ant-pagination .ant-pagination-jump-next .ant-pagination-item-link {
+  min-width: 28px;
+  height: 28px;
+  line-height: 26px;
+  border-radius: 8px;
+  background: transparent;
+  border-color: var(--g-card-border);
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+html body .ant-pagination.ant-pagination .ant-pagination-item a {
+  font-size: 12.5px;
+  color: var(--g-text-sub);
+}
+
+html body .ant-pagination.ant-pagination .ant-pagination-item:hover {
+  background: var(--g-row-hover);
+  border-color: var(--g-card-border-strong);
+}
+
+html body .ant-pagination.ant-pagination .ant-pagination-item-active {
+  background: var(--g-blue);
+  border-color: var(--g-blue);
+}
+
+html body .ant-pagination.ant-pagination .ant-pagination-item-active a,
+html body .ant-pagination.ant-pagination .ant-pagination-item-active:hover a {
+  color: #fff;
+}
+
+html body .ant-pagination.ant-pagination .ant-pagination-total-text {
+  font-size: 12px;
+  color: var(--g-text-mute);
+}
+
+html body .ant-pagination.ant-pagination .ant-pagination-options .ant-select-selector {
+  border-radius: 8px;
+}
+
+/* ------------------------------ 单元格原语 ------------------------------ */
+
+/* 主值 + 次值两行：行高收紧，避免「两行撑成三行」 */
+.g-cell-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.35;
+}
+
+.g-cell-stack__main {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--g-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.g-cell-stack__sub {
+  font-size: 11px;
+  color: var(--g-text-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 状态：圆点 + 文案（语义色只落在点上，文字保持可读对比度） */
+.g-status {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--g-text-sub);
+  white-space: nowrap;
+}
+
+.g-status::before {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  content: '';
+  background: var(--g-text-mute);
+  border-radius: 50%;
+}
+
+.g-status.is-ok {
+  color: var(--g-green);
+}
+
+.g-status.is-ok::before {
+  background: var(--g-green);
+  box-shadow: 0 0 0 3px rgb(69 185 124 / 14%);
+}
+
+.g-status.is-err {
+  color: var(--g-red);
+}
+
+.g-status.is-err::before {
+  background: var(--g-red);
+  box-shadow: 0 0 0 3px rgb(224 86 86 / 14%);
+}
+
+.g-status.is-warn {
+  color: var(--g-amber);
+}
+
+.g-status.is-warn::before {
+  background: var(--g-amber);
+  box-shadow: 0 0 0 3px rgb(211 188 141 / 16%);
+}
+
+.g-status.is-mute {
+  color: var(--g-text-mute);
+  font-weight: 500;
+}
+
+/* 标签组：统一 18px 高 / 5px 圆角，同行内不再高低不齐 */
+.g-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.g-chip {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--g-text-sub);
+  white-space: nowrap;
+  background: var(--g-chip-bg);
+  border-radius: 5px;
+}
+
+.g-chip em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--g-text-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+.g-chip.is-signed {
+  color: var(--g-green);
+  background: rgb(69 185 124 / 12%);
+}
+
+.g-chip.is-unbound {
+  color: var(--g-text-mute);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--g-card-border);
+}
+
+.g-chip.is-failed {
+  color: var(--g-red);
+  background: rgb(224 86 86 / 12%);
+}
+
+.g-chip.is-warn {
+  color: var(--g-amber);
+  background: rgb(211 188 141 / 16%);
+}
+
+/* ------------------------------------------------------------------
+ * 表格里还在用 antd <Tag> 的老页面：统一收成同一套低饱和 chip。
+ * 不去改那二十几处模板，直接在样式层归一 —— 保留语义色相，只压掉
+ * antd 默认的「实心高饱和底 + 描边」，否则一行里红绿黄蓝紫全在抢注意力。
+ * ------------------------------------------------------------------ */
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag {
+  height: 18px;
+  margin: 0;
+  padding: 0 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--g-text-sub);
+  background: var(--g-chip-bg);
+  border: none;
+  border-radius: 5px;
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-red,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-volcano {
+  color: var(--g-red);
+  background: rgb(224 86 86 / 12%);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-green,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-success {
+  color: var(--g-green);
+  background: rgb(69 185 124 / 12%);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-orange,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-gold {
+  color: var(--g-amber);
+  background: rgb(211 188 141 / 16%);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-blue,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-cyan,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-geekblue {
+  color: var(--g-blue);
+  background: rgb(98 168 234 / 12%);
+}
+
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-purple,
+html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-magenta {
+  color: var(--g-violet);
+  background: rgb(157 141 240 / 12%);
+}
+
+/* 文本操作：品牌色链接，hover 才出下划线，不占底色 */
+.g-link {
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--g-blue);
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: color 0.16s ease;
+}
+
+.g-link:hover {
+  color: var(--g-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.g-link:focus-visible {
+  outline: 2px solid var(--g-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

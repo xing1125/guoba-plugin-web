@@ -64,7 +64,7 @@
             <span class="au-time">{{ fmtTime(record.created_at) }}</span>
           </template>
           <template v-else-if="column.key === 'action'">
-            <Tag :color="risky(record.action) ? 'red' : 'blue'">{{ record.action }}</Tag>
+            <span class="g-chip" :class="{ 'is-failed': risky(record.action) }">{{ record.action }}</span>
           </template>
           <template v-else-if="column.key === 'target'">
             <span class="au-target" :title="record.target">{{ record.target || '-' }}</span>
@@ -81,7 +81,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue';
-  import { Button, Tag } from 'ant-design-vue';
+  import { Button } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import { useMessage } from '/@/hooks/web/useMessage';

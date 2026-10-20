@@ -1401,27 +1401,7 @@
     }
   }
 
-  :deep(.ant-table-thead > tr > th) {
-    height: 40px;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--g-text-mute) !important;
-    letter-spacing: 0.3px;
-    background: var(--g-card-bg-soft) !important;
-    border-bottom: 1px solid var(--g-card-border) !important;
-
-    &::before {
-      display: none !important;
-    }
-  }
-
-  :deep(.ant-table-tbody > tr > td) {
-    border-bottom: 1px solid var(--g-card-border);
-  }
-
-  :deep(.ant-table-tbody > tr:hover > td) {
-    background: var(--g-hover) !important;
-  }
+  /* 表格样式统一由 design/guoba-table.less 接管 */
 
   /* 详情弹窗：左身份 + 指标卡片，右图表区块 */
   .dm {
