@@ -92,6 +92,10 @@ export const GM_COLLECTION = {
     terminal: {
       body: `<rect x="3.5" y="4.4" width="17" height="15.2" rx="3" fill="currentColor" fill-opacity=".14"/><g ${S}><rect x="3.5" y="4.4" width="17" height="15.2" rx="3"/><path d="M7.2 9.7l3.1 2.7-3.1 2.7"/></g><circle cx="6.7" cy="7" r=".9" fill="currentColor" fill-opacity=".55"/><circle cx="9.3" cy="7" r=".9" fill="currentColor" fill-opacity=".55"/><path d="M12.9 15.3h4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-opacity=".6"/>`,
     },
+    /* 控制台 —— 侧栏面板 + 内容行（与终端窗口区分） */
+    console: {
+      body: `<rect x="3.4" y="4.4" width="17.2" height="15.2" rx="3" fill="currentColor" fill-opacity=".12"/><g ${S}><rect x="3.4" y="4.4" width="17.2" height="15.2" rx="3"/><path d="M8.6 4.6v14.8"/><path d="M11.4 9.2h6.2"/><path d="M11.4 12.4h4.2"/></g><path d="M11.4 15.8h6.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-opacity=".45"/><circle cx="6" cy="8.2" r=".9" fill="currentColor" fill-opacity=".5"/><circle cx="6" cy="11.6" r=".9" fill="currentColor" fill-opacity=".34"/>`,
+    },
     /* 关于 —— 信息 */
     info: {
       body: `<circle cx="12" cy="12" r="8.4" fill="currentColor" fill-opacity=".16"/><circle cx="12" cy="12" r="8.4" ${S}/><circle cx="12" cy="8.2" r="1.05" fill="currentColor"/><path d="M12 11.3v5.1" ${SD}/>`,
@@ -364,6 +368,10 @@ export const GM_COLLECTION = {
     },
     cloud: {
       body: `<path d="M7.6 18.2a3.9 3.9 0 0 1-.5-7.7 5.2 5.2 0 0 1 9.9-1.2 3.6 3.6 0 0 1 .6 7.1z" fill="currentColor" fill-opacity=".16"/><path d="M7.6 18.2a3.9 3.9 0 0 1-.5-7.7 5.2 5.2 0 0 1 9.9-1.2 3.6 3.6 0 0 1 .6 7.1z" ${S}/>`,
+    },
+    /* 控制台 —— 终端窗 + 提示符 */
+    console: {
+      body: `<rect x="3.4" y="4.8" width="17.2" height="14.4" rx="2.8" fill="currentColor" fill-opacity=".12"/><rect x="3.4" y="4.8" width="17.2" height="14.4" rx="2.8" ${S}/><path d="M7.4 9.8l2.6 2.3-2.6 2.3" ${SD}/><path d="M12.6 14.4h4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-opacity=".55"/>`,
     },
 
     /* ======================= 方向 / 导航类 ======================= */
