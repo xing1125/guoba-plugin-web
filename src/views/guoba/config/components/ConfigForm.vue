@@ -197,9 +197,16 @@
           if (form.fieldKey) {
             values = { [form.fieldKey]: values };
           }
-          await saveConfigData(configKey, values);
+          const saved: any = await saveConfigData(configKey, values);
+          // 后端会回 { hot, reason }：hot===false 是「必须重启才生效」的配置（redis/端口/浏览器路径等）
           if (silent !== true) {
-            createMessage.success('保存成功~');
+            if (saved?.hot === false) {
+              createMessage.warning(`已保存，重启 Bot 后生效${saved?.reason ? '：' + saved.reason : ''}`, 6);
+            } else if (saved?.hot === true) {
+              createMessage.success('已保存并即时生效');
+            } else {
+              createMessage.success('保存成功~');
+            }
           }
           await onRedo(form);
         } finally {
