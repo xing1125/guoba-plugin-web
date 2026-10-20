@@ -2146,15 +2146,16 @@
 
   .record-raw__body {
     max-height: 280px;
-    padding: 10px 12px;
+    padding: 12px 14px;
+    margin: 0;
     overflow: auto;
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 11.5px;
-    line-height: 1.7;
+    font-size: 12px;
+    line-height: 1.72;
     color: var(--g-text-sub);
     white-space: pre-wrap;
     background: var(--g-card-bg-soft);
-    border: 1px solid var(--g-card-border);
+    border: 1px solid var(--g-row-sep);
     border-radius: 10px;
   }
 

@@ -634,38 +634,6 @@ html[data-theme='dark'] {
  * 这里统一用设计令牌接管，保证任何浮层都跟页面同一套深浅色。
  */
 html[data-theme='dark'] {
-  .ant-modal-content {
-    background: var(--g-card-bg);
-    border: 1px solid var(--g-card-border);
-    box-shadow: var(--g-card-shadow);
-  }
-
-  .ant-modal-header,
-  .ant-modal-footer {
-    background: transparent;
-    border-color: var(--g-card-border);
-  }
-
-  .ant-modal-title,
-  .ant-modal-confirm-title {
-    color: var(--g-text);
-  }
-
-  .ant-modal-confirm-content,
-  .ant-modal-confirm-paragraph,
-  .ant-modal-body {
-    color: var(--g-text-sub);
-  }
-
-  .ant-modal-close {
-    color: var(--g-text-mute);
-  }
-
-  .ant-modal-close:hover {
-    color: var(--g-text);
-    background: var(--g-hover);
-  }
-
   .ant-popover-inner {
     background: var(--g-card-bg);
     box-shadow: var(--g-card-shadow);
@@ -776,66 +744,12 @@ html[data-theme='dark'] ::selection {
   color: var(--g-text-sub);
 }
 
-/* ------------------------------ 弹窗统一打磨 ------------------------------ */
+/* ------------------------------ 弹窗 ------------------------------ */
 /*
- * 全站 Modal：大圆角、标题区带底部分隔、内容留白、底部按钮区分隔，
- * 深浅主题走 --g-* 令牌（覆盖 antd 默认的生硬灰线）。
+ * 弹窗（Modal 容器 / 关闭按钮 / Descriptions 详情表 / 原文滚动条）已整体搬到
+ * design/guoba-dialog.less —— 那边用 `html body` + 重复类名把权重顶到 (0,4,x)，
+ * 才压得住暗色抽取表和 vben 自带的 .ant-modal-header。别再在这里加 .ant-modal 规则。
  */
-.ant-modal-content {
-  overflow: hidden;
-  border-radius: 16px;
-}
-
-.ant-modal-header {
-  display: flex;
-  align-items: center;
-  padding: 16px 22px 13px;
-  border-bottom: 1px solid var(--g-card-border);
-}
-
-.ant-modal-title {
-  position: relative;
-  padding-left: 14px;
-  font-size: 15.5px;
-  font-weight: 700;
-  letter-spacing: 0.3px;
-}
-
-/* 标题左侧品牌竖条 */
-.ant-modal-title::before {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  width: 4px;
-  height: 16px;
-  content: '';
-  background: linear-gradient(180deg, var(--g-blue), var(--g-cyan));
-  border-radius: 3px;
-  transform: translateY(-50%);
-}
-
-.ant-modal .ant-modal-body:not(:has(> .scrollbar)) {
-  /* vben 全局把 .ant-modal .ant-modal-body 清成 padding:0（它自家的 BasicModal 靠
-     内部 .scrollbar 补 14px）；原生 antd Modal（后台账户/签到详情等）没有 scrollbar，
-     内容会贴边 —— 这里把非 scrollbar 的弹窗体补回内边距，GModal 自管 padding 不受影响 */
-  padding: 18px 22px;
-}
-
-.ant-modal-footer {
-  margin-top: 0;
-  padding: 12px 22px 16px;
-  border-top: 1px solid var(--g-card-border);
-}
-
-.ant-modal-footer .ant-btn + .ant-btn {
-  margin-left: 10px;
-}
-
-.ant-modal-close {
-  top: 14px;
-  right: 16px;
-  border-radius: 8px;
-}
 
 /* GFormModal：表单输入件统一圆角与软底 */
 .gfm-form {

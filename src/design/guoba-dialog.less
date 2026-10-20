@@ -1,0 +1,265 @@
+/*
+ * 弹窗设计层（v2.3.21）
+ * ---------------------------------------------------------------------------
+ * 背景：antd 3.x 的 .ant-modal-* 在暗色主题下会被 vite-plugin-theme 抽成
+ * `html[data-theme='dark'] .ant-modal-header` 这种 (0,2,0) 规则，同时 vben 自身
+ * 还有一套 .ant-modal-header { padding: 16px }；guoba-admin.less 里早先写的
+ * 低权重覆盖（0,1,0）**在暗色下一半不生效**，实测表头 padding 仍是 16px、
+ * 关闭按钮被 close-x 撑成 96×56 的大方块。
+ *
+ * 因此本文件统一用 `html body` + 重复类名（同元素写两遍）把权重顶到 (0,4,x)，
+ * 无论浅色/暗色抽取表/组件库顺序如何都稳定命中。新增弹窗相关样式请写在这里，
+ * 不要再往 guoba-admin.less 里加 .ant-modal 规则。
+ */
+
+/* ------------------------------ 弹窗容器 ------------------------------ */
+
+html body .ant-modal.ant-modal .ant-modal-content {
+  overflow: hidden;
+  background: var(--g-card-bg);
+  border: 1px solid var(--g-card-border);
+  border-radius: 16px;
+  box-shadow: var(--g-card-shadow);
+}
+
+html body .ant-modal.ant-modal .ant-modal-header {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  padding: 0 60px 0 20px; /* 右侧留出关闭按钮的位置，标题过长也不会撞上 */
+  margin: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--g-card-border);
+}
+
+html body .ant-modal.ant-modal .ant-modal-title {
+  position: relative;
+  padding-left: 13px;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+  color: var(--g-text);
+  letter-spacing: 0.3px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 标题左侧品牌竖条：3px 比 4px 更克制，渐变保留 */
+html body .ant-modal.ant-modal .ant-modal-title::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3px;
+  height: 15px;
+  content: '';
+  background: linear-gradient(180deg, var(--g-blue), var(--g-cyan));
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+
+/* 没有标题的弹窗（footer:null + title 空）不留 52px 空带 */
+html body .ant-modal.ant-modal .ant-modal-header:empty {
+  display: none;
+}
+
+html body .ant-modal.ant-modal .ant-modal-body {
+  padding: 18px 20px;
+  color: var(--g-text-sub);
+}
+
+/* vben 把它自家的 BasicModal 靠内部 .scrollbar 补 padding，全局把 body 清成 0；
+   原生 antd 弹窗没有 .scrollbar，这里补回内边距（GModal 内部自带，不受影响）
+   注意：不给 body 加 max-height/overflow —— GModal 的内容是 body 的直接子元素，
+   外层一旦变成滚动容器，会把它自己的 86vh 限制废掉，出现双层滚动。 */
+html body .ant-modal.ant-modal .ant-modal-body:not(:has(> .scrollbar)) {
+  padding: 18px 20px;
+}
+
+html body .ant-modal.ant-modal .ant-modal-footer {
+  padding: 12px 20px 16px;
+  margin: 0;
+  background: transparent;
+  border-top: 1px solid var(--g-card-border);
+}
+
+html body .ant-modal.ant-modal .ant-modal-footer .ant-btn + .ant-btn {
+  margin-left: 10px;
+}
+
+/* 确认类弹窗（Modal.confirm）的标题与正文 */
+html body .ant-modal.ant-modal .ant-modal-confirm-title {
+  color: var(--g-text);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+html body .ant-modal.ant-modal .ant-modal-confirm-content,
+html body .ant-modal.ant-modal .ant-modal-confirm-paragraph {
+  color: var(--g-text-sub);
+  font-size: 13px;
+}
+
+/* ------------------------------ 关闭按钮 ------------------------------ */
+/*
+ * 这块是本轮重点：antd 的 .ant-modal-close-x 默认 56×56 居中撑开按钮，
+ * 在东财/锅巴这类主题里还会被额外拉宽（实测 96×56），视觉上就是个盖住
+ * 标题区的灰方块。统一收成 30×30 的图标按钮：无边框、无底色，只有 hover
+ * 才浮起一层软底。
+ */
+
+html body .ant-modal.ant-modal .ant-modal-close,
+html body .ant-modal.ant-modal .ant-modal-close.ant-modal-close {
+  top: 11px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: var(--g-text-mute);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  transition:
+    color 0.16s ease,
+    background 0.16s ease;
+}
+
+html body .ant-modal.ant-modal .ant-modal-close-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  line-height: 30px;
+}
+
+/* 图标本身再收到 14px，antd 默认 16px 在 30px 按钮里偏挤 */
+html body .ant-modal.ant-modal .ant-modal-close .anticon {
+  font-size: 14px;
+}
+
+html body .ant-modal.ant-modal .ant-modal-close:hover {
+  color: var(--g-text);
+  background: var(--g-hover);
+}
+
+html body .ant-modal.ant-modal .ant-modal-close:active {
+  background: var(--g-row-selected);
+}
+
+html body .ant-modal.ant-modal .ant-modal-close:focus-visible {
+  outline: 2px solid var(--g-blue);
+  outline-offset: 1px;
+}
+
+/* 提示类弹窗（confirm）没有 header，关闭按钮贴着圆角，位置回退一点 */
+html body .ant-modal.ant-modal.ant-modal-confirm .ant-modal-close {
+  top: 12px;
+  right: 12px;
+}
+
+/* ------------------------------ 详情描述表 ------------------------------ */
+/*
+ * antd 的 bordered Descriptions 是 14px + 8×16 内边距 + 2px 圆角 + #f0f0f0 硬边框，
+ * 放进弹窗里像一张 Excel 截图。这里改成后台详情卡：12.5px 正文 / 12px 标签、
+ * 标签列软底、圆角 12、内部只留 1px 网格线。
+ */
+
+html body .ant-modal .ant-descriptions.ant-descriptions {
+  color: var(--g-text-sub);
+}
+
+html body .ant-modal .ant-descriptions .ant-descriptions-view {
+  overflow: hidden;
+  background: transparent;
+  border: 1px solid var(--g-card-border);
+  border-radius: 12px;
+}
+
+html body .ant-modal .ant-descriptions .ant-descriptions-view > table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* 单元格只画右/下两条线，外框交给 .ant-descriptions-view，避免双线 */
+html body .ant-modal .ant-descriptions .ant-descriptions-row > th,
+html body .ant-modal .ant-descriptions .ant-descriptions-row > td {
+  padding: 9px 14px;
+  line-height: 20px;
+  border: 0;
+  border-right: 1px solid var(--g-row-sep);
+  border-bottom: 1px solid var(--g-row-sep);
+}
+
+html body .ant-modal .ant-descriptions .ant-descriptions-row > th:last-child,
+html body .ant-modal .ant-descriptions .ant-descriptions-row > td:last-child {
+  border-right: 0;
+}
+
+html body .ant-modal .ant-descriptions .ant-descriptions-row:last-child > th,
+html body .ant-modal .ant-descriptions .ant-descriptions-row:last-child > td {
+  border-bottom: 0;
+}
+
+html body .ant-modal .ant-descriptions .ant-descriptions-item-label {
+  width: 84px;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--g-text-mute);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  background: var(--g-card-bg-soft);
+}
+
+/* bordered 模式下 antd 会保留标签后的冒号，这里统一去掉 */
+html body .ant-modal .ant-descriptions .ant-descriptions-item-label::after {
+  display: none;
+}
+
+html body .ant-modal .ant-descriptions .ant-descriptions-item-content {
+  font-size: 12.5px;
+  color: var(--g-text);
+  word-break: break-word;
+}
+
+/* 内容为空时给个静默破折号位，避免整格塌成一条线 */
+html body .ant-modal .ant-descriptions .ant-descriptions-item-content:empty::before {
+  content: '—';
+  color: var(--g-text-mute);
+}
+
+/* ------------------------------ 原文 / 代码块 ------------------------------ */
+
+html body .ant-modal pre {
+  /* Chrome 121+ 在桌面端默认启用浮层滚动条：不占布局宽度，`::-webkit-scrollbar-*`
+     的颜色规则会被忽略。所以真正生效的是标准属性 —— thin 决定粗细、
+     scrollbar-color 决定滑块与轨道色；webkit 伪元素只对老版本浏览器兜底。 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--g-track) transparent;
+}
+
+html body .ant-modal pre::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html body .ant-modal pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html body .ant-modal pre::-webkit-scrollbar-thumb {
+  background: var(--g-track);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 8px;
+}
+
+html body .ant-modal pre::-webkit-scrollbar-thumb:hover {
+  background: var(--g-text-mute);
+  background-clip: padding-box;
+}
