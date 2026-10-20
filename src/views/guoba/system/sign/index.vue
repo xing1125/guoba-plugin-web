@@ -761,12 +761,40 @@
           <DescriptionsItem label="账号">{{ recordModal.model.qqName }}</DescriptionsItem>
           <DescriptionsItem label="结果">{{ recordModal.model.result }}</DescriptionsItem>
           <DescriptionsItem label="来源">{{ recordModal.model.source }}</DescriptionsItem>
-          <DescriptionsItem label="游戏" :span="2">{{ recordModal.model.games }}</DescriptionsItem>
         </Descriptions>
-        <div class="record-raw">
-          <div class="record-raw__title">原始返回</div>
-          <pre class="record-raw__body">{{ recordModal.model.message }}</pre>
+
+        <!--
+          流水原文是按「游戏名:」分段的纯文本，整块丢进 <pre> 里既难扫也没法比较。
+          这里按游戏拆成明细行：图标 + 名称 + 状态 + 连签天数 + 奖励。
+        -->
+        <div class="rec-sec">
+          <div class="rec-sec__head">
+            <span class="rec-sec__title">{{ recordModal.model.gamesList?.length ? '各游戏结果' : '原始返回' }}</span>
+          </div>
+
+          <div v-if="recordModal.model.gamesList?.length" class="rec-games">
+            <div v-for="g in recordModal.model.gamesList" :key="g.key" class="rec-game">
+              <GameIcon :game="g.key" :size="18" />
+              <span class="rec-game__name">{{ gameShort(g.key) }}</span>
+              <span class="g-chip" :class="gameChip(g.status)">{{ gameStatusText(g.status, g.key) }}</span>
+              <span v-if="g.days" class="rec-game__meta">{{ g.days }} 天连签</span>
+              <span v-if="g.reward" class="rec-game__meta">奖励 {{ g.reward }}</span>
+              <!-- 米游币三项挂在米游社这一行，和游戏结果同一列阅读 -->
+              <span v-for="c in coinChips(g.key, recordModal.model.coins)" :key="c" class="rec-game__meta">{{ c }}</span>
+              <span v-if="!g.days && !g.reward && gameNote(g)" class="rec-game__note">{{ gameNote(g) }}</span>
+            </div>
+          </div>
+          <!--
+            整轮失败（登录失效之类）时解析不出任何游戏段，这时候直接把原文摊开，
+            不额外加「没有可解析段落」的提示——结果栏已经写了失败，原文就是原因本身。
+          -->
+          <pre v-else class="record-raw__body rec-raw__fallback">{{ recordModal.model.message }}</pre>
         </div>
+
+        <details v-if="recordModal.model.gamesList?.length" class="rec-raw">
+          <summary class="rec-raw__summary">查看原始返回</summary>
+          <pre class="record-raw__body">{{ recordModal.model.message }}</pre>
+        </details>
       </template>
       <template v-else>
         <Descriptions :column="2" size="small" bordered>
@@ -808,12 +836,13 @@
   import GSelect from '../_shared/form/GSelect.vue';
   import GSegmented from '../_shared/form/GSegmented.vue';
   import GModal from '../_shared/dialog/GModal.vue';
+  import GameIcon from '../_shared/GameIcon.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import type { SignDay, SignIssues, SignOverview, SignRecord, WavesDay, WavesOverview } from './api';
   import { signApi, wavesApi } from './api';
   import { downloadCsv } from '/@/utils/export/csv';
   import { gm } from '/@/design/gmIcons';
-  import { fmtTimeShort } from '/@/utils/localTime';
+  import { fmtDateTime, fmtTimeShort } from '/@/utils/localTime';
   import {
     areaGradient,
     chartBase,
@@ -890,6 +919,39 @@
 
   function gameShort(key: string) {
     return GAME_LIST.find((g) => g.value === key)?.label.replace('崩坏：', '').replace('未定事件簿', '未定') ?? key;
+  }
+
+  /* ---------------------- 单条流水里的游戏段落 ---------------------- */
+
+  /** 后端 parseGames 的 status → 标签配色 */
+  function gameChip(status: string) {
+    const map: Record<string, string> = { signed: 'is-signed', unbound: 'is-unbound', failed: 'is-failed' };
+    return map[status] || '';
+  }
+
+  function gameStatusText(status: string, key?: string) {
+    // 米游社那段说的是米游币领取，写「已签到」不准确
+    if (status === 'signed' && key === 'mys') return '已领取';
+    const map: Record<string, string> = { signed: '已签到', unbound: '未绑定', failed: '失败' };
+    return map[status] || '未知';
+  }
+
+  /** 没有连签天数和奖励时的补充文案（未绑定不再重复解释） */
+  function gameNote(g: any) {
+    if (g?.status === 'unbound') return '';
+    // 米游社那句原文就是米游币三项，标题右侧已经单独列了，别重复占一行
+    if (g?.key === 'mys') return '';
+    return String(g?.text || '').trim() || '无返回内容';
+  }
+
+  /** 米游币三项挂到米游社行上（只给 mys 行，其他游戏返回空） */
+  function coinChips(key: string, coins: any) {
+    if (key !== 'mys' || !coins) return [];
+    const out: string[] = [];
+    if (coins.todayGain != null) out.push(`今日 +${coins.todayGain}`);
+    if (coins.rest != null) out.push(`可再得 ${coins.rest}`);
+    if (coins.current != null) out.push(`当前 ${coins.current}`);
+    return out;
   }
 
   /* ------------------------------ 指标卡 ------------------------------ */
@@ -1672,11 +1734,12 @@
   function openRecord(r: any) {
     if (scope.value === 'mys') {
       recordModal.model = {
-        time: r.time.replace('T', ' ').slice(0, 19),
+        time: fmtDateTime(r.time),
         qqName: `${userName(r.qq)}（${r.qq}）`,
         result: r.ok ? '成功' : `失败（${r.stage || 'unknown'}）`,
         source: r.source,
-        games: r.games.map((g) => `${g.key}:${g.status}${g.days ? `/${g.days}天` : ''}`).join('  ') || '—',
+        gamesList: Array.isArray(r.games) ? r.games : [],
+        coins: r.coins || null,
         message: r.message,
       };
     } else {
@@ -1967,6 +2030,108 @@
 
   .dm-stat__value.is-fail {
     color: #e0664a;
+  }
+
+  /* ---------------- 单条流水的「各游戏结果」 ---------------- */
+
+  .rec-sec {
+    margin-top: 14px;
+  }
+
+  .rec-sec__head {
+    margin-bottom: 8px;
+  }
+
+  .rec-sec__title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--g-text-sub);
+  }
+
+  .rec-games {
+    overflow: hidden;
+    border: 1px solid var(--g-card-border);
+    border-radius: 10px;
+  }
+
+  .rec-game {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 9px 12px;
+    font-size: 12.5px;
+    border-bottom: 1px solid var(--g-row-sep);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  /* 游戏名定宽，右侧状态和天数才能对齐成一列 */
+  .rec-game__name {
+    flex: 0 0 auto;
+    min-width: 96px;
+    font-weight: 600;
+    color: var(--g-text);
+  }
+
+  .rec-game__meta {
+    flex: 0 0 auto;
+    padding: 0 6px;
+    font-size: 11px;
+    line-height: 18px;
+    color: var(--g-text-sub);
+    background: var(--g-chip-bg);
+    border-radius: 5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rec-game__note {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 解析不出游戏段时原文直接摊开，占位取代上方的明细列表 */
+  .rec-raw__fallback {
+    max-height: 240px;
+    margin: 0;
+  }
+
+  /* 原文降级为折叠区：需要核对细节时才展开 */
+  .rec-raw {
+    margin-top: 12px;
+
+    &[open] .rec-raw__summary {
+      margin-bottom: 8px;
+    }
+  }
+
+  .rec-raw__summary {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--g-blue);
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::before {
+      font-size: 9px;
+      content: '▶';
+      transition: transform 0.16s ease;
+    }
+  }
+
+  .rec-raw[open] .rec-raw__summary::before {
+    content: '▼';
   }
 
   .record-raw {
