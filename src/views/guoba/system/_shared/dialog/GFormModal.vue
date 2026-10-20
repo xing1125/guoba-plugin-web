@@ -2,7 +2,7 @@
   <Modal :visible="visible" :title="title" :width="width" :confirm-loading="loading" :ok-text="okText" cancel-text="取消" :mask-closable="false" @ok="handleOk" @cancel="handleCancel">
     <Form ref="formRef" class="gfm-form" :label-col="{ span: 5 }" :wrapper-col="{ span: 17 }" :model="values">
       <div v-if="hint" class="gfm-hint">
-        <Icon icon="ant-design:info-circle-outlined" :size="14" style="flex-shrink: 0; margin-top: 2px" />
+        <Icon :icon="$gm('info')" :size="14" style="flex-shrink: 0; margin-top: 2px" />
         <span>{{ hint }}</span>
       </div>
       <FormItem v-for="f in schema" :key="f.field" :name="f.field" :label="f.label" :rules="buildRules(f)">

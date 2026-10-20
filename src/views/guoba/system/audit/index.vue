@@ -34,7 +34,7 @@
         v-model:page="page"
         v-model:page-size="size"
         title="操作记录"
-        icon="ant-design:audit-outlined"
+        :icon="$gm('clipboard')"
         :columns="columns"
         :data-source="rows"
         :total="total"
@@ -89,6 +89,7 @@
   import GSearch from '../_shared/form/GSearch.vue';
   import GSelect from '../_shared/form/GSelect.vue';
   import { auditApi, type AuditRow } from '../sys-users/api';
+  import { gm } from '/@/design/gmIcons';
 
   defineOptions({ name: 'AuditLog' });
 
@@ -140,7 +141,7 @@
       value: stats.total,
       unit: ' 条',
       foot: '全部历史操作留痕',
-      icon: 'ant-design:database-outlined',
+      icon: gm('database'),
       color: '#3b82f6',
       color2: '#22d3ee',
     },
@@ -150,7 +151,7 @@
       value: stats.today,
       unit: ' 条',
       foot: '当天 00:00 起',
-      icon: 'ant-design:clock-circle-outlined',
+      icon: gm('clock'),
       color: '#8b5cf6',
       color2: '#6366f1',
     },
@@ -160,7 +161,7 @@
       value: stats.risky,
       unit: ' 条',
       foot: '删除 / 清理 / 退群 / 权限变更',
-      icon: 'ant-design:warning-outlined',
+      icon: gm('warning'),
       color: '#ef4444',
       color2: '#f97316',
     },

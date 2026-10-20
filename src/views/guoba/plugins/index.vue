@@ -63,10 +63,10 @@
         </div>
         <div class="pf-bar__ops">
           <span class="pf-count">共 {{ filteredPlugins.length }} 个</span>
-          <a-button pre-icon="ant-design:plus" @click="onInstall">安装自定义插件</a-button>
+          <a-button :pre-icon="$gm('plus')" @click="onInstall">安装自定义插件</a-button>
           <a-tooltip title="重新加载插件列表">
             <span class="db-cfg__icon-btn" @click="reloadPlugins">
-              <Icon icon="ant-design:reload" :size="14" />
+              <Icon :icon="$gm('refresh')" :size="14" />
             </span>
           </a-tooltip>
         </div>
@@ -77,7 +77,7 @@
         <div v-if="selectedKeys.length" class="pf-batch">
           <span class="pf-batch__txt">已选中 <b>{{ selectedKeys.length }}</b> 个插件</span>
           <div class="pf-batch__ops">
-            <a-button size="small" danger pre-icon="ant-design:delete" @click="onUninstallBatch">批量卸载</a-button>
+            <a-button size="small" danger :pre-icon="$gm('trash')" @click="onUninstallBatch">批量卸载</a-button>
             <a-button size="small" type="text" @click="selectedKeys = []">清除选择</a-button>
           </div>
         </div>
@@ -138,12 +138,12 @@
                 v-if="record.installed && record.hasConfig"
                 type="link"
                 size="small"
-                pre-icon="ant-design:setting"
+                :pre-icon="$gm('gear')"
                 @click.stop="goConfig(record)"
               >
                 配置
               </a-button>
-              <a-button type="link" size="small" pre-icon="ant-design:info-circle" @click.stop="handleView(record)">
+              <a-button type="link" size="small" :pre-icon="$gm('info')" @click.stop="handleView(record)">
                 详情
               </a-button>
             </div>
@@ -191,6 +191,7 @@
   import GSearch from '/@/views/guoba/system/_shared/form/GSearch.vue';
   import GSelect from '/@/views/guoba/system/_shared/form/GSelect.vue';
   import PluginIcon from '/@/components/Guoba/src/components/PluginIcon.vue';
+  import { gm } from '/@/design/gmIcons';
 
   const guobaStore = useGuobaStore();
   const { createPrompt } = usePrompt();
@@ -240,7 +241,7 @@
         key: 'installed',
         label: '已安装',
         value: installed,
-        icon: 'ant-design:check-circle',
+        icon: gm('success'),
         color: 'var(--g-green)',
         bg: 'rgb(69 185 124 / 14%)',
         status: 1,
@@ -250,7 +251,7 @@
         key: 'not-installed',
         label: '未安装',
         value: total - installed,
-        icon: 'ant-design:cloud-download',
+        icon: gm('cloud'),
         color: 'var(--g-amber)',
         bg: 'rgb(211 188 141 / 16%)',
         status: 0,
@@ -260,7 +261,7 @@
         key: 'configurable',
         label: '可配置',
         value: allPlugins.value.filter((p) => p.installed && p.hasConfig).length,
-        icon: 'ant-design:setting',
+        icon: gm('gear'),
         color: 'var(--g-violet)',
         bg: 'rgb(157 141 240 / 14%)',
         status: 1,
@@ -270,7 +271,7 @@
         key: 'deleted',
         label: '已失效',
         value: allPlugins.value.filter((p) => p.isDeleted).length,
-        icon: 'ant-design:warning',
+        icon: gm('warning'),
         color: 'var(--g-rose)',
         bg: 'rgb(255 138 101 / 14%)',
         status: 1,

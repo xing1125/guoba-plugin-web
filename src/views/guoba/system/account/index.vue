@@ -75,9 +75,11 @@
           <div class="g-card">
             <div class="gm-panel__head">
               <div class="gm-panel__title">
-                <i><Icon icon="ant-design:idcard-outlined" :size="13" /></i>
+                <i><Icon :icon="$gm('idcard')" :size="13" /></i>
                 {{ meta.name }}账号
-                <span class="gm-panel__extra" style="margin-left: 8px">共 {{ total }} 个</span>
+                <span class="gm-panel__extra" style="margin-left: 8px">
+                  共 {{ total }} 个账号 · {{ uidRows.length }} 个 UID
+                </span>
               </div>
               <div class="toolbar">
                 <GSearch
@@ -109,75 +111,67 @@
                 :title="keyword ? '没有匹配的账号' : '该游戏暂无账号'"
                 :desc="keyword ? '换个关键词试试' : '账号在聊天中绑定后会出现在这里'"
               />
+              <!-- 每个游戏 UID 单独一行：绑了几个号就显示几行 -->
               <div v-else class="ac-list">
-                <div v-for="a in list" :key="a.id" class="ac-row" :class="{ 'is-open': opened.has(a.id) }">
-                  <div
-                    class="ac-row__head"
-                    role="button"
-                    tabindex="0"
-                    :aria-expanded="opened.has(a.id)"
-                    @click="toggleRow(a.id)"
-                    @keydown.enter.prevent="toggleRow(a.id)"
-                    @keydown.space.prevent="toggleRow(a.id)"
-                  >
-                    <span class="ac-row__chev">
-                      <Icon icon="ant-design:right-outlined" :size="11" />
-                    </span>
-                    <span class="ac-row__avatar" :style="avatarStyle(a)">
-                      {{ (a.bindNames?.[0] || String(a.ltuid ?? a.qq)).slice(0, 1) }}
-                    </span>
-                    <div class="ac-row__id">
-                      <div class="mono">{{ a.ltuid ? `ltuid ${a.ltuid}` : `QQ ${a.qq}` }}</div>
-                      <div class="ac-row__binds">
-                        <span v-if="!a.bindIds.length" class="muted">未绑定 Bot 用户</span>
-                        <span v-for="(id, i) in a.bindIds.slice(0, 3)" :key="id" class="bind-chip" :title="id">
-                          {{ a.bindNames?.[i] || maskId(id) }}
-                        </span>
-                        <span v-if="a.bindIds.length > 3" class="bind-more">+{{ a.bindIds.length - 3 }}</span>
-                      </div>
+                <div v-for="r in uidRows" :key="r.__key" class="ac-uidrow">
+                  <span class="ac-row__avatar" :style="avatarStyle(r)">
+                    {{ (r.nickname || r.bindNames?.[0] || String(r.ltuid ?? r.qq) || '?').slice(0, 1) }}
+                  </span>
+
+                  <div class="ac-uidrow__main">
+                    <div class="ac-uidrow__name">
+                      <span class="ac-uidrow__nick">{{ r.nickname || '未获取昵称' }}</span>
+                      <span class="mono ac-uidrow__uid">{{ r.uid || '—' }}</span>
+                      <span v-if="r.level" class="ac-uidrow__lv">Lv.{{ r.level }}</span>
                     </div>
-                    <span class="ac-row__count">{{ a.uidCount }} UID</span>
-                    <span class="ac-tag" :class="a.hasCk ? 'is-on' : 'is-off'">
-                      {{ isMys ? 'CK' : '令牌' }}
-                    </span>
-                    <span v-if="isMys" class="ac-tag" :class="a.hasSk ? 'is-on' : 'is-off'">SK</span>
+                    <div class="ac-uidrow__meta">
+                      <span class="mono">{{ r.ltuid ? `ltuid ${r.ltuid}` : `QQ ${r.qq}` }}</span>
+                      <span v-if="r.server" class="ac-uidrow__dot">区服 {{ r.server }}</span>
+                      <span v-if="r.kuroUid" class="ac-uidrow__dot mono">库街区 {{ r.kuroUid }}</span>
+                      <span class="ac-uidrow__binds">
+                        <span v-if="!r.bindIds.length" class="muted">未绑定 Bot 用户</span>
+                        <span
+                          v-for="(id, i) in r.bindIds.slice(0, 3)"
+                          :key="id"
+                          class="bind-chip"
+                          :title="id"
+                        >
+                          {{ r.bindNames?.[i] || maskId(id) }}
+                        </span>
+                        <span v-if="r.bindIds.length > 3" class="bind-more">
+                          +{{ r.bindIds.length - 3 }}
+                        </span>
+                      </span>
+                    </div>
                   </div>
 
-                  <div v-show="opened.has(a.id)" class="ac-row__body">
-                    <div v-for="u in a.uids" :key="u.uid" class="ac-uid">
-                      <div class="ac-uid__body">
-                        <div class="ac-uid__name">{{ u.nickname || '未获取昵称' }}</div>
-                        <div class="ac-uid__meta">
-                          <span class="mono">{{ u.uid }}</span>
-                          <span v-if="u.level">· Lv.{{ u.level }}</span>
-                          <span v-if="u.server">· 区服 {{ u.server }}</span>
-                          <span v-if="u.kuroUid">· 库街区 {{ u.kuroUid }}</span>
-                        </div>
-                      </div>
-                      <Button
-                        v-if="isMys"
-                        size="small"
-                        danger
-                        :loading="unbinding === `${a.ltuid}:${u.uid}`"
-                        @click="askUnbind(a, u)"
-                      >
-                        解绑
-                      </Button>
-                    </div>
+                  <div class="ac-uidrow__tags">
+                    <span class="ac-tag" :class="r.hasCk ? 'is-on' : 'is-off'">
+                      {{ isMys ? 'CK' : '令牌' }}
+                    </span>
+                    <span v-if="isMys" class="ac-tag" :class="r.hasSk ? 'is-on' : 'is-off'">SK</span>
+                    <span v-if="r.ckStatus === 'expired'" class="ac-tag is-off">已失效</span>
+                  </div>
 
-                    <div class="ac-row__foot">
-                      <span v-if="isMys" class="mono fs-12">CK {{ a.ckMask || '未保存' }}</span>
-                      <span v-if="a.checkedAt" class="muted">最后校验 {{ a.checkedAt }}</span>
-                      <span v-if="!isMys" class="muted">
-                        鸣潮账号由库街区 token 绑定，请在聊天中用 <span class="mono">#ww</span> 指令管理
-                      </span>
-                      <div class="ac-row__actions">
-                        <Button v-if="isMys" size="small" :loading="verifying === a.ltuid" @click="verifyOne(a)">
-                          校验 CK
-                        </Button>
-                        <Button v-if="isMys" size="small" danger @click="askDelete(a)">删除账号</Button>
-                      </div>
-                    </div>
+                  <div class="ac-uidrow__acts">
+                    <Button
+                      v-if="isMys && r.uid"
+                      size="small"
+                      danger
+                      :loading="unbinding === `${r.ltuid}:${r.uid}`"
+                      @click="askUnbind(r, r)"
+                    >
+                      解绑
+                    </Button>
+                    <Button v-if="isMys" size="small" :loading="verifying === r.ltuid" @click="verifyOne(r)">
+                      校验
+                    </Button>
+                    <Button v-if="isMys" size="small" danger @click="askDelete(r)">删除</Button>
+                  </div>
+
+                  <div v-if="isMys" class="ac-uidrow__foot">
+                    <span class="mono fs-12">CK {{ r.ckMask || '未保存' }}</span>
+                    <span v-if="r.checkedAt" class="muted">最后校验 {{ r.checkedAt }}</span>
                   </div>
                 </div>
               </div>
@@ -377,6 +371,34 @@
   const isMys = computed(() => activeGame.value !== 'waves');
 
   const opened = ref<Set<string>>(new Set());
+
+  /**
+   * 把一个米游社账号下的多个游戏 UID 摊平成独立行 —— 绑几个号就显示几行，
+   * 避免「2 UID」这种合并展示让人以为只有一条记录。
+   * 没有任何 UID 的账号单独出一行占位，免得账号在列表里凭空消失。
+   */
+  const uidRows = computed(() => {
+    const rows: any[] = [];
+    for (const a of list.value) {
+      const uids = Array.isArray(a.uids) ? a.uids : [];
+      if (!uids.length) {
+        rows.push({ ...a, uid: '', nickname: '', level: '', server: '', kuroUid: '', __key: `${a.id}#none` });
+        continue;
+      }
+      for (const u of uids) {
+        rows.push({
+          ...a,
+          uid: u.uid,
+          nickname: u.nickname || '',
+          level: u.level || '',
+          server: u.server || '',
+          kuroUid: u.kuroUid || '',
+          __key: `${a.id}#${u.uid}`,
+        });
+      }
+    }
+    return rows;
+  });
 
   /** 鸣潮不适用米游社统计口径 */
   function pctOf(v: number, t: number) {
@@ -1096,6 +1118,116 @@
 
     .ac-nav__foot {
       display: none;
+    }
+  }
+
+  /* --------------------- UID 平铺行（绑几个号就几行） --------------------- */
+
+  .ac-uidrow {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto auto;
+    gap: 8px 12px;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 12px;
+    transition: border-color 0.16s ease;
+
+    &:hover {
+      border-color: var(--g-card-border-strong);
+    }
+  }
+
+  .ac-uidrow__main {
+    min-width: 0;
+  }
+
+  .ac-uidrow__name {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    min-width: 0;
+  }
+
+  .ac-uidrow__nick {
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--g-text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ac-uidrow__uid {
+    flex: 0 0 auto;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+  }
+
+  .ac-uidrow__lv {
+    flex: 0 0 auto;
+    padding: 0 5px;
+    font-size: 10.5px;
+    line-height: 16px;
+    color: var(--g-text-sub);
+    background: var(--g-bg);
+    border: 1px solid var(--g-card-border);
+    border-radius: 5px;
+  }
+
+  .ac-uidrow__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 10px;
+    align-items: center;
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+  }
+
+  .ac-uidrow__binds {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+  }
+
+  .ac-uidrow__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .ac-uidrow__acts {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .ac-uidrow__foot {
+    display: flex;
+    grid-column: 1 / -1;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    padding-top: 7px;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+    border-top: 1px dashed var(--g-card-border);
+  }
+
+  @media (max-width: 1180px) {
+    .ac-uidrow {
+      grid-template-columns: 28px minmax(0, 1fr);
+
+      .ac-uidrow__tags,
+      .ac-uidrow__acts {
+        grid-column: 2;
+        justify-content: flex-start;
+      }
     }
   }
 </style>

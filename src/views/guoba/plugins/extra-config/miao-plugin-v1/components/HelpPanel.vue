@@ -6,7 +6,7 @@
         <input type="file" id="upload-icon" style="display: none" name="icon" accept="image/png" />
         <Dropdown :trigger="['click']" :dropMenuList="dropMenuList">
           <a-button :style="`transform: scale(${1 / scale});transform-origin: right top;`" type="primary" shape="circle" size="large">
-            <Icon icon="akar-icons:image" />
+            <Icon :icon="$gm('image')" />
           </a-button>
         </Dropdown>
       </div>
@@ -53,14 +53,14 @@
         <div class="row">
           <div>主标题</div>
           <div class="flex-1">
-            <a-input v-model:value="helpCfg.title" placeholder="主标题" />
+            <GInput v-model="helpCfg.title" placeholder="主标题" />
           </div>
         </div>
 
         <div class="row">
           <div>副标题</div>
           <div class="flex-1">
-            <a-input v-model:value="helpCfg.subTitle" placeholder="附标题" />
+            <GInput v-model="helpCfg.subTitle" placeholder="附标题" />
           </div>
         </div>
       </div>
@@ -73,6 +73,7 @@
 
 <script lang="ts" setup>
   import { computed, ref } from 'vue';
+  import GInput from '/@/views/guoba/system/_shared/form/GInput.vue';
   import EditBodyModal from './EditBodyModal.vue';
   import { Modal } from 'ant-design-vue';
   import { helpCfgType, helpListItemType, helpListType, listItemType, ListType, modelDataType } from '../types';
@@ -84,6 +85,7 @@
   import { useModal } from '/@/components/Modal';
   import UploadIconHelpModal from './UploadIconHelpModal.vue';
   import {getAppEnvConfig} from "/@/utils/env";
+  import { gm } from '/@/design/gmIcons';
 
   const { VITE_PUBLIC_PATH } = getAppEnvConfig();
   const ls = createLocalStorage();
@@ -111,7 +113,7 @@
     {
       event: 'changeBackground',
       text: '更换背景',
-      icon: 'akar-icons:image',
+      icon: gm('image'),
       onClick() {
         getUploadBase64('upload-bg', (base64) => {
           emits('update:mainB64', base64);
@@ -121,7 +123,7 @@
     {
       event: 'uploadIcon',
       text: '上传图标',
-      icon: 'fontisto:nav-icon-grid',
+      icon: gm('grid'),
       onClick() {
         let fn = () => {
           getUploadBase64('upload-icon', async (base64) => {

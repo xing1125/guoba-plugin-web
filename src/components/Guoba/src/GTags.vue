@@ -16,7 +16,7 @@
       @keyup.enter="handleInputConfirm"
     />
     <span v-else class="g-tags__add" @click="showInput">
-      <icon icon="ant-design:plus" :size="11" />
+      <icon :icon="$gm('plus')" :size="11" />
       新增
     </span>
   </div>

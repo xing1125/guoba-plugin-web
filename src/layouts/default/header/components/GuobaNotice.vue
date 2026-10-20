@@ -29,7 +29,7 @@
     </template>
     <Badge :count="unread" :offset="[-2, 2]" size="small">
       <span class="gn__bell">
-        <Icon icon="ant-design:bell-outlined" :size="16" />
+        <Icon :icon="$gm('bell')" :size="16" />
       </span>
     </Badge>
   </Popover>

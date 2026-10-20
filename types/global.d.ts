@@ -88,4 +88,9 @@ declare global {
 
 declare module 'vue' {
   export type JSXComponent<Props = any> = { new (): ComponentPublicInstance<Props> } | FunctionalComponent<Props>;
+
+  interface ComponentCustomProperties {
+    /** 自绘 duotone 图标名拼装器（main.ts 注册），模板里用 $gm('plus') 取 'gm:plus' */
+    $gm: (name: string) => string;
+  }
 }

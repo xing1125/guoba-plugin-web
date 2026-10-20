@@ -52,7 +52,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:line-chart-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('chart')" :size="13" /></i>
               消息趋势
             </div>
             <div class="gm-panel__extra">
@@ -67,7 +67,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:pie-chart-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('chart-pie')" :size="13" /></i>
               米游社缓存分布
             </div>
             <span class="gm-panel__extra">按游戏</span>
@@ -83,7 +83,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:bar-chart-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('chart-bar')" :size="13" /></i>
               群消息量 TOP 8
             </div>
             <span class="gm-panel__link" @click="go('/groups')">查看全部›</span>
@@ -114,7 +114,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:fire-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('fire')" :size="13" /></i>
               最近活跃群
             </div>
             <span class="gm-panel__link" @click="go('/groups')">查看全部›</span>
@@ -150,7 +150,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:team-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('users')" :size="13" /></i>
               用户消息量 TOP 8
             </div>
             <span class="gm-panel__link" @click="go('/users-data')">查看全部›</span>
@@ -181,7 +181,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:api-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('api')" :size="13" /></i>
               插件数据体量
             </div>
             <span class="gm-panel__link" @click="go('/plugins-data')">查看全部›</span>
@@ -211,7 +211,7 @@
       </section>
 
       <div v-if="!available && !booting" class="g-card db-tip">
-        <Icon icon="ant-design:info-circle-outlined" :size="16" />
+        <Icon :icon="$gm('info')" :size="16" />
         <div>
           <b>后端接口暂时没有数据</b>
           <div class="g-muted">
@@ -235,6 +235,7 @@
   import GEmpty from '../_shared/GEmpty.vue';
   import GSegmented from '../_shared/form/GSegmented.vue';
   import type { GameSlice, GroupRow, OverviewCards, TrendPoint } from '../_shared/stats';
+  import { gm } from '/@/design/gmIcons';
   import {
     activeText,
     areaGradient,
@@ -300,7 +301,7 @@
       {
         key: 'keys',
         label: 'Redis 键',
-        icon: 'ant-design:cloud-server-outlined',
+        icon: gm('server'),
         value: thousands(overview.value.redisKeys),
         foot: `覆盖 ${overview.value.namespaces} 个命名空间`,
         color: p.blue[0],
@@ -309,7 +310,7 @@
       {
         key: 'groups',
         label: '群总数',
-        icon: 'ant-design:appstore-outlined',
+        icon: gm('grid'),
         value: thousands(overview.value.groupCount),
         unit: '个',
         foot: `今日活跃 ${overview.value.activeToday} 个`,
@@ -319,7 +320,7 @@
       {
         key: 'today',
         label: '今日消息',
-        icon: 'ant-design:message-outlined',
+        icon: gm('pulse'),
         value: thousands(overview.value.todayMsg),
         unit: '条',
         foot: `群均 ${fmtNum(overview.value.avgPerGroup)} 条`,
@@ -329,7 +330,7 @@
       {
         key: 'total',
         label: '累计消息',
-        icon: 'ant-design:database-outlined',
+        icon: gm('database'),
         value: fmtNum(overview.value.totalMsg),
         unit: '条',
         foot: `群平均 ${fmtNum(overview.value.avgPerGroup)} 条`,
@@ -339,7 +340,7 @@
       {
         key: 'users',
         label: '用户总数',
-        icon: 'ant-design:team-outlined',
+        icon: gm('users'),
         value: thousands(userSummary.value.userCount),
         unit: '人',
         foot: `今日活跃 ${thousands(userSummary.value.activeToday)} 人`,
@@ -349,7 +350,7 @@
       {
         key: 'avg',
         label: '单群日均',
-        icon: 'ant-design:bar-chart-outlined',
+        icon: gm('chart-bar'),
         value: fmtNum(avgPerGroupDaily.value),
         unit: '条',
         foot: '按有记录天数平均',

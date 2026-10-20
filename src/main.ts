@@ -15,9 +15,13 @@ import { setupGlobDirectives } from '/@/directives';
 import { setupI18n } from '/@/locales/setupI18n';
 import { registerGlobComp } from '/@/components/registerGlobComp';
 import { registerGuoba } from '/@/components/Guoba/register';
+import { gm } from '/@/design/gmIcons';
 
 async function bootstrap() {
   const app = createApp(App);
+
+  // 自绘 duotone 图标名拼装器：模板里写 $gm('plus')，任何组件（setup / options 两种写法）都能用
+  app.config.globalProperties.$gm = gm;
 
   // Configure store
   // 配置 store

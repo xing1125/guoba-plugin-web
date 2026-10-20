@@ -2,17 +2,17 @@
   <BasicDrawer v-bind="getProps">
     <a-spin wrapperClassName="p-2" :spinning="loading">
       <div style="margin-bottom: 8px">
-        <a-button type="primary" preIcon="ant-design:plus" @click="onAdd">新增备份</a-button>
+        <a-button type="primary" :pre-icon="$gm('plus')" @click="onAdd">新增备份</a-button>
       </div>
       <a-list size="large" bordered :dataSource="backupList">
         <template #renderItem="{ item }">
           <a-list-item>
             <template #actions>
               <a-popconfirm title="确定要还原吗？" placement="left" @confirm="() => onRollback(item.id)">
-                <a-button type="primary" shape="circle" preIcon="ant-design:undo" />
+                <a-button type="primary" shape="circle" :pre-icon="$gm('undo')" />
               </a-popconfirm>
               <a-popconfirm title="确定要删除吗？" placement="left" @confirm="() => onDelete(item)">
-                <a-button type="primary" shape="circle" danger preIcon="ant-design:delete" />
+                <a-button type="primary" shape="circle" danger :pre-icon="$gm('trash')" />
               </a-popconfirm>
             </template>
 

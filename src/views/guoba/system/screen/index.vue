@@ -26,7 +26,7 @@
         </span>
         <span class="scr-clock">{{ clock }}</span>
         <Button size="small" ghost class="scr-full-btn" @click="toggleFull">
-          <Icon icon="ant-design:fullscreen-outlined" :size="12" />
+          <Icon :icon="$gm('fullscreen')" :size="12" />
           {{ isFull ? '退出全屏' : '全屏' }}
         </Button>
       </div>
@@ -296,6 +296,7 @@
   import { useECharts } from '/@/hooks/web/useECharts';
   import type { BotRuntime, DailyPoint, GroupRow, LiveInfo, OverviewCards, TrendPoint } from '../_shared/stats';
   import { areaGradient, chartBase, fmtNum, shortGid, statsApi, thousands } from '../_shared/stats';
+  import { gm } from '/@/design/gmIcons';
 
   defineOptions({ name: 'BotScreen' });
 
@@ -468,7 +469,7 @@
     return [
       {
         label: '今日消息',
-        icon: 'ant-design:message-outlined',
+        icon: gm('pulse'),
         color: ice,
         value: thousands(todayMsg),
         unit: '条',
@@ -477,7 +478,7 @@
       },
       {
         label: '累计消息',
-        icon: 'ant-design:database-outlined',
+        icon: gm('database'),
         color: gold,
         value: fmtNum(totalMsg),
         unit: '条',
@@ -486,7 +487,7 @@
       },
       {
         label: '群总数',
-        icon: 'ant-design:appstore-outlined',
+        icon: gm('grid'),
         color: green,
         value: thousands(overview.value.groupCount ?? 0),
         unit: '个',
@@ -495,7 +496,7 @@
       },
       {
         label: '用户总数',
-        icon: 'ant-design:team-outlined',
+        icon: gm('users'),
         color: violet,
         value: thousands(userCount.value),
         unit: '人',
@@ -504,7 +505,7 @@
       },
       {
         label: '进程内存',
-        icon: 'ant-design:dashboard-outlined',
+        icon: gm('dashboard'),
         color: ice,
         value: fmtBytes(r.memory?.rss),
         unit: '',
@@ -513,7 +514,7 @@
       },
       {
         label: '在线账号',
-        icon: 'ant-design:robot-outlined',
+        icon: gm('bot'),
         color: r.bots?.length ? green : '#E5533D',
         value: String(r.bots?.length ?? 0),
         unit: '个',

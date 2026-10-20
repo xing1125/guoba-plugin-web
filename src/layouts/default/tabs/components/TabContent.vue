@@ -4,7 +4,7 @@
       <span class="ml-1">{{ getTitle }}</span>
     </div>
     <span :class="`${prefixCls}__extra-quick`" v-else @click="handleContext">
-      <Icon icon="ion:chevron-down" />
+      <Icon :icon="$gm('chevron-down')" />
     </span>
   </Dropdown>
 </template>

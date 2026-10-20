@@ -23,7 +23,7 @@
             <!--操作栏-->
             <template #action="{ record }">
               <a @click="handleDeleteSelected(record)">
-                <Icon icon="ant-design:delete-outlined" />
+                <Icon :icon="$gm('trash')" />
               </a>
             </template>
           </BasicTable>

@@ -2,7 +2,7 @@
   <div>
     <BasicForm @register="registerForm" />
     <div v-if="showBtn" style="text-align: center">
-      <a-button type="primary" preIcon="ant-design:save" @click="onSave">保存皮肤配置</a-button>
+      <a-button type="primary" :pre-icon="$gm('save')" @click="onSave">保存皮肤配置</a-button>
     </div>
   </div>
 </template>

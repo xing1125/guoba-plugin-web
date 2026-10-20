@@ -12,7 +12,7 @@
     @press-enter="emitSearch"
   >
     <template v-if="!loading" #prefix>
-      <Icon icon="ant-design:search-outlined" :size="13" />
+      <Icon :icon="$gm('search')" :size="13" />
     </template>
   </GInput>
 </template>

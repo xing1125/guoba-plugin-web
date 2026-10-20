@@ -3,7 +3,7 @@
     <template #addonAfter>
       <!--suppress HtmlUnknownAttribute -->
       <a class="open-btn" :disabled="disabled ? 'disabled' : null" @click="open">
-        <Icon icon="ant-design:setting-outlined" />
+        <Icon :icon="$gm('gear')" />
         <span>选择</span>
       </a>
     </template>

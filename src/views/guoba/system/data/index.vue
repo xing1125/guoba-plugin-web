@@ -46,7 +46,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:cluster-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('cluster')" :size="13" /></i>
               游戏数据域
             </div>
             <span class="gm-panel__extra">按游戏归类 · 点命名空间直接进入键列表</span>
@@ -96,7 +96,7 @@
           <div class="g-card dm-side">
             <div class="gm-panel__head">
               <div class="gm-panel__title">
-                <i><Icon icon="ant-design:tags-outlined" :size="13" /></i>
+                <i><Icon :icon="$gm('tags')" :size="13" /></i>
                 命名空间
               </div>
             </div>
@@ -117,7 +117,7 @@
                   <GameIcon :game="g.id" :size="18" />
                   <span class="dm-game__name">{{ g.name }}</span>
                   <em class="dm-game__count">{{ thousands(g.count || 0) }}</em>
-                  <Icon icon="ant-design:right-outlined" :size="11" class="dm-game__arrow" />
+                  <Icon :icon="$gm('arrow-right')" :size="11" class="dm-game__arrow" />
                 </div>
                 <div v-show="openGames.has(g.id)" class="dm-game__body">
                   <div
@@ -145,7 +145,7 @@
           <div class="g-card">
             <div class="gm-panel__head">
               <div class="gm-panel__title">
-                <i><Icon icon="ant-design:key-outlined" :size="13" /></i>
+                <i><Icon :icon="$gm('key')" :size="13" /></i>
                 {{ activeDomain ? activeDomain.label : '全部键' }}
                 <span class="gm-panel__extra" style="margin-left: 8px">
                   {{ thousands(!prefix && keyPage.truncated ? domains.totalKeys : keyPage.total) }} 个
@@ -202,7 +202,7 @@
           <div class="g-card dm-side">
             <div class="gm-panel__head">
               <div class="gm-panel__title">
-                <i><Icon icon="ant-design:appstore-outlined" :size="13" /></i>
+                <i><Icon :icon="$gm('grid')" :size="13" /></i>
                 插件 data 目录
               </div>
             </div>
@@ -224,7 +224,7 @@
           <div class="g-card">
             <div class="gm-panel__head">
               <div class="gm-panel__title">
-                <i><Icon icon="ant-design:folder-open-outlined" :size="13" /></i>
+                <i><Icon :icon="$gm('folder-open')" :size="13" /></i>
                 {{ filePlugin || '请选择插件' }}
                 <span v-if="filePath" class="gm-panel__extra" style="margin-left: 8px">/{{ filePath }}</span>
               </div>
@@ -245,7 +245,7 @@
               <template #bodyCell="{ column, record }">
                 <template v-if="column.key === 'name'">
                   <span v-if="record.dir" class="dm-dir" @click="enterDir(record.path)">
-                    <Icon icon="ant-design:folder-outlined" :size="14" />
+                    <Icon :icon="$gm('folder')" :size="14" />
                     {{ record.name }}
                   </span>
                   <span v-else class="dm-file" @click="openFile(record.path)">{{ record.name }}</span>
@@ -436,6 +436,7 @@
   import { kpiPalette, thousands } from '../_shared/stats';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
+  import { gm } from '/@/design/gmIcons';
 
   defineOptions({ name: 'DataManage' });
 
@@ -503,7 +504,7 @@
       {
         key: 'total',
         label: 'Redis 键总数',
-        icon: 'ant-design:cloud-server-outlined',
+        icon: gm('server'),
         value: thousands(domains.value.totalKeys),
         foot: `覆盖 ${games} 款游戏 · ${plugins} 个插件/模块`,
         color: p.blue[0],
@@ -512,7 +513,7 @@
       {
         key: 'known',
         label: '已归属插件',
-        icon: 'ant-design:cluster-outlined',
+        icon: gm('cluster'),
         value: thousands(known),
         foot: `占 ${domains.value.totalKeys ? ((known / domains.value.totalKeys) * 100).toFixed(1) : 0}%`,
         color: p.green[0],
@@ -521,7 +522,7 @@
       {
         key: 'ns',
         label: '命名空间',
-        icon: 'ant-design:tags-outlined',
+        icon: gm('tags'),
         value: String(domains.value.domains?.length ?? 0),
         foot: '带中文说明与风险等级',
         color: p.violet[0],
@@ -530,7 +531,7 @@
       {
         key: 'unknown',
         label: '未收录键',
-        icon: 'ant-design:question-circle-outlined',
+        icon: gm('question'),
         value: thousands(domains.value.unknownCount),
         foot: '可在「Redis 键」里自由查看',
         color: p.amber[0],

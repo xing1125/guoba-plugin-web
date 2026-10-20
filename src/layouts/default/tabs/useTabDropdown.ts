@@ -8,6 +8,7 @@ import { useMultipleTabStore } from '/@/store/modules/multipleTab';
 import { RouteLocationNormalized, useRouter } from 'vue-router';
 import { useTabs } from '/@/hooks/web/useTabs';
 import { useI18n } from '/@/hooks/web/useI18n';
+import { gm } from '/@/design/gmIcons';
 
 export function useTabDropdown(tabContentProps: TabContentProps, getIsTabs: ComputedRef<boolean>) {
   const state = reactive({
@@ -50,40 +51,40 @@ export function useTabDropdown(tabContentProps: TabContentProps, getIsTabs: Comp
     const closeRightDisabled = !isCurItem || (index === tabStore.getTabList.length - 1 && tabStore.getLastDragEndIndex >= 0);
     const dropMenuList: DropMenu[] = [
       {
-        icon: 'ion:reload-sharp',
+        icon: gm('refresh'),
         event: MenuEventEnum.REFRESH_PAGE,
         text: t('layout.multipleTab.reload'),
         disabled: refreshDisabled,
       },
       {
-        icon: 'clarity:close-line',
+        icon: gm('close'),
         event: MenuEventEnum.CLOSE_CURRENT,
         text: t('layout.multipleTab.close'),
         disabled: !!meta?.affix || disabled,
         divider: true,
       },
       {
-        icon: 'line-md:arrow-close-left',
+        icon: gm('arrow-left'),
         event: MenuEventEnum.CLOSE_LEFT,
         text: t('layout.multipleTab.closeLeft'),
         disabled: closeLeftDisabled,
         divider: false,
       },
       {
-        icon: 'line-md:arrow-close-right',
+        icon: gm('arrow-right'),
         event: MenuEventEnum.CLOSE_RIGHT,
         text: t('layout.multipleTab.closeRight'),
         disabled: closeRightDisabled,
         divider: true,
       },
       {
-        icon: 'dashicons:align-center',
+        icon: gm('list'),
         event: MenuEventEnum.CLOSE_OTHER,
         text: t('layout.multipleTab.closeOther'),
         disabled: disabled || !isCurItem,
       },
       {
-        icon: 'clarity:minus-line',
+        icon: gm('minus'),
         event: MenuEventEnum.CLOSE_ALL,
         text: t('layout.multipleTab.closeAll'),
         disabled: disabled,

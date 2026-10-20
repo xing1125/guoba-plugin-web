@@ -43,7 +43,7 @@
           <div class="g-card">
             <div class="gm-panel__head">
               <div class="gm-panel__title">
-                <i><Icon icon="ant-design:bar-chart-outlined" :size="13" /></i>
+                <i><Icon :icon="$gm('chart-bar')" :size="13" /></i>
                 命名空间占用 TOP 8
               </div>
               <span class="gm-panel__extra">TOP 8 + 其他</span>
@@ -82,7 +82,7 @@
           <div class="g-card">
             <div class="gm-panel__head">
               <div class="gm-panel__title">
-                <i><Icon icon="ant-design:thunderbolt-outlined" :size="13" /></i>
+                <i><Icon :icon="$gm('zap')" :size="13" /></i>
                 游戏维度分布
               </div>
               <GSegmented
@@ -127,7 +127,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:database-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('database')" :size="13" /></i>
             命名空间明细
           </div>
           <div class="toolbar">
@@ -205,6 +205,7 @@
   import GSearch from '../_shared/form/GSearch.vue';
   import GSegmented from '../_shared/form/GSegmented.vue';
   import type { GameSlice, HistogramResult, NsBucket } from '../_shared/stats';
+  import { gm } from '/@/design/gmIcons';
   import {
     chartColors,
     fmtNum,
@@ -235,7 +236,7 @@
       {
         key: 'keys',
         label: 'Redis 键总数',
-        icon: 'ant-design:cloud-server-outlined',
+        icon: gm('server'),
         value: thousands(d?.dbsize ?? 0),
         foot: d?.scannedAt ? `扫描于 ${d.scannedAt.slice(11, 19)}` : '等待扫描',
         color: p.blue[0],
@@ -244,7 +245,7 @@
       {
         key: 'ns',
         label: '命名空间',
-        icon: 'ant-design:block-outlined',
+        icon: gm('lock'),
         value: thousands(d?.bucketCount ?? 0),
         unit: '个',
         foot: `已识别 ${d?.knownCount ?? 0} 个`,
@@ -254,7 +255,7 @@
       {
         key: 'top',
         label: '最大占用',
-        icon: 'ant-design:pie-chart-outlined',
+        icon: gm('chart-pie'),
         value: top ? `${top.ratio}%` : '—',
         foot: top ? `${top.label} · ${top.owner}` : '—',
         color: p.violet[0],
@@ -263,7 +264,7 @@
       {
         key: 'scan',
         label: '已扫描键',
-        icon: 'ant-design:search-outlined',
+        icon: gm('search'),
         value: fmtNum(d?.totalKeys ?? 0),
         unit: '个',
         foot: 'SCAN 全量遍历',

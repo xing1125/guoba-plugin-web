@@ -36,7 +36,7 @@
       <section class="ya-viz">
         <div class="g-card ya-panel ya-viz__donut">
           <div class="gm-panel__head">
-            <div class="gm-panel__title"><i><Icon icon="ant-design:pie-chart-outlined" :size="13" /></i>阶段分布</div>
+            <div class="gm-panel__title"><i><Icon :icon="$gm('chart-pie')" :size="13" /></i>阶段分布</div>
             <span class="gm-panel__extra">按关系阶段</span>
           </div>
           <div ref="stageRef" class="ya-chart ya-chart--donut" />
@@ -48,7 +48,7 @@
 
         <div class="g-card ya-panel ya-viz__scatter">
           <div class="gm-panel__head">
-            <div class="gm-panel__title"><i><Icon icon="ant-design:dot-chart-outlined" :size="13" /></i>亲密 × 熟悉</div>
+            <div class="gm-panel__title"><i><Icon :icon="$gm('chart-dot')" :size="13" /></i>亲密 × 熟悉</div>
             <span class="gm-panel__extra">点越大消息越多 · 共 {{ distRows.length }} 位</span>
           </div>
           <div ref="scatterRef" class="ya-chart ya-chart--scatter" />
@@ -60,7 +60,7 @@
 
         <div class="g-card ya-panel ya-viz__rank">
           <div class="gm-panel__head">
-            <div class="gm-panel__title"><i><Icon icon="ant-design:bar-chart-outlined" :size="13" /></i>消息量 TOP 8</div>
+            <div class="gm-panel__title"><i><Icon :icon="$gm('chart-bar')" :size="13" /></i>消息量 TOP 8</div>
             <span class="gm-panel__extra">用户 / 荧</span>
           </div>
           <div ref="rankRef" class="ya-chart ya-chart--rank" />
@@ -74,7 +74,7 @@
       <!-- 用户表 -->
       <div class="g-card ya-panel">
         <div class="ya-panel__head">
-          <div class="ya-panel__title"><Icon icon="mdi:account-multiple-outline" :size="15" /> 用户表</div>
+          <div class="ya-panel__title"><Icon :icon="$gm('users')" :size="15" /> 用户表</div>
           <div class="ya-panel__tools">
             <GSearch
               v-model="query.q"
@@ -143,7 +143,7 @@
       <!-- 用户对比 · 综合 -->
       <div class="g-card ya-panel">
         <div class="ya-panel__head">
-          <div class="ya-panel__title"><Icon icon="mdi:chart-box-outline" :size="15" /> 用户对比 · 综合</div>
+          <div class="ya-panel__title"><Icon :icon="$gm('chart-bar')" :size="15" /> 用户对比 · 综合</div>
           <span class="ya-panel__extra">
             {{ compare.total }} 位有回复的用户 · 按需要打磨程度排序 · 点行切单用户视角（样本 &lt;15 条的占比噪声大）
           </span>
@@ -179,7 +179,7 @@
       <!-- 智能诊断 -->
       <div class="g-card ya-panel">
         <div class="ya-panel__head">
-          <div class="ya-panel__title"><Icon icon="ant-design:bulb-outlined" :size="15" /> 智能诊断</div>
+          <div class="ya-panel__title"><Icon :icon="$gm('bulb')" :size="15" /> 智能诊断</div>
           <div class="ya-panel__tools">
             <span class="ya-seg">
               <span class="ya-seg__item" :class="{ 'is-active': !scope }" @click="setScope('')">全体</span>

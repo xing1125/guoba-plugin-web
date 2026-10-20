@@ -42,7 +42,7 @@
         <div class="g-card lg-files">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:folder-open-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('folder-open')" :size="13" /></i>
               日志文件
               <span class="gm-panel__extra" style="margin-left: 8px">{{ files.length }} 个</span>
             </div>
@@ -73,7 +73,7 @@
         <div class="g-card lg-view">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:file-text-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('file-text')" :size="13" /></i>
               {{ activeLabel }}
               <span class="gm-panel__extra" style="margin-left: 8px">
                 {{ data.matched }} 条<template v-if="data.matched !== data.total"> / 共 {{ data.total }}</template>
@@ -95,7 +95,7 @@
               />
               <Button size="small" :disabled="!data.matched" @click="copyAll">复制</Button>
               <Button size="small" @click="download">
-                <Icon icon="ant-design:download-outlined" :size="13" />
+                <Icon :icon="$gm('download')" :size="13" />
               </Button>
               <Button size="small" danger :disabled="!activeFile" @click="clearVisible = true">清空</Button>
             </div>
@@ -155,6 +155,7 @@
   import GSegmented from '../_shared/form/GSegmented.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import { logApi, type LogEntriesResult, type LogEntry, type LogFile, type LogSummary } from './api';
+  import { gm } from '/@/design/gmIcons';
 
   /**
    * 运行日志中心
@@ -230,7 +231,7 @@
         value: thousands(summary.value.todayErrors),
         unit: '条',
         foot: summary.value.lastError ? `最近 ${summary.value.lastError.time}` : '窗口内无错误',
-        icon: 'ant-design:close-circle-outlined',
+        icon: gm('error'),
         color: p.rose[0],
         color2: p.rose[1],
       },
@@ -240,7 +241,7 @@
         value: thousands(summary.value.todayWarns),
         unit: '条',
         foot: `标记 ${thousands(summary.value.todayMarks)} 条`,
-        icon: 'ant-design:warning-outlined',
+        icon: gm('warning'),
         color: p.amber[0],
         color2: p.amber[1],
       },
@@ -250,7 +251,7 @@
         value: thousands(summary.value.fileCount),
         unit: '个',
         foot: summary.value.available ? 'app/logs' : '目录不存在',
-        icon: 'ant-design:file-text-outlined',
+        icon: gm('file-text'),
         color: p.blue[0],
         color2: p.blue[1],
       },
@@ -260,7 +261,7 @@
         value: fmtSize(summary.value.totalSize),
         unit: '',
         foot: '含历史归档',
-        icon: 'ant-design:database-outlined',
+        icon: gm('database'),
         color: p.violet[0],
         color2: p.violet[1],
       },

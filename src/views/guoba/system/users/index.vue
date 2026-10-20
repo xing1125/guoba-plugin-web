@@ -18,7 +18,7 @@
         <div class="g-card ur-bind">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:link-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('link')" :size="13" /></i>
               账号绑定率
             </div>
             <span class="gm-panel__extra">米游社 UID</span>
@@ -90,7 +90,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:trophy-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('trophy')" :size="13" /></i>
               最活跃用户 TOP5
             </div>
             <span class="gm-panel__extra">按累计消息量</span>
@@ -118,7 +118,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:bar-chart-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('chart-bar')" :size="13" /></i>
               近 7 日消息活性
             </div>
             <span class="gm-panel__extra">合计 {{ fmtNum(hero.message.last7) }} 条</span>
@@ -144,7 +144,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:appstore-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('grid')" :size="13" /></i>
             游戏绑定矩阵
           </div>
           <div class="toolbar">
@@ -203,7 +203,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:line-chart-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('chart')" :size="13" /></i>
             用户消息趋势
           </div>
           <span class="gm-panel__extra">最近 {{ trend.length }} 天 · 私聊 + 全部用户维度</span>
@@ -223,7 +223,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:team-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('users')" :size="13" /></i>
             用户列表
             <span class="gm-panel__extra" style="margin-left: 8px">共 {{ pager.total }} 人</span>
           </div>
@@ -399,6 +399,7 @@
   import type { GameOverviewItem } from '../account/gameApi';
   import { gameApi } from '../account/gameApi';
   import { downloadCsv } from '/@/utils/export/csv';
+  import { gm } from '/@/design/gmIcons';
 
   defineOptions({ name: 'Users' });
 
@@ -471,7 +472,7 @@
     {
       key: 'today',
       label: '今日活跃',
-      icon: 'ant-design:fire-outlined',
+      icon: gm('fire'),
       value: v(hero.value.active.today),
       unit: '人',
       foot: '今天有消息往来的用户',
@@ -481,7 +482,7 @@
     {
       key: 'last7',
       label: '近 7 日活跃',
-      icon: 'ant-design:calendar-outlined',
+      icon: gm('calendar-check'),
       value: v(hero.value.active.last7),
       unit: '人',
       foot: `7 日内新增 ${hero.value.active.new7} 人`,
@@ -491,7 +492,7 @@
     {
       key: 'msg',
       label: '今日消息',
-      icon: 'ant-design:message-outlined',
+      icon: gm('pulse'),
       value: v(hero.value.message.today),
       unit: '条',
       foot: `昨日 ${fmtNum(hero.value.message.yesterday)} 条`,
@@ -501,7 +502,7 @@
     {
       key: 'avg',
       label: '人均累计',
-      icon: 'ant-design:fund-outlined',
+      icon: gm('chart'),
       value: fmtNum(summary.value.avgPerUser),
       unit: '条',
       foot: `累计 ${fmtNum(summary.value.totalMsg)} 条`,

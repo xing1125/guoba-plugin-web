@@ -1,5 +1,6 @@
 import type { App } from 'vue';
 import { router } from '/@/router';
+import { gm } from '/@/design/gmIcons';
 
 const { VERSION } = window['__YUNZAI_BOT_CONF__'];
 const isV2 = VERSION.startsWith('2');
@@ -27,7 +28,7 @@ export function useV2Route() {
       component: () => import('./index.vue'),
       meta: {
         title: '升级云崽',
-        icon: 'ic:twotone-update',
+        icon: gm('refresh'),
       },
     },
   ];

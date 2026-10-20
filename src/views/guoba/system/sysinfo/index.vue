@@ -24,7 +24,7 @@
           />
           <Button size="small" :loading="loading" @click="load">刷新</Button>
           <Button size="small" @click="openMobileLink">
-            <Icon icon="mdi:qrcode-scan" :size="13" style="margin-right: 4px" />
+            <Icon :icon="$gm('qrcode')" :size="13" style="margin-right: 4px" />
             移动端访问
           </Button>
         </div>
@@ -35,7 +35,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="mdi:information-outline" :size="13" /></i>
+              <i><Icon :icon="$gm('info')" :size="13" /></i>
               概览
             </div>
             <span class="gm-panel__extra">{{ info?.host?.hostname || '…' }}</span>
@@ -56,7 +56,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="mdi:cpu-64-bit" :size="13" /></i>
+              <i><Icon :icon="$gm('cpu')" :size="13" /></i>
               处理器
             </div>
             <span class="gm-panel__extra">{{ cpu?.cores || '—' }} 核</span>
@@ -83,7 +83,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="mdi:memory" :size="13" /></i>
+              <i><Icon :icon="$gm('memory')" :size="13" /></i>
               内存与交换分区
             </div>
             <span class="gm-panel__extra">实时</span>
@@ -117,7 +117,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="mdi:monitor" :size="13" /></i>
+              <i><Icon :icon="$gm('monitor')" :size="13" /></i>
               显卡
             </div>
             <span class="gm-panel__extra">{{ gpus.length || 0 }} 块</span>
@@ -150,7 +150,7 @@
       <section class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="mdi:harddisk" :size="13" /></i>
+            <i><Icon :icon="$gm('harddisk')" :size="13" /></i>
             磁盘
           </div>
           <span class="gm-panel__extra">{{ disks.length }} 个分区</span>
@@ -188,7 +188,7 @@
             <div class="si-mobile__list">
               <button v-for="(u, i) in mobile.links" :key="i" class="si-mobile__link" type="button" @click="copyLink(u)">
                 <span class="si-mobile__url">{{ u }}</span>
-                <Icon icon="ant-design:copy-outlined" :size="13" />
+                <Icon :icon="$gm('copy')" :size="13" />
               </button>
             </div>
           </template>

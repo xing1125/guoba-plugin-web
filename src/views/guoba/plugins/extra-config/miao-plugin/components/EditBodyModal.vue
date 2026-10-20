@@ -17,7 +17,7 @@
       <div class="row">
         <div>分组</div>
         <div class="flex-1">
-          <a-input v-model:value="modelData.group.group" placeholder="分组" />
+          <GInput v-model="modelData.group.group" placeholder="分组" />
         </div>
       </div>
 
@@ -29,11 +29,11 @@
       <div class="flex justify-between align-center flex-wrap">
         <div class="flex justify-start">
           <a-button class="ml-4" :disabled="modelData.groupIndex === 0" type="primary" shape="circle" size="medium" @click="moveGroup(-1)">
-            <Icon icon="akar-icons:arrow-up" />
+            <Icon :icon="$gm('arrow-up')" />
           </a-button>
 
           <a-button class="ml-4" :disabled="modelData.groupIndex === helpList.length - 1" type="primary" shape="circle" size="medium" @click="moveGroup(1)">
-            <Icon icon="akar-icons:arrow-down" />
+            <Icon :icon="$gm('arrow-down')" />
           </a-button>
         </div>
         <div class="flex flex-1 justify-end">
@@ -53,21 +53,21 @@
         <div class="row">
           <div>标题</div>
           <div class="flex-1">
-            <a-input v-model:value="modelData.cell.title" placeholder="标题" />
+            <GInput v-model="modelData.cell.title" placeholder="标题" />
           </div>
         </div>
 
         <div class="row">
           <div>描述</div>
           <div class="flex-1">
-            <a-input v-model:value="modelData.cell.desc" placeholder="描述" />
+            <GInput v-model="modelData.cell.desc" placeholder="描述" />
           </div>
         </div>
 
         <div class="flex justify-between align-center">
           <div class="flex justify-start move-buttons">
             <a-button class="ml-4" :class="['ml-4', { warn: modelData.cellIndex === 0 }]" :disabled="moveBtnDisable(-1)" type="primary" shape="circle" size="medium" @click="moveCell(-1)">
-              <Icon icon="akar-icons:arrow-left" />
+              <Icon :icon="$gm('arrow-left')" />
             </a-button>
 
             <a-button
@@ -79,7 +79,7 @@
               size="medium"
               @click="moveCell(1)"
             >
-              <Icon icon="akar-icons:arrow-right" />
+              <Icon :icon="$gm('arrow-right')" />
             </a-button>
           </div>
           <div class="flex flex-1 justify-end">
@@ -102,6 +102,7 @@
   import { Modal, Switch } from 'ant-design-vue';
   import { helpListType, modelDataType } from '../types';
   import SelectIconModal from './SelectIconModal.vue';
+  import GInput from '/@/views/guoba/system/_shared/form/GInput.vue';
   import { useDesign } from '/@/hooks/web/useDesign';
   import { useMessage } from '/@/hooks/web/useMessage';
 

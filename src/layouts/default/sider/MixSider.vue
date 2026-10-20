@@ -50,7 +50,7 @@
         ]"
       >
         <span class="text"> {{ title }}</span>
-        <Icon :size="16" :icon="getMixSideFixed ? 'ri:pushpin-2-fill' : 'ri:pushpin-2-line'" class="pushpin" @click="handleFixedMenu" />
+        <Icon :size="16" :icon="getMixSideFixed ? $gm('lock') : $gm('unlock')" class="pushpin" @click="handleFixedMenu" />
       </div>
       <ScrollContainer :class="`${prefixCls}-menu-list__content`">
         <SimpleMenu :items="childrenMenus" :theme="getMenuTheme" mixSider @menu-click="handleMenuClick" />

@@ -51,7 +51,7 @@
             <a-button size="small" @click="toggleAll">{{ allFolded ? '展开全部' : '收起全部' }}</a-button>
             <a-tooltip title="重新读取配置">
               <span class="db-cfg__icon-btn" @click="reloadConfig">
-                <Icon icon="ant-design:reload" :size="14" />
+                <Icon :icon="$gm('refresh')" :size="14" />
               </span>
             </a-tooltip>
           </div>
@@ -63,7 +63,7 @@
 
     <!-- 全局悬浮保存：fixed 右下角，不随内容滚动 -->
     <div v-if="activeTab" class="cfg-fab" :class="{ 'is-busy': fabSaving }" @click="onSaveAll">
-      <Icon :icon="fabSaving ? 'ant-design:loading' : 'ant-design:save'" :size="15" :spin="fabSaving" />
+      <Icon :icon="fabSaving ? $gm('refresh') : $gm('save')" :size="15" :spin="fabSaving" />
       <span>{{ fabSaving ? '保存中…' : '保存全部' }}</span>
       <span class="cfg-fab__cnt">{{ activeTab.cards.length }} 块</span>
     </div>

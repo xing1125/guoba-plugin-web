@@ -7,11 +7,11 @@
             <EasyCronInputCell v-model:value="values[i]" v-bind="cellProps" @open="() => showModal(i)" style="width: 100%" />
           </a-col>
           <a-col class="right">
-            <a-button v-if="multiple" preIcon="ant-design:minus" @click="onRemove(i)" />
+            <a-button v-if="multiple" :pre-icon="$gm('minus')" @click="onRemove(i)" />
           </a-col>
         </a-row>
       </template>
-      <a-button v-if="multiple" preIcon="ant-design:plus" type="link" @click="onAdd">添加</a-button>
+      <a-button v-if="multiple" :pre-icon="$gm('plus')" type="link" @click="onAdd">添加</a-button>
       <EasyCronModal @register="registerModal" v-model:value="modalValue" :exeStartTime="exeStartTime" :hideYear="hideYear" :remote="remote" :hideSecond="hideSecond" @ok="onModalOk" />
     </a-form-item-rest>
   </div>

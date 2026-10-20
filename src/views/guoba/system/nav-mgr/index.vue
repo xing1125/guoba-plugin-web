@@ -20,7 +20,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ion:settings-outline" :size="13" /></i>
+            <i><Icon :icon="$gm('gear')" :size="13" /></i>
             菜单列表
           </div>
           <span class="gm-panel__extra">拖动「≡」调整顺序 · 开关控制显隐 · 插件页暂不参与</span>
@@ -39,9 +39,9 @@
             @dragend="onDragEnd"
           >
             <span class="nv-row__handle" :class="{ 'is-off': !canDrag(it) }">
-              <Icon icon="ant-design:drag-outlined" :size="13" />
+              <Icon :icon="$gm('drag')" :size="13" />
             </span>
-            <span class="nv-row__icon"><Icon :icon="it.icon || 'ant-design:appstore-outlined'" :size="15" /></span>
+            <span class="nv-row__icon"><Icon :icon="it.icon || $gm('grid')" :size="15" /></span>
             <span class="nv-row__name" :title="it.title">{{ it.title }}</span>
             <span class="nv-row__path mono" :title="it.path">{{ it.path }}</span>
             <span v-if="it.plugin" class="gm-chip">插件页</span>
@@ -57,7 +57,7 @@
         </div>
 
         <div v-if="dirty" class="nv-dirty">
-          <Icon icon="ant-design:info-circle-outlined" :size="14" />
+          <Icon :icon="$gm('info')" :size="14" />
           有未保存的修改，点右上角「保存」生效
         </div>
       </div>

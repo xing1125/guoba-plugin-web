@@ -27,7 +27,8 @@
       </svg>
     </span>
 
-    <span v-else-if="type === 'password'" class="gc-input__fix gc-input__eye" role="button" tabindex="-1" @mousedown.prevent @click="visible = !visible">
+    <!-- 密码框的眼睛与清除钮可以并存：有值时先清除钮、后眼睛，否则打完字就看不到明文切换了 -->
+    <span v-if="type === 'password'" class="gc-input__fix gc-input__eye" role="button" tabindex="-1" @mousedown.prevent @click="visible = !visible">
       <svg v-if="visible" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4">
         <path d="M1.5 8s2.4-4.2 6.5-4.2S14.5 8 14.5 8 12.1 12.2 8 12.2 1.5 8 1.5 8z" />
         <circle cx="8" cy="8" r="2" />

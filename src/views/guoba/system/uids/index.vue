@@ -41,7 +41,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:trophy-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('trophy')" :size="13" /></i>
             {{ gameName(activeGame) }} UID 列表
             <span class="gm-panel__extra" style="margin-left: 8px">共 {{ pager.total ?? list.length }} 个</span>
           </div>
@@ -133,7 +133,7 @@
     >
       <div class="edit-form">
         <div class="gfm-hint">
-          <Icon icon="ant-design:info-circle-outlined" :size="14" style="flex-shrink: 0; margin-top: 2px" />
+          <Icon :icon="$gm('info')" :size="14" style="flex-shrink: 0; margin-top: 2px" />
           <span>
             {{ edit.origin ? `将把 ${edit.origin} 改为新 UID；` : '' }}只能为已存在的米游社账号维护 UID，保存后立即生效并写入审计日志。
           </span>

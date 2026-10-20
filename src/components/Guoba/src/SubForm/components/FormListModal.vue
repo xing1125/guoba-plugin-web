@@ -10,11 +10,11 @@
     <template #footer>
       <a-row type="flex" justify="space-between">
         <a-col>
-          <a-button type="primary" preIcon="ant-design:plus" :loading="loading" @click="onAdd">新增</a-button>
+          <a-button type="primary" :pre-icon="$gm('plus')" :loading="loading" @click="onAdd">新增</a-button>
         </a-col>
         <a-col>
           <a-button :loading="loading" @click="onCancel">关闭</a-button>
-          <a-button type="primary" preIcon="ant-design:save" :loading="loading" @click="onSave">保存</a-button>
+          <a-button type="primary" :pre-icon="$gm('save')" :loading="loading" @click="onSave">保存</a-button>
         </a-col>
       </a-row>
     </template>

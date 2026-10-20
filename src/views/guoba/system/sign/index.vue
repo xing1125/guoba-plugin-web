@@ -40,6 +40,10 @@
             @update:model-value="setDays($event as number)"
           />
           <Button size="small" :loading="scope === 'mys' ? loading : wLoading" @click="refresh">刷新</Button>
+          <Button v-if="scope === 'mys'" size="small" class="sign-issue-btn" @click="openIssues">
+            账号体检
+            <span v-if="issueBadge" class="sign-issue-btn__badge">{{ issueBadge }}</span>
+          </Button>
         </div>
       </section>
 
@@ -83,7 +87,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:line-chart-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('chart')" :size="13" /></i>
               每日签到趋势
             </div>
             <div class="gm-panel__extra">
@@ -105,7 +109,7 @@
         <div v-if="scope === 'mys'" class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:trophy-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('trophy')" :size="13" /></i>
               今日游戏完成度
             </div>
             <span class="gm-panel__extra">{{ overview.today?.date || '—' }}</span>
@@ -135,7 +139,7 @@
         <div v-else class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:unordered-list-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('list')" :size="13" /></i>
               最近签到流水
             </div>
             <span class="gm-panel__extra">{{ wOverview.today?.date || '—' }}</span>
@@ -163,7 +167,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:calendar-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('calendar-check')" :size="13" /></i>
             每日签到汇总
           </div>
           <span class="gm-panel__extra">点「明细」查看当天每个账号的签到结果</span>
@@ -230,7 +234,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:unordered-list-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('list')" :size="13" /></i>
             签到流水
             <span class="gm-panel__extra" style="margin-left: 8px">共 {{ scope === 'mys' ? pager.total : wPager.total }} 条</span>
           </div>
@@ -347,7 +351,7 @@
       </div>
 
       <div v-if="scope === 'mys' && !booting && !overview.available" class="g-card db-tip">
-        <Icon icon="ant-design:info-circle-outlined" :size="16" />
+        <Icon :icon="$gm('info')" :size="16" />
         <div>
           <b>没有找到签到流水</b>
           <div class="g-muted">
@@ -357,7 +361,7 @@
         </div>
       </div>
       <div v-if="scope === 'waves' && !wBooting && !wOverview.available" class="g-card db-tip">
-        <Icon icon="ant-design:info-circle-outlined" :size="16" />
+        <Icon :icon="$gm('info')" :size="16" />
         <div>
           <b>没有找到鸣潮签到归档</b>
           <div class="g-muted">
@@ -377,7 +381,8 @@
             v-model="dayTab"
             :options="[
               { value: 'overview', label: '当日概览' },
-              { value: 'users', label: '账号明细', count: dayData.userList.length },
+              { value: 'accounts', label: '账号明细', count: dayAccounts.length },
+              { value: 'fail', label: '失败原因', count: dayData.reasonAccounts || 0 },
             ]"
             label="签到数据视图"
           />
@@ -411,31 +416,95 @@
           </div>
         </template>
 
-        <template v-else>
+        <!-- 账号粒度：一个微信号绑几个米游社账号就出几行 -->
+        <template v-else-if="dayTab === 'accounts'">
+          <div class="sign-daybar">
+            <GSegmented
+              v-model="dayAccountFilter"
+              :options="[
+                { value: 'all', label: '全部', count: dayAccounts.length },
+                { value: 'fail', label: '仅失败', count: dayData.failAccounts || 0 },
+                { value: 'ok', label: '仅成功', count: dayAccounts.length - (dayData.failAccounts || 0) },
+                { value: 'unbound', label: '有未绑', count: dayAccounts.filter((a) => a.unboundGames.length).length },
+              ]"
+              size="sm"
+              label="账号筛选"
+            />
+            <span v-if="(dayData.multiAccountUsers || 0) > 0" class="dm-hint">
+              {{ dayData.multiAccountUsers }} 个微信号绑了多个米游社账号，已拆开统计
+            </span>
+          </div>
           <Table
-            row-key="qq"
+            row-key="__key"
             size="small"
-            :columns="dayUserColumns"
-            :data-source="dayData.userList"
-            :pagination="{ pageSize: 12, size: 'small' }"
+            :columns="dayAccountColumns"
+            :data-source="dayAccountRows"
+            :pagination="{ pageSize: 15, size: 'small' }"
           >
             <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'qq'">
-                <div class="sign-user">{{ userName(record.qq) }}</div>
+              <template v-if="column.key === 'account'">
+                <div class="sign-user">
+                  <span class="sign-acct-no">#{{ record.accountNo }}</span>
+                  {{ record.name || userName(record.qq) }}
+                </div>
                 <div class="g-muted mono">{{ record.qq }}</div>
+                <div class="sign-acct-meta">
+                  <span v-if="record.days">连续 {{ record.days }} 天</span>
+                  <span v-if="record.coins != null">米游币 {{ thousands(record.coins) }}</span>
+                </div>
+              </template>
+              <template v-else-if="column.key === 'result'">
+                <span class="gm-chip" :class="record.fail ? 'sign-chip--fail' : 'sign-chip--ok'">
+                  {{ record.fail ? '失败' : '成功' }}
+                </span>
+                <span v-if="record.count > 1" class="sign-acct-ratio">{{ record.ok }}/{{ record.count }}</span>
+                <span v-if="record.unboundGames.length" class="sign-acct-unbound" :title="record.unboundLabels.join('、')">
+                  未绑 {{ record.unboundGames.length }}
+                </span>
               </template>
               <template v-else-if="column.key === 'games'">
                 <div class="sign-tags">
-                  <span v-for="(d, k) in record.games" :key="k" class="sign-tag is-signed">
-                    {{ gameShort(k) }}<em v-if="d">{{ d }}d</em>
+                  <span v-for="k in record.signedGames" :key="k" class="sign-tag is-signed">
+                    {{ gameShort(k) }}<em v-if="record.games[k]">{{ record.games[k] }}d</em>
                   </span>
+                  <span v-if="!record.signedGames.length" class="g-muted">—</span>
                 </div>
               </template>
-              <template v-else-if="column.key === 'coins'">
-                {{ record.coins != null ? thousands(record.coins) : '—' }}
+              <template v-else-if="column.key === 'reasons'">
+                <div v-if="!record.failReasons.length" class="g-muted">—</div>
+                <div v-else class="sign-reasons">
+                  <div
+                    v-for="(r, i) in record.failReasons"
+                    :key="i"
+                    class="sign-reason"
+                    :class="`is-${r.kind}`"
+                  >
+                    <span class="sign-reason__tag">{{ r.label }}</span>
+                    <span class="sign-reason__text" :title="r.reason">{{ r.reason }}</span>
+                  </div>
+                </div>
               </template>
             </template>
           </Table>
+        </template>
+
+        <!-- 失败原因聚合：按原因文案归类，便于一眼看出是 CK 掉了还是没绑角色 -->
+        <template v-else>
+          <div v-if="!dayFailGroups.length" class="sign-empty">当天没有失败记录</div>
+          <div v-else class="sign-failgroups">
+            <div v-for="(g, i) in dayFailGroups" :key="i" class="sign-failgroup">
+              <div class="sign-failgroup__top">
+                <span class="sign-failgroup__tag" :class="`is-${g.kind}`">{{ g.label }}</span>
+                <span class="sign-failgroup__reason">{{ g.reason }}</span>
+                <span class="sign-failgroup__count">{{ g.accounts.length }} 个账号</span>
+              </div>
+              <div class="sign-failgroup__who">
+                <span v-for="a in g.accounts" :key="a.__key" class="sign-failgroup__chip">
+                  {{ a.name || userName(a.qq) }} <em>#{{ a.accountNo }}</em>
+                </span>
+              </div>
+            </div>
+          </div>
         </template>
       </template>
 
@@ -490,6 +559,186 @@
         <Button @click="dayDrawer.visible = false">关闭</Button>
       </template>
     </GModal>
+
+    <!-- ======================== 账号体检 / 异常清理 ======================== -->
+    <GModal
+      v-model:visible="issueModal.visible"
+      eyebrow="ACCOUNT HEALTH"
+      title="账号体检与清理"
+      :subtitle="issueModal.subtitle"
+      size="xl"
+      body-height="62vh"
+    >
+      <div class="dm-tabs">
+        <GSegmented v-model="issueTab" :options="issueTabs" label="异常类型" @update:model-value="resetIssueSel" />
+      </div>
+
+      <div v-if="issuesLoading" class="gm-skeleton" style="height: 260px" />
+
+      <template v-else>
+        <!-- 1. CK 失效 -->
+        <template v-if="issueTab === 'expired'">
+          <div class="sign-issue-hint">
+            CK / Cookie 已失效的米游社账号 —— 这类账号每次签到必然失败，且不会自己恢复。
+            清理前会整行备份到后台库，可在审计日志里追溯。
+          </div>
+          <Table
+            v-if="issues.expired.length"
+            row-key="ltuid"
+            size="small"
+            :columns="expiredColumns"
+            :data-source="issues.expired"
+            :row-selection="{ selectedRowKeys: selKeys, onChange: onSelChange }"
+            :pagination="{ pageSize: 10, size: 'small' }"
+            :scroll="{ x: 860 }"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'ltuid'">
+                <div class="sign-user mono">{{ record.ltuid }}</div>
+                <div v-if="!record.exists" class="g-muted">主库已无此行</div>
+              </template>
+              <template v-else-if="column.key === 'uidCount'">
+                {{ record.uidCount || 0 }}
+              </template>
+              <template v-else-if="column.key === 'games'">
+                <div class="sign-tags">
+                  <span v-for="g in record.games" :key="g" class="sign-tag is-signed">{{ g }}</span>
+                  <span v-if="!record.games.length" class="g-muted">无绑定</span>
+                </div>
+              </template>
+              <template v-else-if="column.key === 'binds'">
+                <div v-if="!record.bindIds.length" class="g-muted">无人绑定</div>
+                <div v-else class="sign-binds">
+                  <span v-for="(id, i) in record.bindIds" :key="id" class="sign-bind">
+                    {{ record.bindNames[i] || id }}
+                  </span>
+                </div>
+              </template>
+              <template v-else-if="column.key === 'checkedAt'">
+                <span class="g-muted">{{ record.checkedAt ? shortTime(record.checkedAt) : '—' }}</span>
+              </template>
+            </template>
+          </Table>
+          <div v-else class="sign-empty">没有 CK 失效的账号，状态很好</div>
+        </template>
+
+        <!-- 2. 无效用户 -->
+        <template v-else-if="issueTab === 'orphan'">
+          <div class="sign-issue-hint">
+            微信号层面没有可用绑定 —— 完全没绑过 / 绑的米游社账号都已被删 / 部分绑定已悬空。
+            清理只删 <code>Users</code> 这一行，不会动共用的米游社账号。
+          </div>
+          <Table
+            v-if="issues.orphan.length"
+            row-key="id"
+            size="small"
+            :columns="orphanColumns"
+            :data-source="issues.orphan"
+            :row-selection="{ selectedRowKeys: selKeys, onChange: onSelChange }"
+            :pagination="{ pageSize: 10, size: 'small' }"
+            :scroll="{ x: 820 }"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'id'">
+                <div class="sign-user">{{ record.name || '未命名' }}</div>
+                <div class="g-muted mono">{{ record.id }}</div>
+              </template>
+              <template v-else-if="column.key === 'kind'">
+                <span class="sign-badge" :class="`is-${record.kind}`">
+                  {{ record.kind === 'empty' ? '无绑定' : record.kind === 'dangling' ? '全部失效' : '部分失效' }}
+                </span>
+              </template>
+              <template v-else-if="column.key === 'ltuids'">
+                <span v-if="!record.ltuids.length" class="g-muted">—</span>
+                <span v-else class="mono g-muted">{{ record.ltuids.join(', ') }}</span>
+              </template>
+              <template v-else-if="column.key === 'reason'">
+                <span class="sign-issue-reason">{{ record.reason }}</span>
+              </template>
+            </template>
+          </Table>
+          <div v-else class="sign-empty">没有无效用户</div>
+        </template>
+
+        <!-- 3. 长期失败（只读） -->
+        <template v-else>
+          <div class="sign-issue-hint">
+            近 {{ issues.days }} 天签到次数里出现过失败的账号。<b>仅作展示、不支持自动清理</b> ——
+            失败可能只是临时风控、游戏维护或角色还没绑到该账号，删了会误伤。
+          </div>
+          <Table
+            v-if="issues.stale.length"
+            row-key="__key"
+            size="small"
+            :columns="staleColumns"
+            :data-source="staleRows"
+            :pagination="{ pageSize: 10, size: 'small' }"
+            :scroll="{ x: 860 }"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'account'">
+                <div class="sign-user">
+                  <span class="sign-acct-no">#{{ record.profileId }}</span>
+                  {{ record.name || userName(record.qq) }}
+                </div>
+                <div class="g-muted mono">{{ record.qq }}</div>
+              </template>
+              <template v-else-if="column.key === 'stat'">
+                <span class="gm-chip" :class="record.allFail ? 'sign-chip--fail' : 'sign-chip--ok'">
+                  {{ record.ok }}/{{ record.total }}
+                </span>
+                <span v-if="record.allFail" class="sign-acct-ratio is-fail">全失败</span>
+              </template>
+              <template v-else-if="column.key === 'reasons'">
+                <div class="sign-reasons">
+                  <div v-for="(r, i) in record.reasons" :key="i" class="sign-reason is-failed">
+                    <span class="sign-reason__text" :title="r">{{ r }}</span>
+                  </div>
+                </div>
+              </template>
+              <template v-else-if="column.key === 'lastAt'">
+                <span class="g-muted">{{ record.lastAt ? shortTime(record.lastAt) : '—' }}</span>
+              </template>
+            </template>
+          </Table>
+          <div v-else class="sign-empty">近 {{ issues.days }} 天没有失败账号</div>
+        </template>
+      </template>
+
+      <template #footer>
+        <span class="sign-issue-foot">
+          <template v-if="issueTab !== 'stale'">已选 <b>{{ selKeys.length }}</b> 项 · </template>
+          <template v-if="issueTab === 'expired'">共 {{ issues.counts.expired }} 个失效 CK</template>
+          <template v-else-if="issueTab === 'orphan'">共 {{ issues.counts.orphan }} 个无效用户</template>
+          <template v-else>共 {{ issues.counts.stale }} 个失败账号（只读）</template>
+        </span>
+        <Button size="small" :loading="issuesLoading" @click="loadIssues">重新体检</Button>
+        <Button @click="issueModal.visible = false">关闭</Button>
+        <Button
+          v-if="issueTab !== 'stale'"
+          danger
+          :loading="cleaning"
+          :disabled="!selKeys.length"
+          @click="askClean"
+        >
+          {{ issueTab === 'expired' ? '清除选中失效账号' : '清除选中无效用户' }}
+        </Button>
+      </template>
+    </GModal>
+
+    <!-- 清理确认 -->
+    <GConfirmModal
+      v-model:visible="cleanModal.visible"
+      :title="issueTab === 'expired' ? '删除失效账号' : '删除无效用户'"
+      :content="cleanModal.content"
+      :hint="issueTab === 'expired'
+        ? '删除前会整行备份到后台库，可在审计日志里追溯；Bot 侧绑定关系同步清理。'
+        : '只删 Users 表里这一行和各游戏缓存，不会删除共用的米游社账号。'"
+      danger
+      :loading="cleaning"
+      :ok-text="issueTab === 'expired' ? '确认删除账号' : '确认删除用户'"
+      @ok="doClean"
+    />
 
     <!-- 单条流水详情 -->
     <Modal
@@ -551,9 +800,11 @@
   import GSelect from '../_shared/form/GSelect.vue';
   import GSegmented from '../_shared/form/GSegmented.vue';
   import GModal from '../_shared/dialog/GModal.vue';
-  import type { SignDay, SignOverview, SignRecord, WavesDay, WavesOverview } from './api';
+  import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
+  import type { SignDay, SignIssues, SignOverview, SignRecord, WavesDay, WavesOverview } from './api';
   import { signApi, wavesApi } from './api';
   import { downloadCsv } from '/@/utils/export/csv';
+  import { gm } from '/@/design/gmIcons';
   import {
     areaGradient,
     chartBase,
@@ -642,7 +893,7 @@
       {
         key: 'total',
         label: '今日签到人次',
-        icon: 'ant-design:check-square-outlined',
+        icon: gm('success'),
         value: t ? thousands(t.total) : '—',
         unit: t ? '次' : '',
         foot: `${t?.users ?? 0} 个账号 / ${t?.accounts ?? 0} 个 uid`,
@@ -652,7 +903,7 @@
       {
         key: 'ok',
         label: '今日成功',
-        icon: 'ant-design:check-circle-outlined',
+        icon: gm('success'),
         value: t ? thousands(t.ok) : '—',
         unit: t ? '次' : '',
         foot: `成功率 ${t?.rate ?? 0}%`,
@@ -662,7 +913,7 @@
       {
         key: 'fail',
         label: '今日失败',
-        icon: 'ant-design:close-circle-outlined',
+        icon: gm('error'),
         value: t ? thousands(t.fail) : '—',
         unit: t ? '次' : '',
         foot: t && t.fail ? '需要检查 CK 或绑定' : '全部成功',
@@ -672,7 +923,7 @@
       {
         key: 'users',
         label: '覆盖账号',
-        icon: 'ant-design:team-outlined',
+        icon: gm('users'),
         value: t ? thousands(t.users) : '—',
         unit: t ? '人' : '',
         foot: `历史累计 ${s?.users ?? 0} 人`,
@@ -682,7 +933,7 @@
       {
         key: 'coin',
         label: '人均米游币',
-        icon: 'ant-design:pay-circle-outlined',
+        icon: gm('heart'),
         value: t ? fmtNum(t.coinAvg) : '—',
         foot: t ? `今日合计 ${fmtNum(t.coinTotal)}` : '未解析到米游币',
         color: p.amber[0],
@@ -691,7 +942,7 @@
       {
         key: 'days',
         label: '最长连续',
-        icon: 'ant-design:fire-outlined',
+        icon: gm('fire'),
         value: t?.maxDays ?? '—',
         unit: t?.maxDays ? '天' : '',
         foot: `近 ${days.value} 天平均成功率 ${s?.avgOkRate ?? 0}%`,
@@ -711,7 +962,7 @@
       {
         key: 'total',
         label: '今日签到人次',
-        icon: 'ant-design:check-square-outlined',
+        icon: gm('success'),
         value: t ? thousands(t.total) : '—',
         unit: t ? '次' : '',
         foot: `${t?.users ?? 0} 个账号`,
@@ -721,7 +972,7 @@
       {
         key: 'ok',
         label: '今日成功',
-        icon: 'ant-design:check-circle-outlined',
+        icon: gm('success'),
         value: t ? thousands(t.ok) : '—',
         unit: t ? '次' : '',
         foot: `成功率 ${t?.rate ?? 0}%`,
@@ -731,7 +982,7 @@
       {
         key: 'fail',
         label: '今日失败',
-        icon: 'ant-design:close-circle-outlined',
+        icon: gm('error'),
         value: t ? thousands(t.fail) : '—',
         unit: t ? '次' : '',
         foot: t && t.fail ? '多为 token 失效，需重新绑定' : '全部成功',
@@ -741,7 +992,7 @@
       {
         key: 'users',
         label: '覆盖账号',
-        icon: 'ant-design:team-outlined',
+        icon: gm('users'),
         value: t ? thousands(t.users) : '—',
         unit: t ? '人' : '',
         foot: `历史累计 ${s?.users ?? 0} 人`,
@@ -751,7 +1002,7 @@
       {
         key: 'sig',
         label: '最长累计签到',
-        icon: 'ant-design:fire-outlined',
+        icon: gm('fire'),
         value: t?.maxSigIn ?? '—',
         unit: t?.maxSigIn ? '天' : '',
         foot: `近 ${days.value} 天平均成功率 ${s?.avgOkRate ?? 0}%`,
@@ -761,7 +1012,7 @@
       {
         key: 'omission',
         label: '漏签次数',
-        icon: 'ant-design:warning-outlined',
+        icon: gm('warning'),
         value: t ? thousands(t.omission) : '—',
         unit: t ? '次' : '',
         foot: t && t.omission ? '存在断签，注意补签' : '无人漏签',
@@ -855,12 +1106,11 @@
     showTotal: (t: number) => `共 ${t} 条`,
   }));
 
-  const dayUserColumns = [
-    { title: '账号', key: 'qq', width: 200 },
-    { title: '成功 / 次数', key: 'ok', width: 120 },
-    { title: '已签游戏', key: 'games', width: 220 },
-    { title: '最长连续', dataIndex: 'days', key: 'days', width: 100 },
-    { title: '米游币', key: 'coins', width: 110 },
+  const dayAccountColumns = [
+    { title: '账号', key: 'account', width: 178 },
+    { title: '结果', key: 'result', width: 104 },
+    { title: '已签游戏', key: 'games', width: 136 },
+    { title: '失败原因', key: 'reasons' },
   ];
 
   const pagination = computed(() => ({
@@ -1166,6 +1416,128 @@
     }
   }
 
+  /* ------------------------ 账号体检 / 异常清理 ------------------------ */
+
+  const issueModal = reactive({ visible: false, subtitle: '' });
+  const issueTab = ref<'expired' | 'orphan' | 'stale'>('expired');
+  const issuesLoading = ref(false);
+  const cleaning = ref(false);
+  const selKeys = ref<(string | number)[]>([]);
+  const issues = ref<SignIssues>({
+    generatedAt: '',
+    days: 7,
+    expired: [],
+    orphan: [],
+    stale: [],
+    counts: { expired: 0, orphan: 0, stale: 0, orphanEmpty: 0, orphanDangling: 0, staleAllFail: 0 },
+  });
+
+  const issueTabs = computed(() => [
+    { value: 'expired', label: 'CK 失效', count: issues.value.counts.expired },
+    { value: 'orphan', label: '无效用户', count: issues.value.counts.orphan },
+    { value: 'stale', label: '长期失败', count: issues.value.counts.stale },
+  ]);
+
+  /** 需要处理的（可直接清理的）数量，用于页头角标 */
+  const issueBadge = computed(() => (issues.value.counts.expired || 0) + (issues.value.counts.orphan || 0));
+
+  const expiredColumns = [
+    { title: '米游社账号', key: 'ltuid', width: 170 },
+    { title: 'UID 数', key: 'uidCount', width: 84 },
+    { title: '游戏', key: 'games', width: 240 },
+    { title: '绑定微信', key: 'binds', width: 220 },
+    { title: '失效检测', key: 'checkedAt', width: 140 },
+  ];
+
+  const orphanColumns = [
+    { title: '微信号', key: 'id', width: 210 },
+    { title: '类型', key: 'kind', width: 100 },
+    { title: '绑定 ltuid', key: 'ltuids', width: 200 },
+    { title: '说明', key: 'reason' },
+  ];
+
+  const staleColumns = [
+    { title: '账号', key: 'account', width: 200 },
+    { title: '成功 / 次数', key: 'stat', width: 150 },
+    { title: '最近失败原因', key: 'reasons' },
+    { title: '最近一次', key: 'lastAt', width: 120 },
+  ];
+
+  const staleRows = computed(() =>
+    issues.value.stale.map((s, i) => ({ ...s, __key: `${s.qq}|${s.profileId}|${i}` })),
+  );
+
+  async function loadIssues() {
+    issuesLoading.value = true;
+    try {
+      issues.value = await signApi.getIssues(7);
+    } catch (e: any) {
+      message.error(e?.message || '体检数据加载失败');
+    } finally {
+      issuesLoading.value = false;
+    }
+  }
+
+  async function openIssues() {
+    issueModal.visible = true;
+    resetIssueSel();
+    await loadIssues();
+  }
+
+  function resetIssueSel() {
+    selKeys.value = [];
+  }
+
+  function onSelChange(keys: (string | number)[]) {
+    selKeys.value = keys;
+  }
+
+  const cleanModal = reactive({ visible: false, content: '' });
+
+  function askClean() {
+    const n = selKeys.value.length;
+    if (!n) {
+      message.warning('请先勾选要清理的项');
+      return;
+    }
+    cleanModal.content =
+      issueTab.value === 'expired'
+        ? `将删除 ${n} 个 CK 已失效的米游社账号，其在各游戏下的 UID 记录会一并清理。`
+        : `将删除 ${n} 个无效微信号（Users 行 + 游戏缓存），共用的米游社账号不受影响。`;
+    cleanModal.visible = true;
+  }
+
+  async function doClean() {
+    if (!selKeys.value.length) {
+      return;
+    }
+    cleaning.value = true;
+    try {
+      const res = await signApi.cleanIssues({
+        scope: issueTab.value,
+        ids: selKeys.value.map(String),
+        confirm: true,
+      });
+      if (res.skipped) {
+        message.info(res.message || '该类型不支持清理');
+      } else {
+        const bad = res.failed?.length || 0;
+        if (bad) {
+          message.warning(`已清理 ${res.deleted || 0} 项，${bad} 项失败`);
+        } else {
+          message.success(`已清理 ${res.deleted || 0} 项`);
+        }
+      }
+      cleanModal.visible = false;
+      resetIssueSel();
+      await Promise.all([loadIssues(), loadAll()]);
+    } catch (e: any) {
+      message.error(e?.message || '清理失败');
+    } finally {
+      cleaning.value = false;
+    }
+  }
+
   /* ------------------------------ 某天明细 ------------------------------ */
 
   const dayDrawer = reactive({ visible: false, date: '' });
@@ -1176,6 +1548,7 @@
     dayDrawer.visible = true;
     dayDrawer.date = date;
     dayTab.value = 'overview';
+    dayAccountFilter.value = 'all';
     if (scope.value === 'mys') {
       dayData.value = null;
       try {
@@ -1244,6 +1617,45 @@
     });
   });
 
+  /* -------------------- 账号明细（每个米游社账号一行） -------------------- */
+
+  const dayAccountFilter = ref<'all' | 'fail' | 'ok' | 'unbound'>('all');
+
+  const dayAccounts = computed(() => {
+    const list = dayData.value?.accountList || [];
+    return list.map((a, i) => ({ ...a, __key: `${a.qq}|${a.profileId}|${i}` }));
+  });
+
+  const dayAccountRows = computed(() => {
+    if (dayAccountFilter.value === 'fail') {
+      // 只算真正签到失败；「没绑某游戏」在行内单独提示，不混进失败
+      return dayAccounts.value.filter((a) => a.fail > 0);
+    }
+    if (dayAccountFilter.value === 'ok') {
+      return dayAccounts.value.filter((a) => a.fail === 0);
+    }
+    if (dayAccountFilter.value === 'unbound') {
+      return dayAccounts.value.filter((a) => a.unboundGames.length > 0);
+    }
+    return dayAccounts.value;
+  });
+
+  /** 失败原因聚合：同一条文案归一组，列出涉及账号 */
+  const dayFailGroups = computed(() => {
+    const map = new Map<string, { label: string; kind: string; reason: string; accounts: any[] }>();
+    for (const a of dayAccounts.value) {
+      for (const r of a.failReasons || []) {
+        const key = `${r.kind}|${r.label}|${r.reason}`;
+        const g = map.get(key) || { label: r.label, kind: r.kind, reason: r.reason, accounts: [] };
+        if (!g.accounts.some((x) => x.__key === a.__key)) {
+          g.accounts.push(a);
+        }
+        map.set(key, g);
+      }
+    }
+    return [...map.values()].sort((x, y) => y.accounts.length - x.accounts.length);
+  });
+
   /* ------------------------------ 单条详情 ------------------------------ */
 
   const recordModal = reactive({
@@ -1279,6 +1691,7 @@
   onMounted(async () => {
     await loadAll();
     loadNames();
+    loadIssues();
   });
 </script>
 
@@ -1608,5 +2021,290 @@
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
     border-radius: 10px;
+  }
+
+  /* ---------------- 账号明细（按米游社账号拆分） ---------------- */
+
+  .sign-daybar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .sign-acct-no {
+    display: inline-block;
+    min-width: 26px;
+    margin-right: 4px;
+    padding: 0 5px;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 16px;
+    color: var(--g-blue);
+    text-align: center;
+    background: rgb(64 132 224 / 12%);
+    border-radius: 5px;
+  }
+
+  .sign-acct-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-top: 3px;
+    font-size: 10.5px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sign-acct-ratio {
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sign-acct-unbound {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 5px;
+    font-size: 10px;
+    line-height: 15px;
+    color: var(--g-text-sub);
+    background: var(--g-card-border);
+    border-radius: 5px;
+  }
+
+  .sign-acct-ratio.is-fail {
+    color: #e0664a;
+    font-weight: 600;
+  }
+
+  .sign-reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sign-reason {
+    display: flex;
+    gap: 6px;
+    align-items: baseline;
+    font-size: 11.5px;
+    line-height: 1.5;
+  }
+
+  .sign-reason__tag {
+    flex: 0 0 auto;
+    padding: 0 5px;
+    font-size: 10.5px;
+    line-height: 15px;
+    color: var(--g-text-sub);
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 5px;
+  }
+
+  .sign-reason__text {
+    overflow: hidden;
+    color: var(--g-text-mute);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sign-reason.is-failed .sign-reason__text {
+    color: #e0664a;
+  }
+
+  .sign-reason.is-unbound .sign-reason__text {
+    color: var(--g-text-mute);
+  }
+
+  .sign-reason.is-record .sign-reason__text {
+    color: #d99b3a;
+  }
+
+  /* ---------------- 失败原因聚合 ---------------- */
+
+  .sign-failgroups {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sign-failgroup {
+    padding: 10px 12px;
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 12px;
+  }
+
+  .sign-failgroup__top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: baseline;
+  }
+
+  .sign-failgroup__tag {
+    padding: 0 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 17px;
+    border-radius: 5px;
+  }
+
+  .sign-failgroup__tag.is-failed {
+    color: #e0664a;
+    background: rgb(224 102 74 / 12%);
+  }
+
+  .sign-failgroup__tag.is-unbound {
+    color: var(--g-text-sub);
+    background: var(--g-card-border);
+  }
+
+  .sign-failgroup__tag.is-record {
+    color: #d99b3a;
+    background: rgb(217 155 58 / 14%);
+  }
+
+  .sign-failgroup__reason {
+    flex: 1 1 200px;
+    min-width: 0;
+    font-size: 12.5px;
+    color: var(--g-text);
+  }
+
+  .sign-failgroup__count {
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sign-failgroup__who {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 7px;
+  }
+
+  .sign-failgroup__chip {
+    padding: 1px 7px;
+    font-size: 11px;
+    color: var(--g-text-sub);
+    background: var(--g-bg);
+    border: 1px solid var(--g-card-border);
+    border-radius: 20px;
+  }
+
+  .sign-failgroup__chip em {
+    font-style: normal;
+    color: var(--g-text-mute);
+  }
+
+  /* ---------------- 账号体检弹窗 ---------------- */
+
+  .sign-issue-btn {
+    position: relative;
+  }
+
+  .sign-issue-btn__badge {
+    display: inline-block;
+    min-width: 16px;
+    margin-left: 5px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    color: #fff;
+    text-align: center;
+    background: #e0664a;
+    border-radius: 9px;
+  }
+
+  .sign-issue-hint {
+    margin-bottom: 10px;
+    padding: 9px 12px;
+    font-size: 12px;
+    line-height: 1.65;
+    color: var(--g-text-sub);
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 10px;
+  }
+
+  .sign-issue-hint code {
+    padding: 0 4px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 11px;
+    background: var(--g-bg);
+    border-radius: 4px;
+  }
+
+  .sign-issue-reason {
+    font-size: 12px;
+    color: var(--g-text-sub);
+  }
+
+  .sign-issue-foot {
+    margin-right: auto;
+    font-size: 12px;
+    color: var(--g-text-mute);
+  }
+
+  .sign-issue-foot b {
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sign-badge {
+    padding: 0 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 17px;
+    border-radius: 5px;
+  }
+
+  .sign-badge.is-empty {
+    color: var(--g-text-sub);
+    background: var(--g-card-border);
+  }
+
+  .sign-badge.is-dangling {
+    color: #e0664a;
+    background: rgb(224 102 74 / 12%);
+  }
+
+  .sign-badge.is-partial {
+    color: #d99b3a;
+    background: rgb(217 155 58 / 14%);
+  }
+
+  .sign-binds {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .sign-bind {
+    padding: 0 6px;
+    font-size: 11px;
+    line-height: 17px;
+    color: var(--g-text-sub);
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 5px;
+  }
+
+  .sign-empty {
+    padding: 44px 0;
+    font-size: 12.5px;
+    color: var(--g-text-mute);
+    text-align: center;
+    background: var(--g-card-bg-soft);
+    border: 1px dashed var(--g-card-border);
+    border-radius: 12px;
   }
 </style>

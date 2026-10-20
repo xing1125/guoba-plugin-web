@@ -21,7 +21,7 @@
         <div class="g-modal__tools">
           <slot name="tools" />
           <button class="g-modal__close" type="button" aria-label="关闭" @click="close">
-            <Icon icon="ant-design:close-outlined" :size="13" />
+            <Icon :icon="$gm('close')" :size="13" />
           </button>
         </div>
       </header>

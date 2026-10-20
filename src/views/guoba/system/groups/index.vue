@@ -33,7 +33,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:line-chart-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('chart')" :size="13" /></i>
             全群消息趋势
           </div>
           <span class="gm-panel__extra">最近 {{ trend.length }} 天 · 按群计数汇总</span>
@@ -53,7 +53,7 @@
       <div class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:appstore-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('grid')" :size="13" /></i>
             群列表
             <span class="gm-panel__extra" style="margin-left: 8px">共 {{ pager.total }} 个群</span>
           </div>
@@ -61,15 +61,15 @@
             <GSearch v-model="query.keyword" placeholder="搜索群号 / 群名" width="200px" @search="handleSearch" />
             <GSelect v-model="query.sort" width="140px" :options="sortOptions" @change="handleSearch" />
             <Button class="order-btn" :title="query.order === 'desc' ? '当前降序' : '当前升序'" @click="toggleOrder">
-              <Icon :icon="query.order === 'desc' ? 'ant-design:arrow-down-outlined' : 'ant-design:arrow-up-outlined'" :size="13" />
+              <Icon :icon="query.order === 'desc' ? $gm('arrow-down') : $gm('arrow-up')" :size="13" />
             </Button>
             <Button type="primary" @click="handleSearch">查询</Button>
             <Button :disabled="!list.length" @click="exportCsv">导出 CSV</Button>
             <Button class="icon-btn" :loading="loading" title="刷新" @click="loadAll">
-              <Icon icon="ant-design:reload-outlined" :size="14" />
+              <Icon :icon="$gm('refresh')" :size="14" />
             </Button>
             <Button :loading="invalidDrawer.loading" @click="openInvalid">
-              <Icon icon="ant-design:clear-outlined" :size="13" />
+              <Icon :icon="$gm('close')" :size="13" />
               无效群检测
             </Button>
           </div>
@@ -171,15 +171,15 @@
             <template v-else-if="column.key === 'extras'">
               <div class="metaline">
                 <span title="群管增强的当日消息总计">
-                  <Icon icon="ant-design:calendar-outlined" :size="12" />
+                  <Icon :icon="$gm('calendar-check')" :size="12" />
                   <b>{{ thousands(record.dayTotal) }}</b>
                 </span>
                 <span title="该群参与的角色排行榜数">
-                  <Icon icon="ant-design:trophy-outlined" :size="12" />
+                  <Icon :icon="$gm('trophy')" :size="12" />
                   <b>{{ record.rankKeys }}</b>
                 </span>
                 <span title="绑定到该群的用户数">
-                  <Icon icon="ant-design:team-outlined" :size="12" />
+                  <Icon :icon="$gm('users')" :size="12" />
                   <b>{{ record.boundUsers }}</b>
                 </span>
               </div>
@@ -489,6 +489,7 @@
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
   import GFormModal from '../_shared/dialog/GFormModal.vue';
   import type { GroupDetailResult, GroupRow, GroupSummary, InvalidGroupItem, InvalidGroupsResult, TrendPoint } from '../_shared/stats';
+  import { gm } from '/@/design/gmIcons';
   import {
     chartBase,
     daysAgo,
@@ -573,7 +574,7 @@
       {
         key: 'groups',
         label: '群总数',
-        icon: 'ant-design:appstore-outlined',
+        icon: gm('grid'),
         value: thousands(summary.value.groupCount),
         unit: '个',
         foot: `今日活跃 ${summary.value.activeToday} 个`,
@@ -583,7 +584,7 @@
       {
         key: 'today',
         label: '今日消息',
-        icon: 'ant-design:message-outlined',
+        icon: gm('pulse'),
         value: thousands(summary.value.todayMsg),
         unit: '条',
         foot: '今日全群收发合计',
@@ -593,7 +594,7 @@
       {
         key: 'total',
         label: '累计消息',
-        icon: 'ant-design:database-outlined',
+        icon: gm('database'),
         value: fmtNum(summary.value.totalMsg),
         unit: '条',
         foot: '历史全部群消息',
@@ -603,7 +604,7 @@
       {
         key: 'avg',
         label: '群均累计',
-        icon: 'ant-design:fund-outlined',
+        icon: gm('chart'),
         value: fmtNum(summary.value.avgPerGroup),
         unit: '条',
         foot: '累计消息 / 群数',

@@ -10,12 +10,12 @@
         <span v-if="fieldCount > 0" class="db-card__cnt">{{ fieldCount }} 项</span>
         <a-tooltip title="重新读取">
           <span class="db-card__act" @click.stop="() => emit('redo', form)">
-            <Icon icon="ant-design:redo" :size="13" />
+            <Icon :icon="$gm('redo')" :size="13" />
           </span>
         </a-tooltip>
         <a-tooltip v-if="allowFold" :title="folded ? '展开此配置块' : '收起此配置块'">
           <span class="db-card__act" @click.stop="onClickTitle">
-            <Icon :icon="folded ? 'ant-design:down' : 'ant-design:up'" :size="12" />
+            <Icon :icon="folded ? $gm('chevron-down') : $gm('chevron-up')" :size="12" />
           </span>
         </a-tooltip>
       </div>
@@ -27,12 +27,12 @@
         <footer class="db-card__foot">
           <span class="db-card__foot-left">{{ footHint }}</span>
           <a-popconfirm v-if="!isDefault && card.allowDel" title="确定要删除当前配置吗？" @confirm="onRemoveCard">
-            <a-button danger pre-icon="ant-design:delete">删除当前配置</a-button>
+            <a-button danger :pre-icon="$gm('trash')">删除当前配置</a-button>
           </a-popconfirm>
-          <a-button v-if="isDefault && card.allowAdd" pre-icon="ant-design:plus" @click="onAddCard">
+          <a-button v-if="isDefault && card.allowAdd" :pre-icon="$gm('plus')" @click="onAddCard">
             {{ addBtnText }}
           </a-button>
-          <a-button type="primary" pre-icon="ant-design:save" :loading="form.loading" @click="onSubmit">
+          <a-button type="primary" :pre-icon="$gm('save')" :loading="form.loading" @click="onSubmit">
             保存
           </a-button>
         </footer>

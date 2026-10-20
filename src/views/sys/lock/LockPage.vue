@@ -32,12 +32,14 @@
             <p class="db-lock__tip">会话已锁定，输入密码继续</p>
           </div>
 
-          <InputPassword
-            v-model:value="password"
+          <GInput
+            v-model="password"
+            type="password"
+            size="lg"
             :placeholder="t('sys.lock.placeholder')"
-            size="large"
             class="db-lock__input"
-            @pressEnter="unLock()"
+            :clearable="false"
+            @press-enter="unLock()"
           />
           <span v-if="errMsg" class="db-lock__err">{{ t('sys.lock.alert') }}</span>
 
@@ -60,15 +62,13 @@
 </template>
 <script lang="ts" setup>
   import { ref, computed } from 'vue';
-  import { Input } from 'ant-design-vue';
   import { useUserStore } from '/@/store/modules/user';
   import { useLockStore } from '/@/store/modules/lock';
   import { useI18n } from '/@/hooks/web/useI18n';
   import { useNow } from './useNow';
   import { LockOutlined } from '@ant-design/icons-vue';
+  import GInput from '/@/views/guoba/system/_shared/form/GInput.vue';
   import headerImg from '/@/assets/images/header.jpg';
-
-  const InputPassword = Input.Password;
 
   const password = ref('');
   const loading = ref(false);
@@ -275,18 +275,38 @@
     color: rgb(170 180 223 / 78%);
   }
 
-  .db-lock__input {
-    :deep(.ant-input) {
-      background: rgb(255 255 255 / 7%);
-      border-color: rgb(255 255 255 / 16%);
-      color: #e6ebff;
-    }
+  /* 锁屏固定深色卡，自研控件要单独改成暗底（不跟主题走） */
+  .db-lock__card :deep(.gc-lg.gc-input) {
+    height: 42px;
+    padding: 0 12px;
+    color: #e6ebff;
+    background: rgb(255 255 255 / 7%);
+    border-color: rgb(255 255 255 / 16%);
+    border-radius: 10px;
+  }
 
-    :deep(.ant-input:focus),
-    :deep(.ant-input-focused) {
-      border-color: #62a8ea;
-      box-shadow: 0 0 0 2px rgb(98 168 234 / 18%);
-    }
+  .db-lock__card :deep(.gc-lg .gc-input__inner) {
+    font-size: 13.5px;
+    color: #e6ebff;
+  }
+
+  .db-lock__card :deep(.gc-lg .gc-input__inner::placeholder) {
+    color: rgb(170 180 223 / 62%);
+  }
+
+  .db-lock__card :deep(.gc-lg.is-focused) {
+    background: rgb(255 255 255 / 10%);
+    border-color: #62a8ea;
+    box-shadow: 0 0 0 3px rgb(98 168 234 / 18%);
+  }
+
+  .db-lock__card :deep(.gc-lg .gc-input__eye) {
+    color: rgb(170 180 223 / 78%);
+  }
+
+  .db-lock__card :deep(.gc-lg .gc-input__eye:hover) {
+    color: #e6ebff;
+    background: rgb(255 255 255 / 14%);
   }
 
   .db-lock__err {

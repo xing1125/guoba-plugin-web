@@ -12,10 +12,10 @@
     </div>
     <div class="db-hero__side">
       <div class="mh-hero__ops">
-        <a-button danger preIcon="ant-design:undo" @click="emit('rollback')">回滚</a-button>
+        <a-button danger :pre-icon="$gm('undo')" @click="emit('rollback')">回滚</a-button>
         <a-button v-if="showTheme" preIcon="icon-park-outline:theme" @click="emit('theme')">皮肤</a-button>
         <a-button preIcon="dashicons:backup" @click="emit('backup')">备份</a-button>
-        <a-button type="primary" preIcon="ant-design:save" @click="emit('save')">保存</a-button>
+        <a-button type="primary" :pre-icon="$gm('save')" @click="emit('save')">保存</a-button>
       </div>
     </div>
   </section>

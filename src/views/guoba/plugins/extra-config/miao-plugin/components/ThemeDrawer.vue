@@ -2,7 +2,7 @@
   <BasicDrawer v-bind="getProps">
     <a-spin :wrapperClassName="`${prefixCls} p-2`" :spinning="loading">
       <div style="margin-bottom: 8px">
-        <a-button type="primary" preIcon="ant-design:plus" @click="onAdd">新增皮肤</a-button>
+        <a-button type="primary" :pre-icon="$gm('plus')" @click="onAdd">新增皮肤</a-button>
       </div>
       <a-list size="large" bordered :dataSource="themeList">
         <template #renderItem="{ item }">
@@ -23,7 +23,7 @@
             </a-list-item-meta>
             <template #actions>
               <Dropdown v-if="item.name !== 'default'" :trigger="['click']" :dropMenuList="getDropMenuList(item)">
-                <a-button type="primary" shape="circle" preIcon="ant-design:setting" />
+                <a-button type="primary" shape="circle" :pre-icon="$gm('gear')" />
               </Dropdown>
             </template>
           </a-list-item>
@@ -52,6 +52,7 @@
   import ThemeConfigModal from '/@/views/guoba/plugins/extra-config/miao-plugin/components/ThemeConfigModal.vue';
   import { useModal } from '/@/components/Modal';
   import {getAppEnvConfig} from "/@/utils/env";
+  import { gm } from '/@/design/gmIcons';
 
   type ThemeItem = {
     // 皮肤名称
@@ -208,7 +209,7 @@
       {
         event: 'change',
         text: '修改配置',
-        icon: 'ant-design:edit',
+        icon: gm('edit'),
         onClick() {
           configModal.openModal(true, item);
         },
@@ -216,7 +217,7 @@
       {
         event: 'changePic',
         text: '更改底图',
-        icon: 'akar-icons:image',
+        icon: gm('image'),
         async onClick() {
           try {
             setLoading(true);
@@ -234,7 +235,7 @@
       {
         event: 'delete',
         text: '删除皮肤',
-        icon: 'ant-design:delete',
+        icon: gm('trash'),
         onClick() {
           createConfirm({
             title: '删除',

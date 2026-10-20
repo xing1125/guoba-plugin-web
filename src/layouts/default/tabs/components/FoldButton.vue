@@ -6,6 +6,7 @@
 <script lang="ts">
   import { defineComponent, unref, computed } from 'vue';
   import { Icon } from '/@/components/Icon';
+  import { gm } from '/@/design/gmIcons';
 
   import { useDesign } from '/@/hooks/web/useDesign';
   import { useHeaderSetting } from '/@/hooks/setting/useHeaderSetting';
@@ -22,7 +23,7 @@
 
       const getIsUnFold = computed(() => !unref(getShowMenu) && !unref(getShowHeader));
 
-      const getIcon = computed(() => (unref(getIsUnFold) ? 'codicon:screen-normal' : 'codicon:screen-full'));
+      const getIcon = computed(() => (unref(getIsUnFold) ? gm('close') : gm('fullscreen')));
 
       function handleFold() {
         const isUnFold = unref(getIsUnFold);

@@ -74,7 +74,7 @@
         </div>
         <div v-else-if="!viewOptions.length" class="gc-pop__tip">
           <slot name="empty">
-            <Icon icon="ant-design:inbox-outlined" :size="15" />
+            <Icon :icon="$gm('inbox')" :size="15" />
             <span>{{ search ? '没有匹配项' : emptyText }}</span>
           </slot>
         </div>

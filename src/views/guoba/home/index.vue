@@ -24,7 +24,7 @@
           <div class="gm-hero__art-fg" :style="{ backgroundImage: `url(${artUrl})` }" />
         </div>
         <div class="gm-hero__refresh" :class="{ 'is-loading': artLoading }" @click="loadArt">
-          <Icon class="gm-hero__refresh-icon" icon="ant-design:reload-outlined" :size="12" />
+          <Icon class="gm-hero__refresh-icon" :icon="$gm('refresh')" :size="12" />
           换一张
         </div>
       </section>
@@ -60,7 +60,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:dashboard-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('dashboard')" :size="13" /></i>
               系统运行态
             </div>
             <span v-if="sysinfoVisible" class="gm-panel__link" @click="go('/sysinfo')">系统信息›</span>
@@ -90,7 +90,7 @@
         <div class="g-card">
           <div class="gm-panel__head">
             <div class="gm-panel__title">
-              <i><Icon icon="ant-design:thunderbolt-outlined" :size="13" /></i>
+              <i><Icon :icon="$gm('zap')" :size="13" /></i>
               运行状态
             </div>
             <span class="gm-panel__extra">实时</span>
@@ -119,7 +119,7 @@
       <section class="g-card">
         <div class="gm-panel__head">
           <div class="gm-panel__title">
-            <i><Icon icon="ant-design:appstore-outlined" :size="13" /></i>
+            <i><Icon :icon="$gm('grid')" :size="13" /></i>
             快捷入口
           </div>
           <span class="gm-panel__extra">常用模块直达</span>
@@ -155,6 +155,7 @@
   import { adminApi } from '../system/account/api';
   import type { BotRuntime, OverviewCards, TrendPoint } from '../system/_shared/stats';
   import { fmtNum, hexToRgba, statsApi, thousands } from '../system/_shared/stats';
+  import { gm } from '/@/design/gmIcons';
 
   defineOptions({ name: 'Home' });
 
@@ -240,7 +241,7 @@
       {
         key: 'today',
         label: '今日消息',
-        icon: 'ant-design:message-outlined',
+        icon: gm('pulse'),
         value: thousands(today),
         unit: '条',
         delta: todayDelta.value,
@@ -250,7 +251,7 @@
       {
         key: 'total',
         label: '累计消息',
-        icon: 'ant-design:database-outlined',
+        icon: gm('database'),
         value: fmtNum(total),
         unit: '条',
         delta: null,
@@ -260,7 +261,7 @@
       {
         key: 'users',
         label: '用户总数',
-        icon: 'ant-design:team-outlined',
+        icon: gm('users'),
         value: thousands(users),
         unit: '人',
         delta: null,
@@ -270,7 +271,7 @@
       {
         key: 'groups',
         label: '群聊数量',
-        icon: 'ant-design:appstore-outlined',
+        icon: gm('grid'),
         value: thousands(groups),
         unit: '个',
         delta: null,
@@ -280,7 +281,7 @@
       {
         key: 'ck',
         label: 'Cookie 账号',
-        icon: 'ant-design:key-outlined',
+        icon: gm('key'),
         value: thousands(acc.total ?? 0),
         unit: '个',
         delta: null,
@@ -290,7 +291,7 @@
       {
         key: 'redis',
         label: 'Redis 键数',
-        icon: 'ant-design:cloud-server-outlined',
+        icon: gm('server'),
         value: thousands(overview.value.redisKeys ?? 0),
         unit: '条',
         delta: null,
@@ -411,14 +412,14 @@
     /* 导航管理屏蔽的页面，快捷入口同步隐藏 */
     const visible = new Set(usePermissionStore().getBackMenuList.map((m: any) => m?.path).filter(Boolean));
     const all = [
-      { path: '/dashboard', title: '数据总览', desc: '趋势与缓存分布', icon: 'ant-design:dashboard-outlined', ...p.blue },
-      { path: '/groups', title: '群数据', desc: '活跃与趋势', icon: 'ant-design:appstore-outlined', ...p.green },
-      { path: '/users-data', title: '用户数据', desc: '消息排行', icon: 'ant-design:team-outlined', ...p.violet },
-      { path: '/plugins-data', title: '插件数据', desc: '键数占比', icon: 'ant-design:api-outlined', ...p.cyan },
-      { path: '/account', title: '米游社账号', desc: 'CK 与绑定', icon: 'ant-design:key-outlined', ...p.amber },
-      { path: '/uid', title: '游戏 UID', desc: '六游戏归属', icon: 'ant-design:fund-outlined', ...p.rose },
-      { path: '/config', title: '配置管理', desc: '写前自动备份', icon: 'ant-design:safety-certificate-outlined', ...p.blue },
-      { path: '/plugins', title: '插件管理', desc: '安装与启停', icon: 'ant-design:thunderbolt-outlined', ...p.violet },
+      { path: '/dashboard', title: '数据总览', desc: '趋势与缓存分布', icon: gm('dashboard'), ...p.blue },
+      { path: '/groups', title: '群数据', desc: '活跃与趋势', icon: gm('grid'), ...p.green },
+      { path: '/users-data', title: '用户数据', desc: '消息排行', icon: gm('users'), ...p.violet },
+      { path: '/plugins-data', title: '插件数据', desc: '键数占比', icon: gm('api'), ...p.cyan },
+      { path: '/account', title: '米游社账号', desc: 'CK 与绑定', icon: gm('key'), ...p.amber },
+      { path: '/uid', title: '游戏 UID', desc: '六游戏归属', icon: gm('chart'), ...p.rose },
+      { path: '/config', title: '配置管理', desc: '写前自动备份', icon: gm('shield'), ...p.blue },
+      { path: '/plugins', title: '插件管理', desc: '安装与启停', icon: gm('zap'), ...p.violet },
     ];
     return visible.size ? all.filter((t) => visible.has(t.path)) : all;
   });

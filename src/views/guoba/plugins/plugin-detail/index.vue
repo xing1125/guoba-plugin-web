@@ -14,7 +14,7 @@
             </span>
             <a class="pd-title" @click="onOpenPluginModal">{{ plugin!.title }}</a>
             <a v-if="plugin!.link" :href="plugin!.link" target="_blank" class="pd-link">
-              <Icon icon="bx:link" :size="14" />
+              <Icon :icon="$gm('link')" :size="14" />
             </a>
           </div>
           <div class="db-hero__desc">{{ plugin!.description }}</div>
@@ -23,7 +23,7 @@
           </div>
         </div>
         <div class="db-hero__side">
-          <a-button size="small" pre-icon="ant-design:info-circle" @click="onOpenPluginModal">插件信息</a-button>
+          <a-button size="small" :pre-icon="$gm('info')" @click="onOpenPluginModal">插件信息</a-button>
         </div>
       </section>
 
@@ -55,7 +55,7 @@
               <span class="db-cfg__bar-sub">{{ activeFieldCount }} 项配置</span>
             </div>
             <div class="db-cfg__bar-ops">
-              <a-button type="primary" size="small" pre-icon="ant-design:save" :loading="loading" @click="onSave">
+              <a-button type="primary" size="small" :pre-icon="$gm('save')" :loading="loading" @click="onSave">
                 保存配置
               </a-button>
             </div>

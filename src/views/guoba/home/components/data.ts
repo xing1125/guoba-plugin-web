@@ -1,3 +1,4 @@
+import { gm } from '/@/design/gmIcons';
 interface GroupItem {
   title: string;
   icon: string;
@@ -24,36 +25,36 @@ interface DynamicInfoItem {
 export const navItems: NavItem[] = [
   // {
   //   title: '首页',
-  //   icon: 'ion:home-outline',
+  //   icon: gm('home'),
   //   color: '#1FDACA',
   //   path: '/home',
   // },
   {
     title: '配置管理',
-    icon: 'ion:settings-outline',
+    icon: gm('gear'),
     color: '#E18525',
     path: '/config',
   },
   {
     title: '插件管理',
-    icon: 'clarity:plugin-line',
+    icon: gm('puzzle'),
     color: '#3FB27F',
     path: '/plugins',
   },
   {
     title: '账号管理',
-    icon: 'ant-design:user-outlined',
+    icon: gm('user'),
     color: '#BF0C2C',
     path: '/account',
   },
   // {
   //   title: '权限管理',
-  //   icon: 'ion:key-outline',
+  //   icon: gm('key'),
   //   color: '#4daf1bc9',
   // },
   // {
   //   title: '图表',
-  //   icon: 'ion:bar-chart-outline',
+  //   icon: gm('chart-bar'),
   //   color: '#00d8ff',
   // },
 ];

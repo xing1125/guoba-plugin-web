@@ -103,12 +103,51 @@ export interface SignRecordQuery {
 
 export interface SignDayUser {
   qq: string;
+  name?: string;
   count: number;
   ok: number;
   fail: number;
   days: number;
   coins: number | null;
   games: Record<string, number>;
+  accounts?: number;
+  accountNos?: number[];
+}
+
+/** 单条失败原因（按游戏粒度） */
+export interface SignFailReason {
+  game: string;
+  label: string;
+  /** failed = 签到失败；unbound = 没绑这个游戏；record = 整轮流水兜底说明 */
+  kind: 'failed' | 'unbound' | 'record';
+  reason: string;
+}
+
+/**
+ * 账号行：一个微信号下**每个米游社账号（profileId）单独一条**
+ * 绑了 3 个号就是 3 条，各自统计，不再合并。
+ */
+export interface SignDayAccount {
+  qq: string;
+  name?: string;
+  profileId: number;
+  accountNo: number;
+  count: number;
+  ok: number;
+  fail: number;
+  allOk: boolean;
+  days: number;
+  coins: number | null;
+  games: Record<string, number>;
+  signedGames: string[];
+  unboundGames: string[];
+  failedGames: string[];
+  signedLabels: string[];
+  unboundLabels: string[];
+  failedLabels: string[];
+  failReasons: SignFailReason[];
+  firstAt: string;
+  lastAt: string;
 }
 
 export interface SignDay {
@@ -125,12 +164,83 @@ export interface SignDay {
   rate: number;
   gameStat: Record<string, { signed: number; unbound: number; failed: number }>;
   userList: SignDayUser[];
+  accountList?: SignDayAccount[];
+  failList?: SignDayAccount[];
+  failAccounts?: number;
+  reasonAccounts?: number;
+  multiAccountUsers?: number;
+}
+
+/* ------------------------------ 异常清单 ------------------------------ */
+
+export interface SignIssueExpired {
+  ltuid: number;
+  checkedAt: string | null;
+  uidCount: number;
+  games: string[];
+  bindIds: string[];
+  bindNames: string[];
+  exists: boolean;
+}
+
+export interface SignIssueOrphan {
+  id: string;
+  name: string;
+  /** empty = 完全没绑；dangling = 全部失效；partial = 部分失效 */
+  kind: 'empty' | 'dangling' | 'partial';
+  ltuids: number[];
+  dangling: number[];
+  reason: string;
+}
+
+export interface SignIssueStale {
+  qq: string;
+  name: string;
+  profileId: number;
+  days: number;
+  total: number;
+  ok: number;
+  fail: number;
+  allFail: boolean;
+  lastAt: string;
+  lastOk: boolean;
+  reasons: string[];
+}
+
+export interface SignIssues {
+  generatedAt: string;
+  days: number;
+  expired: SignIssueExpired[];
+  orphan: SignIssueOrphan[];
+  stale: SignIssueStale[];
+  counts: {
+    expired: number;
+    orphan: number;
+    stale: number;
+    orphanEmpty: number;
+    orphanDangling: number;
+    staleAllFail: number;
+  };
+}
+
+export interface SignCleanResult {
+  scope: 'expired' | 'orphan' | 'stale';
+  skipped?: boolean;
+  message?: string;
+  deleted?: number;
+  scanned?: number;
+  failed?: { ltuid?: number; uid?: string; error: string }[];
+  detail?: any[];
 }
 
 const enum SignApi {
   overview = '/admin/sign/overview',
   records = '/admin/sign/records',
   day = '/admin/sign/day',
+  issues = '/admin/sign/issues',
+  clean = '/admin/sign/issues/clean',
+  userDelete = '/admin/sign/users/delete',
+  userRestore = '/admin/sign/users/restore',
 }
 
 export const signApi = {
@@ -142,6 +252,22 @@ export const signApi = {
   },
   getDay(date: string) {
     return defHttp.get<SignDay>({ url: `${SignApi.day}/${date}` });
+  },
+  getIssues(days = 7) {
+    return defHttp.get<SignIssues>({ url: SignApi.issues, params: { days } });
+  },
+  /** scope=expired 且不传 ids 表示全量清理 CK 失效账号 */
+  cleanIssues(payload: { scope: 'expired' | 'orphan' | 'stale'; ids?: string[]; confirm: true }) {
+    return defHttp.post<SignCleanResult>({ url: SignApi.clean, params: payload });
+  },
+  deleteUsers(ids: string[]) {
+    return defHttp.post<SignCleanResult>({ url: SignApi.userDelete, params: { ids, confirm: true } });
+  },
+  restoreUser(id: number) {
+    return defHttp.post<{ uid: string; restored: boolean; games: number }>({
+      url: SignApi.userRestore,
+      params: { id },
+    });
   },
 };
 

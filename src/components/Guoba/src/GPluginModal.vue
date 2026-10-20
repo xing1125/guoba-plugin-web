@@ -53,13 +53,13 @@
       <div class="gm-foot">
         <div class="gm-foot__left">
           <template v-if="activeKey === 'desc'">
-            <a-button v-if="!plugin?.installed" type="primary" pre-icon="ant-design:cloud-download" @click="installNow">
+            <a-button v-if="!plugin?.installed" type="primary" :pre-icon="$gm('cloud')" @click="installNow">
               立即安装
             </a-button>
             <a-button
               v-else
               danger
-              pre-icon="ant-design:delete"
+              :pre-icon="$gm('trash')"
               :disabled="['miao-plugin'].includes(plugin.name)"
               @click="uninstall"
             >
@@ -70,7 +70,7 @@
         </div>
         <div class="gm-foot__right">
           <a-button @click="close">关闭</a-button>
-          <a-button v-if="activeKey === 'config'" type="primary" pre-icon="ant-design:save" @click="saveConfig">
+          <a-button v-if="activeKey === 'config'" type="primary" :pre-icon="$gm('save')" @click="saveConfig">
             保存配置
           </a-button>
         </div>

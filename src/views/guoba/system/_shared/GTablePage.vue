@@ -10,11 +10,11 @@
       <div class="gtp__tools">
         <slot name="toolbar" />
         <Button v-if="csvName && csvColumns.length" size="small" :disabled="!dataSource.length" @click="exportCsv">
-          <Icon icon="ant-design:download-outlined" :size="13" style="margin-right: 4px" />
+          <Icon :icon="$gm('download')" :size="13" style="margin-right: 4px" />
           导出 CSV
         </Button>
         <Button size="small" :loading="loading" @click="$emit('refresh')">
-          <Icon icon="ant-design:reload-outlined" :size="13" />
+          <Icon :icon="$gm('refresh')" :size="13" />
         </Button>
       </div>
     </div>
@@ -59,6 +59,7 @@
   import GSearch from './form/GSearch.vue';
   import GSelect from './form/GSelect.vue';
   import { downloadCsv, type CsvColumn } from '/@/utils/export/csv';
+  import { gm } from '/@/design/gmIcons';
 
   /**
    * GTablePage —— 统一列表页骨架（B 端规范）
@@ -99,7 +100,7 @@
     }>(),
     {
       title: '',
-      icon: 'ant-design:unordered-list-outlined',
+      icon: gm('list'),
       loading: false,
       total: 0,
       page: 1,

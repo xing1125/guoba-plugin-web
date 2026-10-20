@@ -10,7 +10,7 @@
         <span class="db-card__cnt">{{ innerValue.length }} 条</span>
         <a-tooltip title="重新读取">
           <span class="db-card__act" @click="() => emit('redo', form)">
-            <Icon icon="ant-design:redo" :size="13" />
+            <Icon :icon="$gm('redo')" :size="13" />
           </span>
         </a-tooltip>
       </div>
@@ -21,23 +21,23 @@
         <div class="af-list">
           <div v-for="(val, idx) of innerValue" :key="idx" class="af-row">
             <span class="af-idx">{{ pad(idx + 1) }}</span>
-            <a-input v-model:value="innerValue[idx]" :placeholder="`第 ${idx + 1} 项`" />
+            <GInput v-model="innerValue[idx]" class="af-input" width="auto" :placeholder="`第 ${idx + 1} 项`" />
             <a-popconfirm v-if="card.allowDel" title="确定要删除吗？" @confirm="() => onRemove(idx)">
               <a-button danger type="text" class="af-del">
-                <Icon icon="ant-design:delete" :size="14" />
+                <Icon :icon="$gm('trash')" :size="14" />
               </a-button>
             </a-popconfirm>
           </div>
           <div v-if="!innerValue.length" class="af-empty">暂无条目</div>
         </div>
 
-        <a-button v-if="card.allowAdd" class="af-add" type="dashed" block pre-icon="ant-design:plus" @click="onAdd">
+        <a-button v-if="card.allowAdd" class="af-add" type="dashed" block :pre-icon="$gm('plus')" @click="onAdd">
           {{ addBtnText }}
         </a-button>
 
         <footer class="db-card__foot">
           <span class="db-card__foot-left">{{ limitText }}</span>
-          <a-button type="primary" pre-icon="ant-design:save" :loading="form.loading" @click="onSubmit">保存</a-button>
+          <a-button type="primary" :pre-icon="$gm('save')" :loading="form.loading" @click="onSubmit">保存</a-button>
         </footer>
       </a-spin>
     </div>
@@ -50,12 +50,13 @@
   import type { IConfigCard, FormType } from '../types';
   import { propTypes } from '/@/utils/propTypes';
   import Icon from '/@/components/Icon';
+  import GInput from '/@/views/guoba/system/_shared/form/GInput.vue';
   import { useDesign } from '/@/hooks/web/useDesign';
   import { useMessage } from '/@/hooks/web/useMessage';
 
   export default defineComponent({
     name: 'ArrayForm',
-    components: { Icon },
+    components: { Icon, GInput },
     props: {
       card: propTypes.object.isRequired.type as PropType<IConfigCard>,
       form: propTypes.object.isRequired.type as PropType<FormType>,
@@ -193,14 +194,11 @@
       border-color: var(--g-blue);
     }
 
-    :deep(.ant-input) {
-      background: var(--g-card-bg-soft);
-      border-color: var(--g-card-border);
-    }
-
-    :deep(.ant-input:focus) {
-      border-color: var(--g-blue);
-      box-shadow: none;
+    /* 自研输入框撑满剩余宽度（flex 行里 basis 0 会塌，显式给 1 1 auto） */
+    .af-input {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: auto;
     }
   }
 </style>

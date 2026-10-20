@@ -11,11 +11,11 @@
         <!--            shape="circle"-->
         <!--            size="large"-->
         <!--          >-->
-        <!--            <Icon icon="akar-icons:image" />-->
+        <!--            <Icon :icon="$gm('image')" />-->
         <!--          </a-button>-->
         <!--        </Dropdown>-->
         <a-button :style="`transform: scale(${1 / scale});transform-origin: right top;`" type="primary" shape="circle" size="large" @click="onOpenSetting">
-          <Icon icon="ion:settings-outline" />
+          <Icon :icon="$gm('gear')" />
         </a-button>
       </div>
 
@@ -69,6 +69,7 @@
   import { HelpTable } from './HelpComps';
   import UploadIconHelpModal from './UploadIconHelpModal.vue';
   import { getHelpIconList, getThemeConfig } from '../miao.api';
+  import { gm } from '/@/design/gmIcons';
 
   const { VITE_PUBLIC_PATH } = getAppEnvConfig();
   const props = defineProps({
@@ -129,7 +130,7 @@
     {
       event: 'changeBackground',
       text: '更换背景',
-      icon: 'akar-icons:image',
+      icon: gm('image'),
       onClick() {
         getUploadBase64('upload-bg', (base64) => {
           emit('update:mainB64', base64);
@@ -139,7 +140,7 @@
     {
       event: 'uploadIcon',
       text: '上传图标',
-      icon: 'fontisto:nav-icon-grid',
+      icon: gm('grid'),
       onClick() {
         let fn = () => {
           getUploadBase64('upload-icon', async (base64) => {
