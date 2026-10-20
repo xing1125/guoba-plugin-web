@@ -11,8 +11,14 @@
           </div>
         </div>
         <div class="db-hero__side">
-          <Button @click="openBin">删除记录</Button>
-          <Button :loading="loading" @click="loadAll">刷新数据</Button>
+          <Button @click="openBin">
+            <Icon :icon="$gm('trash')" :size="13" style="margin-right: 5px" />
+            删除记录
+          </Button>
+          <Button :loading="loading" @click="loadAll">
+            <Icon :icon="$gm('refresh')" :size="13" style="margin-right: 5px" />
+            刷新数据
+          </Button>
         </div>
       </section>
 
@@ -32,9 +38,7 @@
             <span class="ac-nav__name">{{ g.name }}</span>
             <span class="ac-nav__count">{{ g.uidCount }}</span>
           </button>
-          <div class="ac-nav__foot">
-            米游社数据来自 Bot 主库，Stoken 只读自 Lotus 档案；鸣潮走库街区 token。
-          </div>
+          <div class="ac-nav__foot">数据来自 Bot 主库 · Stoken 只读自 Lotus 档案 · 鸣潮走库街区 token</div>
         </aside>
 
         <!-- 右侧内容 -->
@@ -50,23 +54,14 @@
             </div>
 
             <div class="ac-hero__cards">
-              <div class="ac-metric">
-                <div class="ac-metric__label">绑定 UID</div>
-                <div class="ac-metric__value">{{ fmtNum(hero.uidCount) }}</div>
-                <div class="ac-metric__foot">{{ hero.accountCount }} 个账号</div>
-              </div>
-              <div class="ac-metric">
-                <div class="ac-metric__label">{{ isMys ? 'CK 已存' : '有效令牌' }}</div>
-                <div class="ac-metric__value">{{ fmtNum(hero.ckSaved) }}</div>
-                <div class="ac-metric__foot">
-                  覆盖 {{ pctOf(hero.ckSaved, hero.accountCount) }}% 账号
+              <div v-for="m in heroMetrics" :key="m.key" class="ac-metric" :class="{ 'is-na': m.na }">
+                <div class="ac-metric__head">
+                  <span class="ac-metric__label">{{ m.label }}</span>
+                  <span class="ac-metric__ratio">{{ m.ratio }}</span>
                 </div>
-              </div>
-              <div class="ac-metric" :class="{ 'is-na': !hero.skSupported }">
-                <div class="ac-metric__label">SK 已存</div>
-                <div class="ac-metric__value">{{ hero.skSupported ? fmtNum(hero.skSaved) : '—' }}</div>
-                <div class="ac-metric__foot">
-                  {{ hero.skSupported ? `覆盖 ${pctOf(hero.skSaved, hero.accountCount)}% 账号` : '该游戏无 Stoken 体系' }}
+                <div class="ac-metric__value">{{ m.value }}</div>
+                <div class="ac-metric__bar" :title="m.hint">
+                  <i :class="`is-${m.tone}`" :style="{ width: `${m.pct}%` }" />
                 </div>
               </div>
             </div>
@@ -122,12 +117,16 @@
                     <div class="ac-uidrow__name">
                       <span class="ac-uidrow__nick">{{ r.nickname || '未获取昵称' }}</span>
                       <span class="mono ac-uidrow__uid">{{ r.uid || '—' }}</span>
-                      <span v-if="r.level" class="ac-uidrow__lv">Lv.{{ r.level }}</span>
+                      <span v-if="r.level" class="g-chip">Lv.{{ r.level }}</span>
                     </div>
                     <div class="ac-uidrow__meta">
                       <span class="mono">{{ r.ltuid ? `ltuid ${r.ltuid}` : `QQ ${r.qq}` }}</span>
                       <span v-if="r.server" class="ac-uidrow__dot">区服 {{ r.server }}</span>
                       <span v-if="r.kuroUid" class="ac-uidrow__dot mono">库街区 {{ r.kuroUid }}</span>
+                      <!-- 同一米游社账号下有多个 UID 时会平铺成多行，标出来才知道它们同源 -->
+                      <span v-if="r.uidCount > 1" class="ac-uidrow__multi" :title="`该账号下共 ${r.uidCount} 个游戏 UID`">
+                        同账号 {{ r.uidCount }} 个 UID
+                      </span>
                       <span class="ac-uidrow__binds">
                         <span v-if="!r.bindIds.length" class="muted">未绑定 Bot 用户</span>
                         <span
@@ -146,32 +145,45 @@
                   </div>
 
                   <div class="ac-uidrow__tags">
-                    <span class="ac-tag" :class="r.hasCk ? 'is-on' : 'is-off'">
-                      {{ isMys ? 'CK' : '令牌' }}
+                    <span class="g-chip" :class="r.hasCk ? 'is-signed' : 'is-unbound'">
+                      {{ isMys ? 'CK' : '令牌' }} {{ r.hasCk ? '已存' : '缺失' }}
                     </span>
-                    <span v-if="isMys" class="ac-tag" :class="r.hasSk ? 'is-on' : 'is-off'">SK</span>
-                    <span v-if="r.ckStatus === 'expired'" class="ac-tag is-off">已失效</span>
+                    <span v-if="isMys" class="g-chip" :class="r.hasSk ? 'is-signed' : 'is-unbound'">
+                      SK {{ r.hasSk ? '已存' : '缺失' }}
+                    </span>
+                    <span v-if="r.ckStatus === 'expired'" class="g-chip is-failed">已失效</span>
                   </div>
 
                   <div class="ac-uidrow__acts">
-                    <Button
+                    <button
+                      v-if="isMys"
+                      type="button"
+                      class="g-link"
+                      :disabled="verifying === r.ltuid"
+                      @click="verifyOne(r)"
+                    >
+                      {{ verifying === r.ltuid ? '校验中…' : '校验' }}
+                    </button>
+                    <button
                       v-if="isMys && r.uid"
-                      size="small"
-                      danger
-                      :loading="unbinding === `${r.ltuid}:${r.uid}`"
+                      type="button"
+                      class="g-link"
+                      :disabled="unbinding === `${r.ltuid}:${r.uid}`"
                       @click="askUnbind(r, r)"
                     >
-                      解绑
-                    </Button>
-                    <Button v-if="isMys" size="small" :loading="verifying === r.ltuid" @click="verifyOne(r)">
-                      校验
-                    </Button>
-                    <Button v-if="isMys" size="small" danger @click="askDelete(r)">删除</Button>
+                      {{ unbinding === `${r.ltuid}:${r.uid}` ? '解绑中…' : '解绑 UID' }}
+                    </button>
+                    <button v-if="isMys" type="button" class="g-link is-danger" @click="askDelete(r)">删除</button>
                   </div>
 
                   <div v-if="isMys" class="ac-uidrow__foot">
-                    <span class="mono fs-12">CK {{ r.ckMask || '未保存' }}</span>
-                    <span v-if="r.checkedAt" class="muted">最后校验 {{ r.checkedAt }}</span>
+                    <span class="ac-ck">
+                      <span class="ac-ck__key mono">{{ ckParts(r.ckMask).key || 'ck' }}</span>
+                      <span class="ac-ck__val mono">{{ ckParts(r.ckMask).val || '未保存' }}</span>
+                    </span>
+                    <span v-if="r.checkedAt" class="ac-uidrow__time">
+                      最后校验 {{ fmtMoment(r.checkedAt) }}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -202,14 +214,24 @@
                     <span v-else class="muted">未绑定</span>
                   </template>
                   <template v-else-if="column.key === 'ckMask'">
-                    <span class="mono fs-12">{{ record.ckMask || (record.hasCk ? '（鸣潮令牌已保存）' : '未保存') }}</span>
+                    <span v-if="record.ckMask" class="ac-ck">
+                      <span class="ac-ck__key mono">{{ ckParts(record.ckMask).key || 'ck' }}</span>
+                      <span class="ac-ck__val mono">{{ ckParts(record.ckMask).val }}</span>
+                    </span>
+                    <span v-else class="muted">{{ record.hasCk ? '（鸣潮令牌已保存）' : '未保存' }}</span>
+                  </template>
+                  <template v-else-if="column.key === 'checkedAt'">
+                    <span :class="record.checkedAt ? 'fs-12' : 'muted'">
+                      {{ record.checkedAt ? fmtMoment(record.checkedAt) : '—' }}
+                    </span>
                   </template>
                   <template v-else-if="column.key === 'ckStatus'">
-                    <Tag :color="statusOf(record.ckStatus).color">{{ statusOf(record.ckStatus).text }}</Tag>
+                    <span class="g-status" :class="statusTone(record.ckStatus)">{{ statusOf(record.ckStatus).text }}</span>
                   </template>
                   <template v-else-if="column.key === 'hasSk'">
-                    <Tag v-if="record.hasSk" color="blue">已存</Tag>
-                    <span v-else class="muted">未存</span>
+                    <span class="g-chip" :class="record.hasSk ? 'is-signed' : 'is-unbound'">
+                      {{ record.hasSk ? '已存' : '未存' }}
+                    </span>
                   </template>
                   <template v-else-if="column.key === 'action'">
                     <Button
@@ -248,9 +270,9 @@
               >
                 <template #bodyCell="{ column, record }">
                   <template v-if="column.key === 'hasStoken'">
-                    <Tag :color="record.hasStoken ? 'green' : 'default'">
+                    <span class="g-chip" :class="record.hasStoken ? 'is-signed' : 'is-unbound'">
                       {{ record.hasStoken ? '已存' : '未存' }}
-                    </Tag>
+                    </span>
                   </template>
                   <template v-else-if="column.key === 'source'">
                     <span :class="record.source ? 'fs-12' : 'muted'">{{ record.source || '—' }}</span>
@@ -320,7 +342,7 @@
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, watch } from 'vue';
   import { useRoute } from 'vue-router';
-  import { Button, Table, Tag, message } from 'ant-design-vue';
+  import { Button, Table, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
   import { downloadCsv } from '/@/utils/export/csv';
@@ -331,6 +353,7 @@
   import GSegmented from '../_shared/form/GSegmented.vue';
   import GameIcon from '../_shared/GameIcon.vue';
   import { fmtNum } from '../_shared/stats';
+  import { fmtDateTime, fmtMoment } from '/@/utils/localTime';
   import type { CkStatus, VerifyResult } from './api';
   import { adminApi } from './api';
   import { STATUS_MAP } from './data';
@@ -406,8 +429,74 @@
     return Math.round((v / t) * 100);
   }
 
+  /** 覆盖率配色：满 → 绿，八成以上 → 琥珀，更低 → 红 */
+  function toneOf(pct: number) {
+    if (pct >= 100) return 'green';
+    if (pct >= 80) return 'amber';
+    return 'red';
+  }
+
+  /** 三张指标卡：比例条让「覆盖多少」一眼可见，不再靠读小字 */
+  const heroMetrics = computed(() => {
+    const acc = hero.value.accountCount;
+    const ckPct = pctOf(hero.value.ckSaved, acc);
+    const skPct = pctOf(hero.value.skSaved, acc);
+    return [
+      {
+        key: 'uid',
+        label: '绑定 UID',
+        value: fmtNum(hero.value.uidCount),
+        ratio: `${acc} 个账号`,
+        pct: 100,
+        tone: 'blue',
+        na: false,
+        hint: `平均每个账号 ${acc ? (hero.value.uidCount / acc).toFixed(1) : 0} 个 UID`,
+      },
+      {
+        key: 'ck',
+        label: isMys.value ? 'CK 已存' : '有效令牌',
+        value: fmtNum(hero.value.ckSaved),
+        ratio: `${hero.value.ckSaved} / ${acc}`,
+        pct: ckPct,
+        tone: toneOf(ckPct),
+        na: false,
+        hint: `覆盖 ${ckPct}% 账号`,
+      },
+      {
+        key: 'sk',
+        label: 'SK 已存',
+        value: hero.value.skSupported ? fmtNum(hero.value.skSaved) : '—',
+        ratio: hero.value.skSupported ? `${hero.value.skSaved} / ${acc}` : '无 Stoken',
+        pct: hero.value.skSupported ? skPct : 0,
+        tone: toneOf(skPct),
+        na: !hero.value.skSupported,
+        hint: hero.value.skSupported ? `覆盖 ${skPct}% 账号` : '该游戏无 Stoken 体系',
+      },
+    ];
+  });
+
+  /**
+   * Cookie 掩码清洗：后端给的是 `ltoken=v2_1Zcxc****CAE=`，
+   * 直接贴着「CK」显示会变成「CK ltoken=v2_1Zcxc****CAE=」这种一长串。
+   * 这里把键名拆出来单独展示，掩码里的 **** 换成省略号。
+   */
+  function ckParts(mask?: string) {
+    const raw = String(mask || '').trim();
+    if (!raw) return { key: '', val: '' };
+    const m = raw.match(/^([A-Za-z_]+)=(.+)$/);
+    const key = m ? m[1] : '';
+    const val = (m ? m[2] : raw).replace(/\*{3,}/g, '…');
+    return { key, val };
+  }
+
   function statusOf(s: CkStatus | string) {
     return STATUS_MAP[String(s || 'unknown') as CkStatus] ?? STATUS_MAP.unknown;
+  }
+
+  /** 状态语义 → .g-status 的圆点配色（ok 绿 / error 红 / warning 琥珀 / unknown 灰） */
+  function statusTone(s: CkStatus | string) {
+    const map: Record<string, string> = { ok: 'is-ok', expired: 'is-err', error: 'is-warn', unknown: 'is-mute' };
+    return map[String(s || 'unknown')] || 'is-mute';
   }
 
   function maskId(id: string) {
@@ -749,6 +838,16 @@
       background: var(--g-card-bg-soft);
       border-color: var(--g-card-border-strong);
       box-shadow: inset 2px 0 0 var(--g1, var(--g-blue));
+
+      /* 选中项才给全彩图标，其余降饱和，避免六种彩色方块一起抢眼 */
+      :deep(.game-icon) {
+        filter: none;
+      }
+    }
+
+    :deep(.game-icon) {
+      filter: saturate(0.4) brightness(0.94);
+      transition: filter 0.16s ease;
     }
   }
 
@@ -766,6 +865,11 @@
     background: var(--g-chip-bg);
     border-radius: 6px;
     font-variant-numeric: tabular-nums;
+  }
+
+  .ac-nav__item.is-active .ac-nav__count {
+    color: var(--g-blue);
+    background: rgb(98 168 234 / 14%);
   }
 
   .ac-nav__foot {
@@ -826,7 +930,10 @@
   }
 
   .ac-metric {
-    padding: 9px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px 11px;
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
     border-radius: 11px;
@@ -836,22 +943,64 @@
     }
   }
 
+  .ac-metric__head {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
   .ac-metric__label {
     font-size: 11px;
     color: var(--g-text-mute);
+    white-space: nowrap;
+  }
+
+  /* 右侧的「27 / 27」比脚注更省地方，也更容易和数字对齐比较 */
+  .ac-metric__ratio {
+    font-size: 10.5px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   .ac-metric__value {
-    margin: 2px 0;
     font-size: 21px;
     font-weight: 700;
+    line-height: 1.15;
     color: var(--g-text);
     font-variant-numeric: tabular-nums;
   }
 
-  .ac-metric__foot {
-    font-size: 10.5px;
-    color: var(--g-text-mute);
+  /* 覆盖比例条：把「覆盖 89% 账号」这种要靠读小字的信息变成可扫视的长度 */
+  .ac-metric__bar {
+    height: 3px;
+    overflow: hidden;
+    background: var(--g-track);
+    border-radius: 2px;
+  }
+
+  .ac-metric__bar i {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+
+    &.is-green {
+      background: var(--g-green);
+    }
+
+    &.is-amber {
+      background: var(--g-amber);
+    }
+
+    &.is-red {
+      background: var(--g-red);
+    }
+
+    &.is-blue {
+      background: var(--g-blue);
+    }
   }
 
   /* --------------------------- 分段控件 --------------------------- */
@@ -865,7 +1014,7 @@
   .ac-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
 
   .ac-row {
@@ -944,17 +1093,28 @@
 
   .bind-chip {
     display: inline-flex;
+    gap: 4px;
     align-items: center;
     max-width: 118px;
     padding: 0 6px;
     overflow: hidden;
     font-size: 10.5px;
+    line-height: 17px;
     color: var(--g-text-sub);
     white-space: nowrap;
     text-overflow: ellipsis;
     background: var(--g-chip-bg);
-    border: 1px solid var(--g-card-border);
     border-radius: 5px;
+
+    /* 前置小圆点：和「Lv.60」这类纯文字 chip 区分开，一眼看出这是绑定用户 */
+    &::before {
+      flex: 0 0 auto;
+      width: 4px;
+      height: 4px;
+      content: '';
+      background: var(--g-cyan);
+      border-radius: 50%;
+    }
   }
 
   .bind-more {
@@ -969,28 +1129,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .ac-tag {
-    padding: 0 7px;
-    font-size: 10.5px;
-    color: var(--g-text-sub);
-    background: var(--g-chip-bg);
-    border: 1px solid var(--g-card-border);
-    border-radius: 6px;
-
-    &.is-on {
-      color: #329C6C;
-      border-color: rgb(50 156 108 / 42%);
-    }
-
-    &.is-off {
-      color: var(--g-text-mute);
-      opacity: 0.7;
-    }
-
-    &.is-ghost {
-      opacity: 0.5;
-    }
-  }
+  /* 状态标签统一走 design/guoba-table.less 的 .g-chip（18px 高，深浅一致） */
 
   .ac-row__body {
     padding: 4px 12px 12px;
@@ -1128,7 +1267,7 @@
   .ac-uidrow__name {
     display: flex;
     gap: 8px;
-    align-items: baseline;
+    align-items: center;
     min-width: 0;
   }
 
@@ -1145,17 +1284,6 @@
     flex: 0 0 auto;
     font-size: 11.5px;
     color: var(--g-text-mute);
-  }
-
-  .ac-uidrow__lv {
-    flex: 0 0 auto;
-    padding: 0 5px;
-    font-size: 10.5px;
-    line-height: 16px;
-    color: var(--g-text-sub);
-    background: var(--g-bg);
-    border: 1px solid var(--g-card-border);
-    border-radius: 5px;
   }
 
   .ac-uidrow__meta {
@@ -1185,20 +1313,82 @@
 
   .ac-uidrow__acts {
     display: flex;
-    gap: 6px;
+    gap: 12px;
     align-items: center;
+
+    /* 文本操作之间用一条细竖线分隔，避免三个链接挤成一串 */
+    .g-link + .g-link {
+      position: relative;
+
+      &::before {
+        position: absolute;
+        top: 50%;
+        left: -6px;
+        width: 1px;
+        height: 10px;
+        content: '';
+        background: var(--g-card-border);
+        transform: translateY(-50%);
+      }
+    }
+
+    .g-link:disabled {
+      color: var(--g-text-mute);
+      cursor: default;
+      text-decoration: none;
+    }
   }
 
   .ac-uidrow__foot {
     display: flex;
     grid-column: 1 / -1;
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 6px 14px;
     align-items: center;
-    padding-top: 7px;
+    padding-top: 8px;
     font-size: 11.5px;
     color: var(--g-text-mute);
-    border-top: 1px dashed var(--g-card-border);
+    border-top: 1px solid var(--g-row-sep);
+  }
+
+  /* Cookie 掩码：键名做成灰色小标签，值用等宽字体，两者分开才不会糊成一串 */
+  .ac-ck {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .ac-ck__key {
+    flex: 0 0 auto;
+    padding: 0 5px;
+    font-size: 10px;
+    line-height: 15px;
+    color: var(--g-text-mute);
+    background: var(--g-chip-bg);
+    border-radius: 4px;
+  }
+
+  .ac-ck__val {
+    overflow: hidden;
+    font-size: 11px;
+    color: var(--g-text-sub);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ac-uidrow__time {
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ac-uidrow__multi {
+    padding: 0 5px;
+    font-size: 10.5px;
+    line-height: 15px;
+    color: var(--g-cyan);
+    background: rgb(79 168 216 / 12%);
+    border-radius: 4px;
   }
 
   @media (max-width: 1180px) {

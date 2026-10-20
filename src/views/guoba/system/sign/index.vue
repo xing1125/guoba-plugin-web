@@ -813,6 +813,7 @@
   import { signApi, wavesApi } from './api';
   import { downloadCsv } from '/@/utils/export/csv';
   import { gm } from '/@/design/gmIcons';
+  import { fmtTimeShort } from '/@/utils/localTime';
   import {
     areaGradient,
     chartBase,
@@ -1213,10 +1214,7 @@
   /* ------------------------------ 数据 ------------------------------ */
 
   function shortTime(iso?: string | null) {
-    if (!iso) {
-      return '';
-    }
-    return iso.slice(5, 16).replace('T', ' ');
+    return fmtTimeShort(iso);
   }
 
   async function loadAll() {

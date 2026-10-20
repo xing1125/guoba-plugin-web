@@ -240,6 +240,7 @@
   import GCheckbox from '../_shared/form/GCheckbox.vue';
   import GSegmented from '../_shared/form/GSegmented.vue';
   import { authApi, type AdminRole, type AdminUser, type Catalogue, type LoginLogRow } from './api';
+  import { fmtDateTime } from '/@/utils/localTime';
 
   defineOptions({ name: 'SysUsers' });
 
@@ -570,8 +571,7 @@
   }
 
   function shortTime(t?: string) {
-    if (!t) return '-';
-    return String(t).replace('T', ' ').slice(0, 19);
+    return fmtDateTime(t) || '-';
   }
 
   onMounted(async () => {

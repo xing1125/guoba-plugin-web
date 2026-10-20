@@ -156,6 +156,7 @@
   import type { BotRuntime, OverviewCards, TrendPoint } from '../system/_shared/stats';
   import { fmtNum, hexToRgba, statsApi, thousands } from '../system/_shared/stats';
   import { gm } from '/@/design/gmIcons';
+  import { fmtTimeShort } from '/@/utils/localTime';
 
   defineOptions({ name: 'Home' });
 
@@ -429,7 +430,7 @@
   }
 
   function shortTime(iso: string) {
-    return String(iso || '').replace('T', ' ').slice(5, 16);
+    return fmtTimeShort(iso);
   }
 
   /* ------------------------------ 立绘 ------------------------------ */

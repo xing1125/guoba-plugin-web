@@ -396,6 +396,15 @@ html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-magent
   text-underline-offset: 3px;
 }
 
+/* 危险动作（删除这类）：默认不红，hover 才提示风险，避免与普通操作抢注意力 */
+.g-link.is-danger {
+  color: var(--g-text-sub);
+}
+
+.g-link.is-danger:hover {
+  color: var(--g-red);
+}
+
 .g-link:focus-visible {
   outline: 2px solid var(--g-blue);
   outline-offset: 2px;

@@ -490,6 +490,7 @@
   import GFormModal from '../_shared/dialog/GFormModal.vue';
   import type { GroupDetailResult, GroupRow, GroupSummary, InvalidGroupItem, InvalidGroupsResult, TrendPoint } from '../_shared/stats';
   import { gm } from '/@/design/gmIcons';
+  import { fmtTimeShort } from '/@/utils/localTime';
   import {
     chartBase,
     daysAgo,
@@ -848,7 +849,7 @@
   );
 
   function shortTime(iso?: string | null) {
-    return String(iso || '').replace('T', ' ').slice(5, 16);
+    return fmtTimeShort(iso);
   }
 
   function toggleInv(gid: string, checked: boolean) {

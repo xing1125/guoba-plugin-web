@@ -236,6 +236,7 @@
   import GSegmented from '../_shared/form/GSegmented.vue';
   import type { GameSlice, GroupRow, OverviewCards, TrendPoint } from '../_shared/stats';
   import { gm } from '/@/design/gmIcons';
+  import { fmtTimeShort } from '/@/utils/localTime';
   import {
     activeText,
     areaGradient,
@@ -408,7 +409,7 @@
   }
 
   function shortTime(iso: string | null) {
-    return String(iso || '').replace('T', ' ').slice(5, 16);
+    return fmtTimeShort(iso);
   }
 
   function go(path: string) {
