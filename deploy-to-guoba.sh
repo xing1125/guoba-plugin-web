@@ -25,5 +25,15 @@ cp -r "$FORK_DIR/dist/." "$STATIC/"
 
 echo "✓ 已备份旧版本: $BACKUP"
 echo "✓ 部署完成 -> $STATIC"
+
+# 备份保留策略：只留最近 5 份（每份约 15MB，攒多了很占盘：实测 56 份 = 830MB）
+KEEP=5
+OLD="$(ls -d "${STATIC}".bak.* 2>/dev/null | sort | head -n -${KEEP} || true)"
+if [ -n "$OLD" ]; then
+  OLD_N="$(echo "$OLD" | wc -l)"
+  echo "$OLD" | while read -r d; do rm -rf "$d"; done
+  echo "  → 已清理 ${OLD_N} 份过期备份（保留最近 ${KEEP} 份）"
+fi
+
 echo "  → 重启锅巴后生效（发送 #锅巴登录 或重启 Bot）"
 echo "  → 回滚: mv '$STATIC' '$STATIC.failed' && mv '$BACKUP' '$STATIC'"
