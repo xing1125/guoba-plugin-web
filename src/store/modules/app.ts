@@ -5,9 +5,9 @@ import { defineStore } from 'pinia';
 import { store } from '/@/store';
 
 import { ThemeEnum } from '/@/enums/appEnum';
-import { APP_DARK_MODE_KEY_, PROJ_CFG_KEY } from '/@/enums/cacheEnum';
+import { PROJ_CFG_KEY } from '/@/enums/cacheEnum';
+import { getThemePref, resolveTheme, setThemePref } from '/@/logics/theme/preference';
 import { Persistent } from '/@/utils/cache/persistent';
-import { darkMode } from '/@/settings/designSetting';
 import { resetRouter } from '/@/router';
 import { deepMerge } from '/@/utils';
 
@@ -34,7 +34,9 @@ export const useAppStore = defineStore({
       return this.pageLoading;
     },
     getDarkMode(): 'light' | 'dark' | string {
-      return this.darkMode || localStorage.getItem(APP_DARK_MODE_KEY_) || darkMode;
+      if (this.darkMode) return this.darkMode;
+      // 没有显式状态时按偏好解析：auto 会读系统 prefers-color-scheme
+      return resolveTheme(getThemePref());
     },
 
     getBeforeMiniInfo(): BeforeMiniState {
@@ -63,9 +65,15 @@ export const useAppStore = defineStore({
       this.pageLoading = loading;
     },
 
+    /** 显式切换：记下偏好，之后不再跟随系统 */
     setDarkMode(mode: ThemeEnum): void {
       this.darkMode = mode;
-      localStorage.setItem(APP_DARK_MODE_KEY_, mode);
+      setThemePref(mode === ThemeEnum.DARK ? 'dark' : 'light');
+    },
+
+    /** 只更新生效值（跟随系统时用），不动偏好 */
+    setResolvedDarkMode(mode: ThemeEnum): void {
+      this.darkMode = mode;
     },
 
     setBeforeMiniInfo(state: BeforeMiniState): void {

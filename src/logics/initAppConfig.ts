@@ -21,6 +21,7 @@ import { primaryColor } from '../../build/config/themeConfig';
 import { Persistent } from '/@/utils/cache/persistent';
 import { deepMerge } from '/@/utils';
 import { ThemeEnum } from '/@/enums/appEnum';
+import { ensureThemePref, getThemePref, systemPrefersDark } from '/@/logics/theme/preference';
 
 /** 历史主色（浅蓝），命中即迁移到当前主色 */
 const LEGACY_THEME_COLORS = ['#6495ed', '#7180ff'];
@@ -63,6 +64,9 @@ export function initAppConfigStore() {
     appStore.setProjectConfig({ menuSetting: { collapsed: true } });
   }
 
+  // 首次进入把主题偏好落盘（新用户 auto / 老用户迁移显式选择），必须在 updateDarkTheme 之前
+  ensureThemePref();
+
   // init dark mode
   updateDarkTheme(darkMode);
   if (darkMode === ThemeEnum.DARK) {
@@ -72,12 +76,33 @@ export function initAppConfigStore() {
     headerBgColor && updateHeaderBgColor(headerBgColor);
     bgColor && updateSidebarBgColor(bgColor);
   }
+
+  // 跟随系统：系统在深浅色之间切的时候，没显式选过就跟着变（不用刷新页面）
+  watchSystemTheme(appStore);
+
   // init store
   localeStore.initLocale();
 
   setTimeout(() => {
     clearObsoleteStorage();
   }, 16);
+}
+
+/**
+ * 监听系统深浅色变化。
+ * 只在偏好为 auto（用户没显式选过）时跟随，显式选择后不打断用户。
+ */
+function watchSystemTheme(appStore: ReturnType<typeof useAppStore>) {
+  const mql = window.matchMedia?.('(prefers-color-scheme: dark)');
+  if (!mql?.addEventListener) return;
+  mql.addEventListener('change', () => {
+    if (getThemePref() !== 'auto') return;
+    const mode = systemPrefersDark() ? ThemeEnum.DARK : ThemeEnum.LIGHT;
+    appStore.setResolvedDarkMode(mode);
+    updateDarkTheme(mode);
+    updateHeaderBgColor();
+    updateSidebarBgColor();
+  });
 }
 
 /**
