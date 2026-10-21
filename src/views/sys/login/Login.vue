@@ -1,40 +1,50 @@
 <template>
   <div class="db-login">
-    <!-- 柔光底料：深浅主题各一套色场 -->
-    <div class="db-login__aurora"></div>
+    <!-- 底料：天空渐变 + 漂浮气泡（元素取自品牌参考图：水手服天蓝 / 金发暖金 / 背景气泡） -->
+    <div class="db-login__sky" aria-hidden="true">
+      <span v-for="b of BUBBLES" :key="b" class="db-login__bubble" :class="`is-${b}`" />
+    </div>
 
     <div v-if="!sessionTimeout" class="db-login__theme">
       <AppDarkModeToggle />
     </div>
 
     <div class="db-login__inner">
-      <!-- 左：品牌区（xl 以上显示） -->
+      <!-- 左：品牌区（≥1100 显示完整叙事，小屏只留锁定区） -->
       <section class="db-login__brand">
-        <!-- 品牌锁定区：图标 + 字标。这里不复用 AppLogo —— 它带标题，
-             会和下面的字标重复一遍产品名，且 32px 固定尺寸装不下 44px 图标。 -->
+        <!-- 品牌锁定区：图标 + 字标。不复用 AppLogo —— 它自带标题，会和字标重复产品名 -->
         <div class="db-login__lockup">
           <span class="db-login__mark">
             <img :src="logoUrl" alt="荧后台" />
           </span>
           <span class="db-login__wordmark">
             <strong class="db-login__name">荧后台</strong>
-            <em class="db-login__en">YINGPANEL · YUNZAI ADMIN</em>
+            <em class="db-login__en">YINGPANEL · YUNZAI ADMIN CONSOLE</em>
           </span>
         </div>
 
-        <h1 class="db-login__title">一个面板，管完整个云崽</h1>
-        <p class="db-login__desc">账号、群聊、插件与签到数据，一个面板全部管起来。用主人身份登录后即可开始。</p>
+        <h1 class="db-login__title">把云崽的每件事，<br /><span>都收进这块面板</span></h1>
+        <p class="db-login__desc">账号、群聊、插件、签到与数据健康——从一条指令到一块面板，该看的都在这里。</p>
 
         <ul class="db-login__feats">
-          <li v-for="feat of feats" :key="feat.text">
+          <li v-for="feat of feats" :key="feat.title">
             <span class="db-login__feat-icon">
-              <Icon :icon="feat.icon" :size="13" />
+              <Icon :icon="feat.icon" :size="17" />
             </span>
-            {{ feat.text }}
+            <span class="db-login__feat-body">
+              <b>{{ feat.title }}</b>
+              <em>{{ feat.text }}</em>
+            </span>
           </li>
         </ul>
 
-        <img :alt="title" :src="artUrl" class="db-login__art" />
+        <!-- 一句操作提示：比再堆一条卖点更有用，也把品牌区下部的空白填住 -->
+        <div class="db-login__tip">
+          <span class="db-login__tip-icon">
+            <Icon :icon="gm('terminal')" :size="14" />
+          </span>
+          <span>群里发送 <code>#荧后台登录</code>，主人可直接拿到一次性登录链接</span>
+        </div>
 
         <div class="db-login__foot">
           <span v-if="version">{{ version }}</span>
@@ -46,7 +56,7 @@
       <section class="db-login__panel">
         <div class="db-login__card">
           <header class="db-login__cardhead">
-            <div class="db-login__cardtitle">登录管理后台</div>
+            <div class="db-login__cardtitle">登录荧后台</div>
             <div class="db-login__cardsub">仅限机器人主人身份登录</div>
           </header>
 
@@ -55,6 +65,11 @@
           <RegisterForm />
           <MobileForm />
           <QrCodeForm />
+
+          <footer class="db-login__cardfoot">
+            <span class="db-login__spark" />
+            令牌 24 小时有效 · 退出后需重新验证主人身份
+          </footer>
         </div>
       </section>
     </div>
@@ -70,7 +85,7 @@
   import MobileForm from './MobileForm.vue';
   import QrCodeForm from './QrCodeForm.vue';
   import { useGlobSetting } from '/@/hooks/setting';
-  import artUrl from '/@/assets/images/yunzai-right.png';
+  import { gm } from '/@/design/gmIcons';
   import logoUrl from '/@/assets/images/logo.png';
 
   defineProps({
@@ -81,7 +96,6 @@
 
   const globSetting = useGlobSetting();
 
-  const title = computed(() => globSetting?.title ?? '');
   const ICPNo = computed(() => globSetting?.ICPNo ?? '');
   const version = computed(() => {
     const conf = (window as any)['__GUOBA_CONF__'] || {};
@@ -91,17 +105,25 @@
     return '';
   });
 
+  /* 三条卖点：一条能力一行，标题 + 一句说明，比原来的单行短句更好扫读 */
   const feats = [
-    { icon: 'ant-design:dashboard-outlined', text: '数据总览与趋势看板' },
-    { icon: 'ant-design:team-outlined', text: '账号 / 群聊 / UID 统一管理' },
-    { icon: 'ant-design:appstore-outlined', text: '插件配置与数据编辑' },
+    { icon: gm('dashboard'), title: '数据总览', text: '群聊、用户、签到的实时趋势' },
+    { icon: gm('users'), title: '账号与群聊', text: 'UID / CK 绑定、群权限一处管' },
+    { icon: gm('puzzle'), title: '插件与数据', text: '配置热更新、在线备份与恢复' },
   ];
+
+  /* 气泡只放 7 个：再多会盖住文字，而且动画会抢注意力 */
+  const BUBBLES = ['a', 'b', 'c', 'd', 'e', 'f', 'g'] as const;
 </script>
 
 <style lang="less">
   /* 登录页独立命名空间：与框架的 guoba-login 解耦，避免旧样式干扰 */
   @prefix-cls: ~'db-login';
-  @ns: ~'@{namespace}';
+
+  /* 品牌色（取自参考图：水手服天蓝 / 金发暖金） */
+  @sky-500: #4f8fd8;
+  @sky-300: #8ec7f3;
+  @gold-500: #e2ab4a;
 
   .@{prefix-cls} {
     position: relative;
@@ -111,24 +133,68 @@
     min-height: 100vh;
     overflow: hidden;
     background: var(--g-page-bg);
+    isolation: isolate;
   }
 
-  /* ---------------- 底料 ---------------- */
-  .@{prefix-cls}__aurora {
+  /* ---------------- 底料：天空 + 气泡 ---------------- */
+  .@{prefix-cls}__sky {
     position: absolute;
     inset: 0;
+    overflow: hidden;
     pointer-events: none;
     background:
-      radial-gradient(680px 460px at 12% 8%, rgb(98 168 234 / 26%), transparent 70%),
-      radial-gradient(620px 440px at 88% 18%, rgb(157 141 240 / 22%), transparent 70%),
-      radial-gradient(560px 420px at 70% 96%, rgb(211 188 141 / 18%), transparent 72%);
+      radial-gradient(760px 520px at 8% 6%, rgb(142 199 243 / 34%), transparent 68%),
+      radial-gradient(620px 460px at 92% 14%, rgb(226 171 74 / 16%), transparent 70%),
+      radial-gradient(680px 520px at 68% 96%, rgb(120 190 240 / 16%), transparent 72%);
   }
 
-  html[data-theme='dark'] .@{prefix-cls}__aurora {
+  html[data-theme='dark'] .@{prefix-cls}__sky {
     background:
-      radial-gradient(680px 460px at 10% 4%, rgb(23 74 110 / 50%), transparent 70%),
-      radial-gradient(620px 440px at 92% 22%, rgb(79 195 247 / 13%), transparent 70%),
-      radial-gradient(560px 420px at 72% 98%, rgb(211 188 141 / 16%), transparent 72%);
+      radial-gradient(760px 520px at 6% 2%, rgb(30 88 146 / 62%), transparent 68%),
+      radial-gradient(620px 460px at 94% 18%, rgb(120 92 40 / 34%), transparent 70%),
+      radial-gradient(680px 520px at 66% 98%, rgb(24 68 118 / 52%), transparent 72%);
+  }
+
+  .@{prefix-cls}__bubble {
+    position: absolute;
+    display: block;
+    background:
+      radial-gradient(circle at 34% 26%, rgb(255 255 255 / 62%), rgb(255 255 255 / 14%) 46%, rgb(255 255 255 / 0) 70%);
+    border: 1px solid rgb(255 255 255 / 46%);
+    border-radius: 50%;
+    box-shadow: inset -8px -10px 22px rgb(255 255 255 / 28%);
+    opacity: 0.9;
+    animation: db-bubble-float 16s ease-in-out infinite alternate;
+  }
+
+  html[data-theme='dark'] .@{prefix-cls}__bubble {
+    border-color: rgb(255 255 255 / 16%);
+    box-shadow: inset -8px -10px 22px rgb(255 255 255 / 8%);
+    opacity: 0.62;
+  }
+
+  .@{prefix-cls}__bubble.is-a { top: 10%; left: 6%; width: 132px; height: 132px; animation-duration: 19s; }
+  .@{prefix-cls}__bubble.is-b { top: 66%; left: 16%; width: 62px; height: 62px; animation-duration: 14s; animation-delay: -4s; }
+  .@{prefix-cls}__bubble.is-c { top: 6%; left: 74%; width: 96px; height: 96px; animation-duration: 21s; animation-delay: -7s; }
+  .@{prefix-cls}__bubble.is-d { top: 72%; left: 82%; width: 168px; height: 168px; animation-duration: 24s; animation-delay: -11s; }
+  .@{prefix-cls}__bubble.is-e { top: 30%; left: 48%; width: 38px; height: 38px; animation-duration: 12s; animation-delay: -2s; }
+  .@{prefix-cls}__bubble.is-f { top: 44%; left: 90%; width: 28px; height: 28px; animation-duration: 15s; animation-delay: -6s; }
+  .@{prefix-cls}__bubble.is-g { top: 88%; left: 6%; width: 34px; height: 34px; animation-duration: 17s; animation-delay: -9s; }
+
+  @keyframes db-bubble-float {
+    from {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    to {
+      transform: translate3d(6px, -22px, 0) scale(1.04);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .@{prefix-cls}__bubble {
+      animation: none;
+    }
   }
 
   .@{prefix-cls}__theme {
@@ -143,29 +209,27 @@
     position: relative;
     z-index: 2;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 24px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+    gap: 64px;
     align-items: center;
     width: 100%;
-    max-width: 1240px;
-    padding: 48px 40px;
+    max-width: 1180px;
+    padding: 56px 40px;
     margin: 0 auto;
   }
 
   /* ---------------- 品牌区 ---------------- */
   .@{prefix-cls}__brand {
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    min-height: 420px;
-    padding-right: 12px;
+    min-height: 452px;
+    padding-right: 8px;
   }
 
-  /* 品牌锁定区：44px 圆角图标 + 两行字标（中文名 / 英文副标） */
   .@{prefix-cls}__lockup {
     display: flex;
-    gap: 13px;
+    gap: 14px;
     align-items: center;
   }
 
@@ -174,11 +238,11 @@
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     overflow: hidden;
-    border-radius: 13px;
-    box-shadow: 0 8px 22px -8px rgb(47 134 196 / 62%);
+    border-radius: 15px;
+    box-shadow: 0 10px 26px -10px rgb(53 99 180 / 62%);
   }
 
   .@{prefix-cls}__mark img {
@@ -191,12 +255,12 @@
   .@{prefix-cls}__wordmark {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     min-width: 0;
   }
 
   .@{prefix-cls}__name {
-    font-size: 19px;
+    font-size: 22px;
     font-weight: 700;
     line-height: 1.1;
     color: var(--g-text);
@@ -209,71 +273,87 @@
     font-weight: 600;
     line-height: 1;
     color: var(--g-text-mute);
-    letter-spacing: 1.9px;
+    letter-spacing: 2px;
+    white-space: nowrap;
   }
 
   .@{prefix-cls}__title {
-    margin: 30px 0 0;
-    font-size: 34px;
+    margin: 34px 0 0;
+    font-size: 38px;
     font-weight: 700;
-    line-height: 1.25;
+    line-height: 1.34;
     color: var(--g-text);
-    letter-spacing: -0.5px;
+    letter-spacing: -0.8px;
+  }
+
+  .@{prefix-cls}__title span {
+    color: @sky-500;
+  }
+
+  html[data-theme='dark'] .@{prefix-cls}__title span {
+    color: @sky-300;
   }
 
   .@{prefix-cls}__desc {
-    max-width: 380px;
-    margin: 12px 0 0;
+    max-width: 420px;
+    margin: 16px 0 0;
     font-size: 13.5px;
-    line-height: 1.75;
+    line-height: 1.8;
     color: var(--g-text-sub);
   }
 
+  /* 卖点：图标块 + 标题/说明两行 */
   .@{prefix-cls}__feats {
     display: flex;
     flex-direction: column;
-    gap: 9px;
+    gap: 14px;
     padding: 0;
-    margin: 22px 0 0;
+    margin: 30px 0 0;
     list-style: none;
   }
 
   .@{prefix-cls}__feats li {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     align-items: center;
-    font-size: 12.5px;
-    color: var(--g-text-sub);
   }
 
   .@{prefix-cls}__feat-icon {
     display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    color: var(--g-blue);
-    background: rgb(98 168 234 / 14%);
-    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    color: @sky-500;
+    background: linear-gradient(160deg, rgb(142 199 243 / 30%), rgb(142 199 243 / 12%));
+    border: 1px solid rgb(142 199 243 / 38%);
+    border-radius: 11px;
   }
 
-  .@{prefix-cls}__art {
-    position: absolute;
-    right: -34px;
-    bottom: -18px;
-    width: 300px;
-    pointer-events: none;
-    user-select: none;
-    opacity: 0.95;
-    filter: drop-shadow(0 18px 36px rgb(0 0 0 / 18%));
-    /* 原图带不透明浅底，用椭圆遮罩把四角淡出，避免暗色下露出方块边界 */
-    mask-image: radial-gradient(closest-side at 50% 52%, #000 76%, transparent 100%);
+  html[data-theme='dark'] .@{prefix-cls}__feat-icon {
+    color: @sky-300;
+    background: linear-gradient(160deg, rgb(80 140 210 / 26%), rgb(80 140 210 / 8%));
+    border-color: rgb(142 199 243 / 18%);
   }
 
-  html[data-theme='dark'] .@{prefix-cls}__art {
-    opacity: 0.92;
-    filter: drop-shadow(0 18px 40px rgb(0 0 0 / 55%));
-    mask-image: radial-gradient(closest-side at 50% 52%, #000 72%, transparent 100%);
+  .@{prefix-cls}__feat-body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .@{prefix-cls}__feat-body b {
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--g-text);
+  }
+
+  .@{prefix-cls}__feat-body em {
+    font-size: 12px;
+    font-style: normal;
+    color: var(--g-text-mute);
   }
 
   .@{prefix-cls}__foot {
@@ -282,9 +362,46 @@
     gap: 12px;
     align-items: center;
     margin-top: auto;
-    padding-top: 28px;
+    padding-top: 30px;
     font-size: 11.5px;
     color: var(--g-text-mute);
+  }
+
+  /* 操作提示条 */
+  .@{prefix-cls}__tip {
+    display: inline-flex;
+    gap: 9px;
+    align-items: center;
+    padding: 9px 13px 9px 10px;
+    margin-top: 28px;
+    font-size: 12px;
+    color: var(--g-text-sub);
+    background: rgb(255 255 255 / 56%);
+    border: 1px solid var(--g-card-border);
+    border-radius: 12px;
+  }
+
+  html[data-theme='dark'] .@{prefix-cls}__tip {
+    background: rgb(255 255 255 / 4%);
+  }
+
+  .@{prefix-cls}__tip-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    color: @sky-500;
+  }
+
+  .@{prefix-cls}__tip code {
+    padding: 1px 6px;
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 11.5px;
+    color: darken(@sky-500, 10%);
+    background: rgb(142 199 243 / 22%);
+    border-radius: 5px;
   }
 
   .@{prefix-cls}__icp {
@@ -292,23 +409,34 @@
   }
 
   .@{prefix-cls}__icp:hover {
-    color: var(--g-blue);
+    color: @sky-500;
   }
 
   /* ---------------- 登录卡 ---------------- */
   .@{prefix-cls}__panel {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
   }
 
   .@{prefix-cls}__card {
+    position: relative;
     width: 100%;
     max-width: 420px;
-    padding: 26px 28px 24px;
+    padding: 28px 28px 20px;
+    overflow: hidden;
     background: var(--g-card-bg);
     border: 1px solid var(--g-card-border);
-    border-radius: 18px;
+    border-radius: 20px;
     box-shadow: var(--g-card-shadow);
+  }
+
+  /* 顶部一道天蓝→暖金的发丝线，替代原来纯色描边，给卡片一点品牌暗示 */
+  .@{prefix-cls}__card::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: linear-gradient(90deg, @sky-300, @sky-500 46%, @gold-500);
+    content: '';
   }
 
   html[data-theme='dark'] .@{prefix-cls}__card {
@@ -318,7 +446,7 @@
   }
 
   .@{prefix-cls}__cardhead {
-    margin-bottom: 18px;
+    margin-bottom: 20px;
   }
 
   .@{prefix-cls}__cardtitle {
@@ -329,9 +457,27 @@
   }
 
   .@{prefix-cls}__cardsub {
-    margin-top: 5px;
+    margin-top: 6px;
     font-size: 12px;
     color: var(--g-text-mute);
+  }
+
+  .@{prefix-cls}__cardfoot {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 16px;
+    font-size: 11px;
+    color: var(--g-text-mute);
+  }
+
+  .@{prefix-cls}__spark {
+    width: 5px;
+    height: 5px;
+    background: @gold-500;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgb(226 171 74 / 72%);
   }
 
   /* ---------------- 卡内表单（ant 组件） ---------------- */
@@ -346,7 +492,6 @@
       border-radius: 11px;
     }
 
-    /* affix 容器的内层 input 不占内边距，否则左右会多出一截 */
     .ant-input-affix-wrapper > input.ant-input {
       padding: 0;
     }
@@ -357,7 +502,6 @@
       color: var(--g-text-mute);
     }
 
-    /* 密码框里的眼睛图标让出右侧空间，避免和圆角挤在一起 */
     .ant-input-affix-wrapper .ant-input-suffix {
       margin-left: 10px;
     }
@@ -399,24 +543,71 @@
   }
 
   /* ---------------- 响应式 ---------------- */
-  @media (max-width: 1100px) {
+  @media (max-width: 1180px) {
+    .@{prefix-cls}__inner {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+      gap: 40px;
+      padding: 40px 28px;
+    }
+
+    .@{prefix-cls}__title {
+      font-size: 32px;
+    }
+  }
+
+  /* 单列：品牌区收成「锁定区」，其余叙事隐藏，让登录卡尽快进入视线 */
+  @media (max-width: 940px) {
     .@{prefix-cls}__inner {
       grid-template-columns: minmax(0, 1fr);
-      padding: 32px 20px;
+      gap: 22px;
+      align-content: center; /* 不把两行摊满整屏，否则锁定区与卡片之间会空出一大块 */
+      justify-items: center;
+      padding: 34px 20px 44px;
     }
 
     .@{prefix-cls}__brand {
+      align-items: center;
+      min-height: 0;
+      padding-right: 0;
+      text-align: center;
+    }
+
+    .@{prefix-cls}__title,
+    .@{prefix-cls}__desc,
+    .@{prefix-cls}__feats,
+    .@{prefix-cls}__tip,
+    .@{prefix-cls}__foot {
       display: none;
     }
 
     .@{prefix-cls}__panel {
       justify-content: center;
     }
+
+    .@{prefix-cls}__bubble.is-a,
+    .@{prefix-cls}__bubble.is-d {
+      opacity: 0.5;
+    }
   }
 
   @media (max-width: 480px) {
+    .@{prefix-cls}__mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+    }
+
+    .@{prefix-cls}__name {
+      font-size: 19px;
+    }
+
+    .@{prefix-cls}__en {
+      font-size: 8.5px;
+      letter-spacing: 1.5px;
+    }
+
     .@{prefix-cls}__card {
-      padding: 22px 18px 20px;
+      padding: 22px 18px 16px;
       border-radius: 16px;
     }
   }

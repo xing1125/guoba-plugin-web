@@ -21,8 +21,8 @@ import { createRequire } from 'node:module';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
-// 品牌图形源：avatar.svg（荧 头像版，v2.3.24 起）。旧的 logo.svg 星芒版留档，可 BRAND_SVG=logo.svg 回退
-const SRC_NAME = process.env.BRAND_SVG || 'avatar.svg';
+// 品牌图形源：emblem.svg（花 + 星徽标，v2.3.25 起，从参考图提炼元素）。avatar.svg 人物版与 logo.svg 星芒版留档
+const SRC_NAME = process.env.BRAND_SVG || 'emblem.svg';
 const SVG = fs.readFileSync(path.join(__dirname, SRC_NAME), 'utf8');
 const require = createRequire('D:/yunzai-yingbot/Yunzai/app/package.json');
 const puppeteer = require('puppeteer-core');
