@@ -10,6 +10,18 @@
 
 ---
 
+## [2.4.3] - 2026-10-21
+
+### 打磨：弹窗按钮规格统一 + 命名清理
+
+- **危险按钮归位**：键详情「删除键」、账号体检「清除选中」从弹窗 footer 移到 body（编辑区头右侧 / 分段控件行右侧），footer 只留「主按钮 + 关闭」，破坏性操作一律 `type="link" danger` + `GConfirmModal` 二次确认
+- **footer 按钮统一**：主按钮唯一且最右、`[次要] [主按钮]` 顺序、不写 `size="small"`（GModal 已强制 32px）、详情用「关闭」/ 表单用「取消 + 确定」不混用
+- **修正 ghost 查询按钮**：`GTablePage`「查询」ghost→primary；uids「查询」改默认（「添加 UID」保持唯一主按钮）
+- **清理 Drawer 命名遗留**：`drawer`/`invalidDrawer`/`keyDrawer`/`fileDrawer`/`backupDrawer`/`binDrawer`/`dayDrawer` 全部重命名为 modal 语义，连带清理「抽屉」注释与死代码 `detailTitle`
+- 设计规范 `docs/design-spec.md` 新增 §3.3.1「弹窗 footer 按钮规格」硬规则
+
+---
+
 ## [2.4.2] - 2026-10-21
 
 ### 控制台新增：实时对话 + 代发
