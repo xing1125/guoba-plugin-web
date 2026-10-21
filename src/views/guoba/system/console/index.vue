@@ -89,7 +89,7 @@
           </header>
 
           <div class="cs-targets__search">
-            <GInput v-model="keyword" size="sm" placeholder="搜索群号 / 名称" @press-enter="loadTargets">
+            <GInput v-model="keyword" size="sm" :placeholder="kind === 'group' ? '搜索群号 / 名称' : '搜索好友昵称 / ID'" @press-enter="loadTargets">
               <template #prefix>
                 <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5">
                   <circle cx="7" cy="7" r="4.6" />
@@ -146,28 +146,31 @@
 
         <!-- 工作区 -->
         <section class="cs-panel cs-workspace">
-          <header v-if="current" class="cs-ws__target">
-            <span class="cs-ws__avatar" :style="avatarStyle(current.id)">{{ initial(current.name) }}</span>
-            <div class="cs-ws__meta">
-              <div class="cs-ws__name">
-                {{ displayName(current) }}
-                <span class="g-chip">{{ kind === 'group' ? '群聊' : '好友' }}</span>
+          <header class="cs-ws__bar">
+            <template v-if="current">
+              <span class="cs-ws__avatar" :style="avatarStyle(current.id)">{{ initial(current.name) }}</span>
+              <div class="cs-ws__meta">
+                <div class="cs-ws__name">
+                  {{ displayName(current) }}
+                  <span class="g-chip">{{ kind === 'group' ? '群聊' : '好友' }}</span>
+                </div>
+                <div class="cs-ws__id">
+                  <span class="cs-ws__id-text">{{ current.id }}</span>
+                  <button type="button" class="cs-copy" @click="copyId">
+                    <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4">
+                      <rect x="5.2" y="5.2" width="8" height="8" rx="1.8" />
+                      <path d="M10.8 5.2V4a1.6 1.6 0 0 0-1.6-1.6H4A1.6 1.6 0 0 0 2.4 4v5.2A1.6 1.6 0 0 0 4 10.8h1.2" stroke-linecap="round" />
+                    </svg>
+                    复制
+                  </button>
+                </div>
               </div>
-              <div class="cs-ws__id">
-                <span class="cs-ws__id-text">{{ current.id }}</span>
-                <button type="button" class="cs-copy" @click="copyId">
-                  <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4">
-                    <rect x="5.2" y="5.2" width="8" height="8" rx="1.8" />
-                    <path d="M10.8 5.2V4a1.6 1.6 0 0 0-1.6-1.6H4A1.6 1.6 0 0 0 2.4 4v5.2A1.6 1.6 0 0 0 4 10.8h1.2" stroke-linecap="round" />
-                  </svg>
-                  复制
-                </button>
-              </div>
-            </div>
+            </template>
+            <span v-else class="cs-ws__nohint">未选择会话 · 实时对话无需选择</span>
             <GSegmented v-model="tab" :options="tabOpts" size="sm" label="控制台模式" class="cs-ws__tabs" @change="onTabChange" />
           </header>
 
-          <div v-else class="cs-ws__blank">
+          <div v-if="!current && tab !== 'live'" class="cs-ws__blank">
             <div class="cs-blank">
               <div class="cs-blank__art">
                 <svg viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6">
@@ -184,8 +187,13 @@
             </div>
           </div>
 
+          <!-- 实时对话（全局视图，不依赖选中会话） -->
+          <div v-if="tab === 'live'" class="cs-pane cs-pane--live">
+            <LiveStream />
+          </div>
+
           <!-- 发消息 -->
-          <div v-if="current && tab === 'send'" class="cs-pane">
+          <div v-else-if="current && tab === 'send'" class="cs-pane">
             <div class="cs-editor">
               <textarea
                 ref="sendRef"
@@ -199,11 +207,29 @@
                 <span class="cs-editor__hint">
                   <span class="cs-kbd">Ctrl</span><span class="cs-kbd">Enter</span> 发送 · 直接调用协议端，插件不会收到
                 </span>
-                <span class="cs-editor__count">{{ sendText.length }} / 4000</span>
+                <span class="cs-editor__count" :class="{ 'is-warn': sendText.length >= 3800 }">
+                  {{ sendText.length }} / 4000
+                </span>
                 <div class="cs-editor__actions">
                   <Button size="small" :disabled="!sendText" @click="sendText = ''">清空</Button>
                   <Button type="primary" :loading="sending" :disabled="!canSend" @click="doSend">发送</Button>
                 </div>
+              </div>
+            </div>
+
+            <div class="cs-sent">
+              <div class="cs-sent__head">
+                <span class="cs-sent__title">本会话最近发送</span>
+                <span class="cs-sent__meta">{{ sentToCurrent.length }} 条 · 收发记录在「最近记录」页</span>
+              </div>
+              <div class="cs-sent__body">
+                <template v-if="sentToCurrent.length">
+                  <div v-for="(s, i) in sentToCurrent" :key="s.at + String(i)" class="cs-sent__row">
+                    <span class="cs-sent__time">{{ fmtTime(s.at) }}</span>
+                    <span class="cs-sent__text" :title="s.text">{{ s.text }}</span>
+                  </div>
+                </template>
+                <p v-else class="cs-sent__empty">还没有向该会话发送过消息</p>
               </div>
             </div>
           </div>
@@ -344,6 +370,7 @@
   import GSegmented from '../_shared/form/GSegmented.vue';
   import GInput from '../_shared/form/GInput.vue';
   import GSwitch from '../_shared/form/GSwitch.vue';
+  import LiveStream from '../yingai/LiveStream.vue';
   import { fmtTimeShort } from '/@/utils/localTime';
   import { consoleApi, type ConsoleHistoryItem, type ConsoleStatus, type ConsoleTarget, type ExecResult } from './api';
 
@@ -356,6 +383,7 @@
   const tabOpts = [
     { value: 'send', label: '发消息' },
     { value: 'exec', label: '执行指令' },
+    { value: 'live', label: '实时对话' },
     { value: 'history', label: '最近记录' },
   ];
   const quickCmds = ['#状态', '#帮助', '#菜单', '#插件列表'];
@@ -375,7 +403,7 @@
     master: '',
   });
   const kind = ref<'group' | 'friend'>('group');
-  const tab = ref<'send' | 'exec' | 'history'>('send');
+  const tab = ref<'send' | 'exec' | 'live' | 'history'>('send');
   const keyword = ref('');
   const targets = ref<ConsoleTarget[]>([]);
   const current = ref<ConsoleTarget | null>(null);
@@ -397,12 +425,18 @@
   const canSend = computed(() => !!current.value && !!sendText.value.trim() && !sending.value);
   const canExec = computed(() => !!current.value && !!cmdText.value.trim() && !execing.value);
   const recentOps = computed(() => history.value.slice(0, 7));
+  /** 当前会话最近发送的消息（发消息页底部回显，action==='send' 且 id 匹配） */
+  const sentToCurrent = computed(() =>
+    history.value.filter((h) => h.action !== 'exec' && h.id === current.value?.id && h.text).slice(0, 5),
+  );
   const todayOps = computed(() => {
     const today = new Date().toDateString();
     return history.value.filter((h) => h.at && new Date(h.at).toDateString() === today).length;
   });
 
   let searchTimer: any = null;
+  /** 切会话类型清空 keyword 会触发 watch，用标志位避免同帧双重 loadTargets */
+  let skipNextSearch = false;
 
   /* ---------------- 展示工具 ---------------- */
   /** 后端部分群/好友没有昵称，会返回字符串 'null'，统一按未命名处理 */
@@ -491,6 +525,7 @@
 
   function onKindChange() {
     current.value = null;
+    skipNextSearch = true;
     keyword.value = '';
     loadTargets();
   }
@@ -503,9 +538,15 @@
     if (current.value?.id === t.id) return;
     current.value = t;
     execResult.value = null;
+    // 选中即聚焦输入框，省一步点击
+    nextTick(() => sendRef.value?.focus());
   }
 
   function onSearch() {
+    if (skipNextSearch) {
+      skipNextSearch = false;
+      return;
+    }
     clearTimeout(searchTimer);
     searchTimer = setTimeout(loadTargets, 260);
   }
@@ -932,12 +973,19 @@
     min-width: 0;
   }
 
-  .cs-ws__target {
+  .cs-ws__bar {
     display: flex;
     gap: 12px;
     align-items: center;
     padding: 12px 16px;
     border-bottom: 1px solid var(--g-card-border);
+  }
+
+  .cs-ws__nohint {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--g-text-mute);
   }
 
   .cs-ws__avatar {
@@ -1153,6 +1201,12 @@
       font-size: 11px;
       color: var(--g-text-mute);
       font-variant-numeric: tabular-nums;
+
+      /* 接近 4000 上限：琥珀警示（--g-amber 深浅主题各自有值） */
+      &.is-warn {
+        color: var(--g-amber);
+        font-weight: 600;
+      }
     }
 
     &__actions {
@@ -1172,6 +1226,78 @@
     background: var(--g-card-bg);
     border: 1px solid var(--g-card-border);
     border-radius: 4px;
+  }
+
+  /* 发消息页：本会话最近发送回显 */
+  .cs-sent {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 12px;
+
+    &__head {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--g-card-border);
+    }
+
+    &__title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--g-text-sub);
+    }
+
+    &__meta {
+      font-size: 11px;
+      color: var(--g-text-mute);
+    }
+
+    &__body {
+      max-height: 172px;
+      padding: 6px 12px;
+      overflow-y: auto;
+    }
+
+    &__row {
+      display: flex;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 12px;
+      line-height: 1.5;
+      border-bottom: 1px dashed var(--g-card-border);
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    &__time {
+      flex-shrink: 0;
+      font-family: var(--cs-mono);
+      font-size: 10.5px;
+      color: var(--g-text-mute);
+      font-variant-numeric: tabular-nums;
+    }
+
+    &__text {
+      overflow: hidden;
+      color: var(--g-text-sub);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__empty {
+      padding: 18px 8px;
+      font-size: 12px;
+      color: var(--g-text-mute);
+      text-align: center;
+    }
   }
 
   /* 指令 */
@@ -1690,7 +1816,7 @@
       display: none;
     }
 
-    .cs-ws__target {
+    .cs-ws__bar {
       flex-wrap: wrap;
       gap: 10px;
       padding: 12px;
