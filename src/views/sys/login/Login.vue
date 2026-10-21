@@ -10,53 +10,27 @@
     </div>
 
     <div class="db-login__inner">
-      <!-- 左：品牌区（>940 显示完整叙事，小屏只留锁定区） -->
+      <!-- 左：品牌区 = 锁定区 + 插画 + 版本行，不放任何营销文案 -->
       <section class="db-login__brand">
-        <div class="db-login__brandtext">
-          <!-- 品牌锁定区：图标 + 字标。不复用 AppLogo —— 它自带标题，会和字标重复产品名 -->
-          <div class="db-login__lockup">
-            <span class="db-login__mark">
-              <img :src="logoUrl" alt="荧后台" />
-            </span>
-            <span class="db-login__wordmark">
-              <strong class="db-login__name">荧后台</strong>
-              <em class="db-login__en">YINGPANEL · YUNZAI ADMIN CONSOLE</em>
-            </span>
-          </div>
-
-          <h1 class="db-login__title">把云崽的每件事，<br /><span>都收进这块面板</span></h1>
-          <p class="db-login__desc">账号、群聊、插件、签到与数据健康——<br />从一条指令，到一块面板。</p>
-
-          <ul class="db-login__feats">
-            <li v-for="feat of feats" :key="feat.title">
-              <span class="db-login__feat-icon">
-                <Icon :icon="feat.icon" :size="17" />
-              </span>
-              <span class="db-login__feat-body">
-                <b>{{ feat.title }}</b>
-                <em>{{ feat.text }}</em>
-              </span>
-            </li>
-          </ul>
-
-          <!-- 一句操作提示：比再堆一条卖点更有用，也把品牌区下部的空白填住 -->
-          <div class="db-login__tip">
-            <span class="db-login__tip-icon">
-              <Icon :icon="gm('terminal')" :size="14" />
-            </span>
-            <span>群里发送 <code>#荧后台登录</code>，主人可直接拿到一次性登录链接</span>
-          </div>
-
-          <div class="db-login__foot">
-            <span v-if="version">{{ version }}</span>
-            <a v-if="ICPNo" href="https://beian.miit.gov.cn/" target="_blank" class="db-login__icp">{{ ICPNo }}</a>
-          </div>
+        <div class="db-login__lockup">
+          <span class="db-login__mark">
+            <img :src="logoUrl" alt="荧后台" />
+          </span>
+          <span class="db-login__wordmark">
+            <strong class="db-login__name">荧后台</strong>
+            <em class="db-login__en">YINGPANEL · YUNZAI ADMIN CONSOLE</em>
+          </span>
         </div>
 
-        <!-- 右侧插画：二创图直接落地，白色底 + 气泡与水手服本身就是品牌视觉 -->
+        <!-- 插画：白底已抠成 alpha，整身站在天空底料上 -->
         <figure class="db-login__art">
           <img :src="artUrl" alt="荧 · 水手服插画" />
         </figure>
+
+        <div class="db-login__foot">
+          <span v-if="version">{{ version }}</span>
+          <a v-if="ICPNo" href="https://beian.miit.gov.cn/" target="_blank" class="db-login__icp">{{ ICPNo }}</a>
+        </div>
       </section>
 
       <!-- 右：登录卡 -->
@@ -85,14 +59,12 @@
 <script lang="ts" setup>
   import { computed } from 'vue';
   import { AppDarkModeToggle } from '/@/components/Application';
-  import Icon from '/@/components/Icon';
   import GuobaLoginForm from './GuobaLoginForm.vue';
   import ForgetPasswordForm from './ForgetPasswordForm.vue';
   import RegisterForm from './RegisterForm.vue';
   import MobileForm from './MobileForm.vue';
   import QrCodeForm from './QrCodeForm.vue';
   import { useGlobSetting } from '/@/hooks/setting';
-  import { gm } from '/@/design/gmIcons';
   import logoUrl from '/@/assets/images/logo.png';
   import artUrl from '/@/assets/images/ying-art.webp';
 
@@ -113,14 +85,7 @@
     return '';
   });
 
-  /* 三条卖点：一条能力一行，标题 + 一句说明，比原来的单行短句更好扫读 */
-  const feats = [
-    { icon: gm('dashboard'), title: '数据总览', text: '群聊、用户、签到的实时趋势' },
-    { icon: gm('users'), title: '账号与群聊', text: 'UID / CK 绑定、群权限一处管' },
-    { icon: gm('puzzle'), title: '插件与数据', text: '配置热更新、在线备份与恢复' },
-  ];
-
-  /* 气泡只放 7 个：再多会盖住文字，而且动画会抢注意力 */
+  /* 气泡只放 7 个：再多会盖住画面，而且动画会抢注意力 */
   const BUBBLES = ['a', 'b', 'c', 'd', 'e', 'f', 'g'] as const;
 </script>
 
@@ -212,50 +177,37 @@
     z-index: 5;
   }
 
-  /* ---------------- 布局 ---------------- */
+  /* ---------------- 布局：左右两栏，左边只放品牌与插画 ---------------- */
   .@{prefix-cls}__inner {
     position: relative;
-    /* 不加 z-index：一旦形成层叠上下文，插画的 mix-blend-mode 就只能跟
-     * 这个空上下文混合（背景是透明的），白底会重新显形成一块白方块。
-     * 靠 DOM 顺序（sky 在前）就已经在下层了，不需要 z-index。 */
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
-    gap: 64px;
+    gap: 72px;
     align-items: center;
     width: 100%;
-    max-width: 1320px;
+    max-width: 1040px;
     padding: 56px 40px;
     margin: 0 auto;
   }
 
-  /* ---------------- 品牌区 ---------------- */
+  /* ---------------- 品牌区：锁定区 / 插画 / 版本行，三件，无文案 ---------------- */
   .@{prefix-cls}__brand {
     display: flex;
-    gap: 30px;
-    align-items: center;
-    min-height: 452px;
-    padding-right: 8px;
-  }
-
-  /* 文字列：固定读到左侧，插画贴在右侧、靠近登录卡 */
-  .@{prefix-cls}__brandtext {
-    display: flex;
-    flex: 1 1 auto;
     flex-direction: column;
-    align-items: flex-start;
+    gap: 26px;
+    align-items: center;
+    justify-content: center;
     min-width: 0;
   }
 
-  /* ---------------- 插画（方形 · 融进背景） ----------------
-   * 图谱本身带 alpha：白底在 build/brand/gen-login-art.py 里从四边 flood fill 掉，
-   * 所以浅色/深色都不需要 blend 兜底，也没有卡片边。
-   * 方框只决定构图：cover 裁到胸口，下沿羽化，人物像从背景里浮出来。 */
+  /* ---------------- 插画（整身立绘） ----------------
+   * 白底在 build/brand/gen-login-art.py 里从四边 flood fill 抠成 alpha，
+   * 所以既没有白方块也没有卡片边，人物直接站在天空底料上。 */
   .@{prefix-cls}__art {
-    position: relative;
-    flex: 0 0 auto;
-    width: clamp(300px, 25vw, 360px);
-    aspect-ratio: 1;
+    /* 同时受视口高约束：矮屏上别把版本行顶出屏幕 */
+    width: clamp(200px, min(24vw, 40vh), 320px);
     margin: 0;
+    aspect-ratio: 520 / 927;
     pointer-events: none;
   }
 
@@ -263,14 +215,12 @@
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    object-position: 50% 4%;
-    mask-image: linear-gradient(180deg, #000 0 82%, rgb(0 0 0 / 0) 100%);
+    object-fit: contain;
   }
 
   /* 深色下白衬衫会有点刺眼，压一点亮度即可（没有白底了，不需要压很狠） */
   html[data-theme='dark'] .@{prefix-cls}__art img {
-    filter: brightness(0.86) saturate(1.04);
+    filter: brightness(0.82) saturate(1.04);
   }
 
   .@{prefix-cls}__lockup {
@@ -323,131 +273,13 @@
     white-space: nowrap;
   }
 
-  .@{prefix-cls}__title {
-    margin: 34px 0 0;
-    font-size: 38px;
-    font-weight: 700;
-    line-height: 1.34;
-    color: var(--g-text);
-    letter-spacing: -0.8px;
-  }
-
-  .@{prefix-cls}__title span {
-    color: @sky-500;
-  }
-
-  html[data-theme='dark'] .@{prefix-cls}__title span {
-    color: @sky-300;
-  }
-
-  .@{prefix-cls}__desc {
-    max-width: 420px;
-    margin: 16px 0 0;
-    font-size: 13.5px;
-    line-height: 1.8;
-    color: var(--g-text-sub);
-  }
-
-  /* 卖点：图标块 + 标题/说明两行 */
-  .@{prefix-cls}__feats {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 0;
-    margin: 30px 0 0;
-    list-style: none;
-  }
-
-  .@{prefix-cls}__feats li {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .@{prefix-cls}__feat-icon {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    color: @sky-500;
-    background: linear-gradient(160deg, rgb(142 199 243 / 30%), rgb(142 199 243 / 12%));
-    border: 1px solid rgb(142 199 243 / 38%);
-    border-radius: 11px;
-  }
-
-  html[data-theme='dark'] .@{prefix-cls}__feat-icon {
-    color: @sky-300;
-    background: linear-gradient(160deg, rgb(80 140 210 / 26%), rgb(80 140 210 / 8%));
-    border-color: rgb(142 199 243 / 18%);
-  }
-
-  .@{prefix-cls}__feat-body {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-  }
-
-  .@{prefix-cls}__feat-body b {
-    font-size: 13px;
-    font-weight: 650;
-    color: var(--g-text);
-  }
-
-  .@{prefix-cls}__feat-body em {
-    font-size: 12px;
-    font-style: normal;
-    color: var(--g-text-mute);
-  }
-
   .@{prefix-cls}__foot {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    margin-top: auto;
-    padding-top: 30px;
     font-size: 11.5px;
     color: var(--g-text-mute);
-  }
-
-  /* 操作提示条 */
-  .@{prefix-cls}__tip {
-    display: inline-flex;
-    gap: 9px;
-    align-items: center;
-    padding: 9px 13px 9px 10px;
-    margin-top: 28px;
-    font-size: 12px;
-    color: var(--g-text-sub);
-    background: rgb(255 255 255 / 56%);
-    border: 1px solid var(--g-card-border);
-    border-radius: 12px;
-  }
-
-  html[data-theme='dark'] .@{prefix-cls}__tip {
-    background: rgb(255 255 255 / 4%);
-  }
-
-  .@{prefix-cls}__tip-icon {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    color: @sky-500;
-  }
-
-  .@{prefix-cls}__tip code {
-    padding: 1px 6px;
-    font-family: ui-monospace, Consolas, monospace;
-    font-size: 11.5px;
-    color: darken(@sky-500, 10%);
-    background: rgb(142 199 243 / 22%);
-    border-radius: 5px;
   }
 
   .@{prefix-cls}__icp {
@@ -591,25 +423,12 @@
   /* ---------------- 响应式 ---------------- */
   @media (max-width: 1180px) {
     .@{prefix-cls}__inner {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
-      gap: 40px;
+      gap: 36px;
       padding: 40px 28px;
     }
-
-    .@{prefix-cls}__title {
-      font-size: 32px;
-    }
   }
 
-  /* 插画占宽较多，右侧文字少于 ~410px 时先撤掉它，文字优先。
-   * 1260 正好是容器上限，低于此值时文字列会明显变窄，宁可不放图。 */
-  @media (max-width: 1259px) {
-    .@{prefix-cls}__art {
-      display: none;
-    }
-  }
-
-  /* 单列：品牌区收成「锁定区」，其余叙事隐藏，让登录卡尽快进入视线 */
+  /* 单列：只留锁定区 + 卡片，插画与版本行收起，让登录卡尽快进入视线 */
   @media (max-width: 940px) {
     .@{prefix-cls}__inner {
       grid-template-columns: minmax(0, 1fr);
@@ -620,21 +439,10 @@
     }
 
     .@{prefix-cls}__brand {
-      flex-direction: column;
-      align-items: center;
-      min-height: 0;
-      padding-right: 0;
-      text-align: center;
+      gap: 14px;
     }
 
-    .@{prefix-cls}__brandtext {
-      align-items: center;
-    }
-
-    .@{prefix-cls}__title,
-    .@{prefix-cls}__desc,
-    .@{prefix-cls}__feats,
-    .@{prefix-cls}__tip,
+    .@{prefix-cls}__art,
     .@{prefix-cls}__foot {
       display: none;
     }
