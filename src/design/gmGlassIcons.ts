@@ -61,6 +61,7 @@ const GLASS_SPEC: Record<string, HueName> = {
 
   shield: 'rose',
   fingerprint: 'rose',
+  bell: 'rose',
 
   image: 'teal',
   'calendar-check': 'teal',
