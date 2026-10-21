@@ -76,6 +76,55 @@
         </div>
       </section>
 
+      <!-- ============================ 记忆体检 ============================ -->
+      <section class="g-card ym-health">
+        <div class="gm-panel__head">
+          <div class="gm-panel__title">
+            <i><Icon :icon="$gm('pulse')" :size="13" /></i>
+            记忆体检
+            <span class="gm-panel__extra" style="margin-left: 8px">只读扫描 · 清理需二次确认</span>
+          </div>
+          <div class="ym-health__tools">
+            <GSegmented
+              v-model="healthScope"
+              :options="healthScopeOptions"
+              size="sm"
+              label="体检范围"
+              @change="loadHealth"
+            />
+            <Button size="small" :loading="healthLoading" @click="loadHealth">重新体检</Button>
+          </div>
+        </div>
+
+        <div v-if="healthLoading && !health" class="gm-skeleton" style="height: 92px" />
+        <div v-else-if="!health" class="ym-empty">
+          <span>还没有体检数据</span>
+          <span class="ym-empty__sub">点「重新体检」扫一次荧的记忆库</span>
+        </div>
+        <div v-else class="ym-health__body">
+          <div class="ym-health__score" :class="scoreTone(health.score)">
+            <div class="ym-health__score-num">{{ health.score }}<em>分</em></div>
+            <div class="ym-health__track"><i :style="{ width: clamp01(health.score) + '%' }" /></div>
+            <div class="ym-health__meta">
+              真实群 {{ health.groups }} 个 · 共 {{ health.total }} 条记忆
+            </div>
+          </div>
+          <div class="ym-health__issues">
+            <button
+              v-for="c in issueChips"
+              :key="c.key"
+              type="button"
+              class="ym-hchip"
+              :class="c.tone"
+              @click="onIssueClick(c.key)"
+            >
+              {{ c.label }}
+              <b>{{ c.count }}</b>
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- ============================ 记忆 + 关系 两栏 ============================ -->
       <div class="ym-grid">
         <!-- 记忆库 -->
@@ -203,6 +252,110 @@
         ok-text="确认删除"
         @ok="doDelMem"
       />
+
+      <!-- ============================ 体检候选清理弹窗 ============================ -->
+      <GModal
+        v-model:visible="candModal.visible"
+        eyebrow="MEMORY HEALTH"
+        :title="`记忆体检候选（${candItems.length}）`"
+        :subtitle="health?.scope === 'group' ? `当前群 ${gid}` : '全站'"
+        :footer-hint="`共 ${candItems.length} 条候选 · 默认全不选`"
+        size="xl"
+        body-height="60vh"
+      >
+        <div class="ym-hfilter">
+          <button
+            v-for="f in CAND_FILTERS"
+            :key="f.value"
+            type="button"
+            class="ym-hfilter__item"
+            :class="{ 'is-active': candModal.filter === f.value }"
+            @click="candModal.filter = f.value"
+          >
+            {{ f.label }}
+            <em>{{ filterCount(f.value) }}</em>
+          </button>
+        </div>
+
+        <div v-if="!candItems.length" class="ym-empty">
+          <span>没有需要清理的记忆，荧的状态很健康</span>
+        </div>
+        <div v-else-if="!filteredCandidates.length" class="ym-empty">
+          <span>这个原因下没有候选记忆</span>
+        </div>
+        <div v-else class="ym-cands">
+          <div
+            v-for="c in filteredCandidates"
+            :key="candKey(c)"
+            class="ym-cand"
+            :class="{ 'is-on': isSelected(c) }"
+            @click="toggleCand(c)"
+          >
+            <div class="ym-cand__check" @click.stop>
+              <GCheckbox :model-value="isSelected(c)" @update:model-value="toggleCand(c)" />
+            </div>
+            <div class="ym-cand__main">
+              <div class="ym-cand__top">
+                <span class="ym-cand__g" :title="c.gid">{{ c.gname || c.gid }}</span>
+                <span class="ym-cand__val">重要度 {{ Math.round(c.value * 100) }}</span>
+                <span class="ym-cand__age">已 {{ Math.round(c.ageDays) }} 天</span>
+              </div>
+              <div class="ym-cand__text" :title="c.text">{{ clipText(c.text) }}</div>
+              <div class="g-chip-row">
+                <span v-for="r in c.reasons" :key="r" class="g-chip" :class="reasonTone(r)">
+                  {{ reasonText(r) }}
+                </span>
+                <span v-if="c.dupWith.length" class="g-chip">与 {{ c.dupWith.length }} 条重复</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <template #footer>
+          <span class="ym-cands__count">已选 <b>{{ candSel.length }}</b> 条</span>
+          <Button @click="candModal.visible = false">取消</Button>
+          <Button danger :disabled="!candSel.length" @click="askCleanup">清理选中</Button>
+        </template>
+      </GModal>
+
+      <!-- ============================ 测试残留文件（只读） ============================ -->
+      <GModal
+        v-model:visible="probeModal.visible"
+        eyebrow="PROBE FILES"
+        title="测试残留文件"
+        subtitle="探针 / 测试数据，需手工处理"
+        size="md"
+      >
+        <div class="ym-probe">
+          <div class="ym-probe__hint">
+            这些是探针 / 测试数据留下的文件，后台不提供清理，请到荧的记忆目录手工处理。
+          </div>
+          <div v-if="!probeFiles.length" class="ym-empty">
+            <span>没有发现残留文件</span>
+          </div>
+          <div v-else class="ym-probe__list">
+            <div v-for="p in probeFiles" :key="p.file" class="ym-probe__row">
+              <span class="ym-probe__file" :title="p.file">{{ p.file }}</span>
+              <span class="ym-probe__count">{{ p.count }} 条</span>
+            </div>
+          </div>
+        </div>
+        <template #footer>
+          <Button @click="probeModal.visible = false">关闭</Button>
+        </template>
+      </GModal>
+
+      <!-- ============================ 批量清理二次确认 ============================ -->
+      <GConfirmModal
+        v-model:visible="cleanModal.visible"
+        title="清理选中记忆"
+        :content="cleanContent"
+        hint="清理前会先整体备份；文本已被改动（漂移）的条目会被跳过。"
+        danger
+        :loading="cleanModal.loading"
+        ok-text="确认清理"
+        @ok="doCleanup"
+      />
     </div>
   </PageWrapper>
 </template>
@@ -214,17 +367,23 @@
   import { Icon } from '/@/components/Icon';
   import GModal from '../_shared/dialog/GModal.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
+  import GCheckbox from '../_shared/form/GCheckbox.vue';
   import GField from '../_shared/form/GField.vue';
   import GInput from '../_shared/form/GInput.vue';
   import GNumber from '../_shared/form/GNumber.vue';
+  import GSegmented from '../_shared/form/GSegmented.vue';
   import GSelect from '../_shared/form/GSelect.vue';
   import { fmtDateTime } from '/@/utils/localTime';
   import {
     yingMindApi,
+    type MindCandidate,
     type MindEmotion,
     type MindGroup,
+    type MindIssueReason,
     type MindMemory,
+    type MindProbeFile,
     type MindRelation,
+    type YingMindHealth,
   } from './api';
 
   defineOptions({ name: 'YingMind' });
@@ -236,6 +395,173 @@
   const milestones = ref<Record<string, any[]>>({});
   const emotion = ref<MindEmotion | null>(null);
   const loading = ref(false);
+
+  /* ------------------------------ 记忆体检 ------------------------------ */
+
+  type CandFilter = 'all' | MindIssueReason;
+
+  const health = ref<YingMindHealth | null>(null);
+  const healthLoading = ref(false);
+  const healthScope = ref<string>('all');
+
+  const healthScopeOptions = computed(() => [
+    { value: 'all', label: '全站' },
+    { value: 'group', label: '当前群', disabled: !gid.value },
+  ]);
+
+  const issueChips = computed(() => {
+    const h = health.value;
+    if (!h) return [] as Array<{ key: string; label: string; count: number; tone: string }>;
+    return [
+      { key: 'lowValue', label: '低价值', count: h.issues.lowValue, tone: 'is-amber' },
+      { key: 'stale', label: '僵尸', count: h.issues.stale, tone: 'is-rose' },
+      { key: 'unconsolidated', label: '未巩固', count: h.issues.unconsolidated, tone: 'is-blue' },
+      { key: 'duplicate', label: '跨群重复', count: h.issues.duplicate, tone: 'is-violet' },
+      { key: 'probe', label: '测试残留', count: h.issues.probe, tone: 'is-mute' },
+    ];
+  });
+
+  const probeFiles = computed<MindProbeFile[]>(() => health.value?.probeFiles ?? []);
+
+  const candItems = ref<MindCandidate[]>([]);
+  const candSel = ref<string[]>([]);
+  const candModal = reactive({ visible: false, filter: 'all' as CandFilter });
+  const probeModal = reactive({ visible: false });
+  const cleanModal = reactive({ visible: false, loading: false });
+
+  const CAND_FILTERS: Array<{ value: CandFilter; label: string }> = [
+    { value: 'all', label: '全部' },
+    { value: 'lowValue', label: '低价值' },
+    { value: 'stale', label: '僵尸' },
+    { value: 'unconsolidated', label: '未巩固' },
+    { value: 'duplicate', label: '重复' },
+  ];
+
+  const REASON_TEXT: Record<string, string> = {
+    lowValue: '低价值',
+    stale: '僵尸',
+    unconsolidated: '未巩固',
+    duplicate: '跨群重复',
+  };
+
+  const REASON_TONE: Record<string, string> = {
+    lowValue: 'is-amber',
+    stale: 'is-rose',
+    unconsolidated: 'is-blue',
+    duplicate: 'is-violet',
+  };
+
+  function reasonText(r: string) {
+    return REASON_TEXT[r] || r;
+  }
+
+  function reasonTone(r: string) {
+    return REASON_TONE[r] || 'is-mute';
+  }
+
+  const filteredCandidates = computed(() => {
+    if (candModal.filter === 'all') return candItems.value;
+    return candItems.value.filter((c) => c.reasons.includes(candModal.filter as MindIssueReason));
+  });
+
+  const selSet = computed(() => new Set(candSel.value));
+
+  const cleanContent = computed(
+    () =>
+      `将删除 ${candSel.value.length} 条记忆。\n` +
+      '删除前会先把这些记忆完整备份到 _backup_memory_cleanup_* 目录。\n' +
+      '该操作不可撤销。',
+  );
+
+  function filterCount(f: CandFilter) {
+    if (f === 'all') return candItems.value.length;
+    return candItems.value.filter((c) => c.reasons.includes(f)).length;
+  }
+
+  function candKey(c: MindCandidate) {
+    return `${c.gid}#${c.index}`;
+  }
+
+  function isSelected(c: MindCandidate) {
+    return selSet.value.has(candKey(c));
+  }
+
+  function toggleCand(c: MindCandidate) {
+    const k = candKey(c);
+    const next = new Set(candSel.value);
+    if (next.has(k)) next.delete(k);
+    else next.add(k);
+    candSel.value = Array.from(next);
+  }
+
+  function clipText(t: string) {
+    return t.length > 60 ? `${t.slice(0, 60)}…` : t;
+  }
+
+  function scoreTone(s: number) {
+    if (s >= 80) return 'is-good';
+    if (s >= 60) return 'is-mid';
+    return 'is-bad';
+  }
+
+  async function loadHealth() {
+    healthLoading.value = true;
+    try {
+      health.value = await yingMindApi.health({ gid: healthScope.value === 'group' ? gid.value : '' });
+    } catch {
+      /* 体检失败不影响主面板 */
+    } finally {
+      healthLoading.value = false;
+    }
+  }
+
+  function onIssueClick(key: string) {
+    if (key === 'probe') {
+      probeModal.visible = true;
+      return;
+    }
+    openCandidates(key as MindIssueReason);
+  }
+
+  /** 打开候选弹窗；默认全不选（危险操作不预选） */
+  function openCandidates(reason: CandFilter = 'all') {
+    candItems.value = health.value?.candidates ?? [];
+    candSel.value = [];
+    candModal.filter = reason;
+    candModal.visible = true;
+  }
+
+  function askCleanup() {
+    if (!candSel.value.length) {
+      message.warning('请先勾选要清理的记忆');
+      return;
+    }
+    cleanModal.visible = true;
+  }
+
+  async function doCleanup() {
+    // 按候选列表顺序收集，oldText 必须是原文（后端做漂移校验）
+    const keys = candItems.value.filter(isSelected).map((c) => ({ gid: c.gid, index: c.index, oldText: c.text }));
+    if (!keys.length) {
+      message.warning('没有选中任何记忆');
+      cleanModal.visible = false;
+      return;
+    }
+    cleanModal.loading = true;
+    try {
+      const r = await yingMindApi.cleanup({ confirm: true, keys });
+      message.success(`已清理 ${r.removed} 条（跳过 ${r.skipped} 条），备份于 ${r.backupDir}`, 6);
+      cleanModal.visible = false;
+      candModal.visible = false;
+      candSel.value = [];
+      candItems.value = [];
+      await Promise.all([loadHealth(), loadDetail()]);
+    } catch (e: any) {
+      message.error(e?.message || '清理失败');
+    } finally {
+      cleanModal.loading = false;
+    }
+  }
 
   const groupOptions = computed(() =>
     groups.value.map((g) => ({
@@ -334,6 +660,7 @@
   async function onGroupChange(v: any) {
     gid.value = String(v ?? '');
     await loadDetail();
+    void loadHealth();
   }
 
   async function loadAll() {
@@ -341,6 +668,7 @@
     try {
       await loadGroups();
       if (gid.value) await loadDetail();
+      void loadHealth();
     } finally {
       loading.value = false;
     }
@@ -418,10 +746,374 @@
     }
   }
 
-  onMounted(loadGroups);
+  onMounted(async () => {
+    await loadGroups();
+    // 体检不阻塞主数据：主面板渲染后再扫
+    void loadHealth();
+  });
 </script>
 
 <style scoped lang="less">
+  @media (max-width: 768px) {
+    .ym-health .gm-panel__head {
+      flex-wrap: wrap;
+    }
+
+    .ym-health .gm-panel__extra {
+      display: none;
+    }
+
+    .ym-health__tools {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .ym-health__body {
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .ym-health__score {
+      flex: 0 0 auto;
+    }
+
+    .ym-health__issues {
+      justify-content: flex-start;
+    }
+  }
+
+  /* ------------------------------ 记忆体检 ------------------------------ */
+
+  .ym-health {
+    margin-bottom: 14px;
+  }
+
+  .ym-health__tools {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .ym-health__body {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .ym-health__score {
+    flex: 0 0 220px;
+    min-width: 0;
+  }
+
+  .ym-health__score-num {
+    font-family: var(--cs-mono, monospace);
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--g-text);
+    font-variant-numeric: tabular-nums;
+
+    em {
+      margin-left: 3px;
+      font-size: 11px;
+      font-style: normal;
+      font-weight: 500;
+      color: var(--g-text-mute);
+    }
+  }
+
+  .ym-health__track {
+    height: 8px;
+    margin-top: 9px;
+    overflow: hidden;
+    background: var(--g-chip-bg);
+    border-radius: 4px;
+
+    i {
+      display: block;
+      height: 100%;
+      background: var(--g-text-mute);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+  }
+
+  .ym-health__score.is-good .ym-health__track i {
+    background: linear-gradient(90deg, var(--g-green), var(--g-cyan));
+  }
+
+  .ym-health__score.is-mid .ym-health__track i {
+    background: linear-gradient(90deg, var(--g-amber), var(--g-gold));
+  }
+
+  .ym-health__score.is-bad .ym-health__track i {
+    background: linear-gradient(90deg, var(--g-rose), var(--g-red));
+  }
+
+  .ym-health__meta {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ym-health__issues {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+
+  .ym-hchip {
+    display: inline-flex;
+    gap: 7px;
+    align-items: center;
+    height: 30px;
+    padding: 0 12px;
+    font-size: 12px;
+    color: var(--g-text-sub);
+    cursor: pointer;
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 8px;
+    transition: background 0.16s ease, border-color 0.16s ease;
+
+    b {
+      font-family: var(--cs-mono, monospace);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--g-text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    &:hover {
+      background: var(--g-hover);
+      border-color: var(--g-card-border);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--g-blue);
+      outline-offset: 1px;
+    }
+
+    &.is-amber b {
+      color: var(--g-amber);
+    }
+
+    &.is-rose b {
+      color: var(--g-rose);
+    }
+
+    &.is-blue b {
+      color: var(--g-blue);
+    }
+
+    &.is-violet b {
+      color: var(--g-violet);
+    }
+
+    &.is-mute b {
+      color: var(--g-text-mute);
+    }
+  }
+
+  /* ------------------------------ 候选筛选 / 列表 ------------------------------ */
+
+  .ym-hfilter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-bottom: 12px;
+  }
+
+  .ym-hfilter__item {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+    height: 26px;
+    padding: 0 10px;
+    font-size: 11.5px;
+    color: var(--g-text-sub);
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid var(--g-card-border);
+    border-radius: 7px;
+    transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+
+    em {
+      font-style: normal;
+      font-size: 11px;
+      color: var(--g-text-mute);
+      font-variant-numeric: tabular-nums;
+    }
+
+    &:hover {
+      background: var(--g-hover);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--g-blue);
+      outline-offset: 1px;
+    }
+
+    &.is-active {
+      font-weight: 600;
+      color: var(--g-blue);
+      background: var(--g-hover);
+      border-color: var(--g-blue);
+
+      em {
+        color: var(--g-blue);
+      }
+    }
+  }
+
+  .ym-cands {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ym-cand {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 6px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--g-row-sep);
+    transition: background 0.14s ease;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover,
+    &.is-on {
+      background: var(--g-hover);
+    }
+  }
+
+  .ym-cand__check {
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+
+  .ym-cand__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ym-cand__top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: baseline;
+  }
+
+  .ym-cand__g {
+    max-width: 280px;
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--g-text);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ym-cand__val,
+  .ym-cand__age {
+    font-family: var(--cs-mono, monospace);
+    font-size: 10.5px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .ym-cand__text {
+    margin: 4px 0 6px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--g-text-sub);
+    word-break: break-word;
+  }
+
+  /* 原因 chip：全局 .g-chip 只有 signed / unbound / failed / warn 四档，这里补上体检语义色 */
+  .ym-cand .g-chip {
+    &.is-amber {
+      color: var(--g-amber);
+    }
+
+    &.is-rose {
+      color: var(--g-rose);
+    }
+
+    &.is-blue {
+      color: var(--g-blue);
+    }
+
+    &.is-violet {
+      color: var(--g-violet);
+    }
+  }
+
+  .ym-cands__count {
+    margin-right: auto;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+
+    b {
+      color: var(--g-text);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  /* ------------------------------ 测试残留文件 ------------------------------ */
+
+  .ym-probe__hint {
+    margin-bottom: 12px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--g-text-mute);
+  }
+
+  .ym-probe__list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ym-probe__row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 2px;
+    border-bottom: 1px solid var(--g-row-sep);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .ym-probe__file {
+    overflow: hidden;
+    font-family: var(--cs-mono, monospace);
+    font-size: 11.5px;
+    color: var(--g-text-sub);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .ym-probe__count {
+    flex-shrink: 0;
+    font-family: var(--cs-mono, monospace);
+    font-size: 11px;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
   .ym-emotion {
     display: flex;
     gap: 16px;

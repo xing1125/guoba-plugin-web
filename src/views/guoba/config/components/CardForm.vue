@@ -8,6 +8,11 @@
       </div>
       <div class="db-card__meta">
         <span v-if="fieldCount > 0" class="db-card__cnt">{{ fieldCount }} 项</span>
+        <a-tooltip title="历史版本 / 对比 / 导出">
+          <span class="db-card__act" @click.stop="onOpenVersion">
+            <Icon :icon="$gm('clock')" :size="13" />
+          </span>
+        </a-tooltip>
         <a-tooltip title="重新读取">
           <span class="db-card__act" @click.stop="() => emit('redo', form)">
             <Icon :icon="$gm('redo')" :size="13" />
@@ -38,6 +43,15 @@
         </footer>
       </a-spin>
     </div>
+
+    <!-- 历史版本 / 对比 / 导出导入：首次点击才挂载，未用过的配置块不产生弹窗 DOM -->
+    <ConfigVersionModal
+      v-if="versionMounted"
+      v-model:visible="versionVisible"
+      :config-key="configKey"
+      :card-title="cardTitle"
+      @changed="onVersionChanged"
+    />
   </section>
 </template>
 
@@ -50,10 +64,11 @@
   import Icon from '/@/components/Icon';
   import { useDesign } from '/@/hooks/web/useDesign';
   import { usePrompt } from '/@/components/Guoba';
+  import ConfigVersionModal from './ConfigVersionModal.vue';
 
   export default defineComponent({
     name: 'CardForm',
-    components: { BasicForm, Icon },
+    components: { BasicForm, Icon, ConfigVersionModal },
     props: {
       card: propTypes.object.isRequired.type as PropType<IConfigCard>,
       form: propTypes.object.isRequired.type as PropType<FormType>,
@@ -82,6 +97,9 @@
       );
 
       const cardTitle = computed(() => decodeTitle(props.card!, props.form!));
+
+      // 配置块 key（历史版本接口用）
+      const configKey = computed(() => props.card?.key ?? '');
 
       // 配置项数量（软分组的标记字段不计入）
       const fieldCount = computed(() => {
@@ -127,6 +145,20 @@
         emit('submit', props.form);
       }
 
+      // 历史版本弹窗
+      const versionVisible = ref(false);
+      const versionMounted = ref(false);
+
+      function onOpenVersion() {
+        versionMounted.value = true;
+        versionVisible.value = true;
+      }
+
+      // 恢复 / 导入后让父级重新读一遍当前配置块
+      function onVersionChanged() {
+        emit('redo', props.form);
+      }
+
       provide('doFormSubmit', onSubmit);
 
       return {
@@ -134,14 +166,19 @@
         prefixCls,
         folded,
         cardTitle,
+        configKey,
         fieldCount,
         addBtnText,
         footHint,
+        versionVisible,
+        versionMounted,
 
         onClickTitle,
         onSubmit,
         onAddCard,
         onRemoveCard,
+        onOpenVersion,
+        onVersionChanged,
       };
     },
   });
