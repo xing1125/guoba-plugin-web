@@ -10,46 +10,53 @@
     </div>
 
     <div class="db-login__inner">
-      <!-- 左：品牌区（≥1100 显示完整叙事，小屏只留锁定区） -->
+      <!-- 左：品牌区（>940 显示完整叙事，小屏只留锁定区） -->
       <section class="db-login__brand">
-        <!-- 品牌锁定区：图标 + 字标。不复用 AppLogo —— 它自带标题，会和字标重复产品名 -->
-        <div class="db-login__lockup">
-          <span class="db-login__mark">
-            <img :src="logoUrl" alt="荧后台" />
-          </span>
-          <span class="db-login__wordmark">
-            <strong class="db-login__name">荧后台</strong>
-            <em class="db-login__en">YINGPANEL · YUNZAI ADMIN CONSOLE</em>
-          </span>
-        </div>
-
-        <h1 class="db-login__title">把云崽的每件事，<br /><span>都收进这块面板</span></h1>
-        <p class="db-login__desc">账号、群聊、插件、签到与数据健康——从一条指令到一块面板，该看的都在这里。</p>
-
-        <ul class="db-login__feats">
-          <li v-for="feat of feats" :key="feat.title">
-            <span class="db-login__feat-icon">
-              <Icon :icon="feat.icon" :size="17" />
+        <div class="db-login__brandtext">
+          <!-- 品牌锁定区：图标 + 字标。不复用 AppLogo —— 它自带标题，会和字标重复产品名 -->
+          <div class="db-login__lockup">
+            <span class="db-login__mark">
+              <img :src="logoUrl" alt="荧后台" />
             </span>
-            <span class="db-login__feat-body">
-              <b>{{ feat.title }}</b>
-              <em>{{ feat.text }}</em>
+            <span class="db-login__wordmark">
+              <strong class="db-login__name">荧后台</strong>
+              <em class="db-login__en">YINGPANEL · YUNZAI ADMIN CONSOLE</em>
             </span>
-          </li>
-        </ul>
+          </div>
 
-        <!-- 一句操作提示：比再堆一条卖点更有用，也把品牌区下部的空白填住 -->
-        <div class="db-login__tip">
-          <span class="db-login__tip-icon">
-            <Icon :icon="gm('terminal')" :size="14" />
-          </span>
-          <span>群里发送 <code>#荧后台登录</code>，主人可直接拿到一次性登录链接</span>
+          <h1 class="db-login__title">把云崽的每件事，<br /><span>都收进这块面板</span></h1>
+          <p class="db-login__desc">账号、群聊、插件、签到与数据健康——<br />从一条指令，到一块面板。</p>
+
+          <ul class="db-login__feats">
+            <li v-for="feat of feats" :key="feat.title">
+              <span class="db-login__feat-icon">
+                <Icon :icon="feat.icon" :size="17" />
+              </span>
+              <span class="db-login__feat-body">
+                <b>{{ feat.title }}</b>
+                <em>{{ feat.text }}</em>
+              </span>
+            </li>
+          </ul>
+
+          <!-- 一句操作提示：比再堆一条卖点更有用，也把品牌区下部的空白填住 -->
+          <div class="db-login__tip">
+            <span class="db-login__tip-icon">
+              <Icon :icon="gm('terminal')" :size="14" />
+            </span>
+            <span>群里发送 <code>#荧后台登录</code>，主人可直接拿到一次性登录链接</span>
+          </div>
+
+          <div class="db-login__foot">
+            <span v-if="version">{{ version }}</span>
+            <a v-if="ICPNo" href="https://beian.miit.gov.cn/" target="_blank" class="db-login__icp">{{ ICPNo }}</a>
+          </div>
         </div>
 
-        <div class="db-login__foot">
-          <span v-if="version">{{ version }}</span>
-          <a v-if="ICPNo" href="https://beian.miit.gov.cn/" target="_blank" class="db-login__icp">{{ ICPNo }}</a>
-        </div>
+        <!-- 右侧插画：二创图直接落地，白色底 + 气泡与水手服本身就是品牌视觉 -->
+        <figure class="db-login__art">
+          <img :src="artUrl" alt="荧 · 水手服插画" />
+        </figure>
       </section>
 
       <!-- 右：登录卡 -->
@@ -87,6 +94,7 @@
   import { useGlobSetting } from '/@/hooks/setting';
   import { gm } from '/@/design/gmIcons';
   import logoUrl from '/@/assets/images/logo.png';
+  import artUrl from '/@/assets/images/ying-art.webp';
 
   defineProps({
     sessionTimeout: {
@@ -213,7 +221,7 @@
     gap: 64px;
     align-items: center;
     width: 100%;
-    max-width: 1180px;
+    max-width: 1260px;
     padding: 56px 40px;
     margin: 0 auto;
   }
@@ -221,10 +229,78 @@
   /* ---------------- 品牌区 ---------------- */
   .@{prefix-cls}__brand {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    gap: 30px;
+    align-items: center;
     min-height: 452px;
     padding-right: 8px;
+  }
+
+  /* 文字列：固定读到左侧，插画贴在右侧、靠近登录卡 */
+  .@{prefix-cls}__brandtext {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  /* ---------------- 插画（竖版卡片） ----------------
+   * 直接用二创原图：白底 + 气泡 + 水手服本身就是这套品牌视觉，
+   * 不再手绘。图由 build/brand/gen-login-art.py 从截图裁黑边后导出。 */
+  .@{prefix-cls}__art {
+    position: relative;
+    flex: 0 0 auto;
+    width: clamp(200px, 19vw, 250px);
+    aspect-ratio: 520 / 927;
+    margin: 0;
+    border-radius: 22px;
+    box-shadow: 0 30px 70px -34px rgb(53 99 180 / 58%);
+  }
+
+  .@{prefix-cls}__art img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+  }
+
+  /* 身后一层天蓝柔光，避免白底卡片像"贴"上去 */
+  .@{prefix-cls}__art::before {
+    position: absolute;
+    inset: -12% -16% -8%;
+    z-index: -1;
+    background:
+      radial-gradient(62% 54% at 50% 40%, rgb(142 199 243 / 44%), transparent 72%),
+      radial-gradient(52% 40% at 50% 96%, rgb(226 171 74 / 22%), transparent 76%);
+    content: '';
+    filter: blur(14px);
+  }
+
+  /* 深色下才需要底部收暗；浅色页面本身是白的，再叠一层反而把裙摆洗白。
+   * 内描边也放这里 —— 图铺满 figure，figure 自身的 inset 阴影会被盖住。 */
+  .@{prefix-cls}__art::after {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    content: '';
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 66%);
+  }
+
+  html[data-theme='dark'] .@{prefix-cls}__art {
+    box-shadow: 0 34px 80px -30px rgb(0 0 0 / 90%);
+  }
+
+  /* 白底原图在深色下刺眼，压一点亮度即可 —— 压太狠会发灰发脏，
+   * 深色底 + 一张亮色挂画本来就是好看的对比。 */
+  html[data-theme='dark'] .@{prefix-cls}__art img {
+    filter: brightness(0.88) saturate(1.02);
+  }
+
+  html[data-theme='dark'] .@{prefix-cls}__art::after {
+    background: linear-gradient(180deg, rgb(0 0 0 / 0) 76%, rgb(6 14 26 / 26%));
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%);
   }
 
   .@{prefix-cls}__lockup {
@@ -555,6 +631,14 @@
     }
   }
 
+  /* 插画占宽较多，右侧文字少于 ~410px 时先撤掉它，文字优先。
+   * 1260 正好是容器上限，低于此值时文字列会明显变窄，宁可不放图。 */
+  @media (max-width: 1259px) {
+    .@{prefix-cls}__art {
+      display: none;
+    }
+  }
+
   /* 单列：品牌区收成「锁定区」，其余叙事隐藏，让登录卡尽快进入视线 */
   @media (max-width: 940px) {
     .@{prefix-cls}__inner {
@@ -566,10 +650,15 @@
     }
 
     .@{prefix-cls}__brand {
+      flex-direction: column;
       align-items: center;
       min-height: 0;
       padding-right: 0;
       text-align: center;
+    }
+
+    .@{prefix-cls}__brandtext {
+      align-items: center;
     }
 
     .@{prefix-cls}__title,

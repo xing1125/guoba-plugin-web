@@ -23,6 +23,24 @@
     </section>
 
     <div v-show="activeKey === 'about'" key="about" class="db-about">
+      <section class="g-card db-about__brand">
+        <figure class="db-about__brandart">
+          <img :src="artUrl" alt="荧 · 二创插画" />
+        </figure>
+        <div class="db-about__brandbody">
+          <div class="db-about__brandtitle">视觉与品牌</div>
+          <p>
+            整套视觉取自云崽的拟人形象<b>荧</b>：水手服的天蓝
+            <code>#4f8fd8</code>、发色与星星的暖金 <code>#e2ab4a</code>，以及画面里漂浮的气泡。侧栏与导航用自绘的毛玻璃方块图标（<code>gmg</code> 图标集），按钮、表格操作用跟随文字色的线性图标（<code>gm</code> 图标集）。
+          </p>
+          <p class="db-about__brandnote">插画为二创作品，仅作本面板的装饰使用，角色版权归 miHoYo 所有。</p>
+          <div class="db-about__swatches">
+            <span class="is-sky"><i /><em>天蓝</em>#4f8fd8</span>
+            <span class="is-gold"><i /><em>暖金</em>#e2ab4a</span>
+            <span class="is-mist"><i /><em>气泡白</em>#f7fbff</span>
+          </div>
+        </div>
+      </section>
       <section class="g-card db-about__block">
         <Description @register="infoRegister" />
       </section>
@@ -50,6 +68,7 @@
   import GSegmented from '../system/_shared/form/GSegmented.vue';
 
   import { pkg, lastBuildTime } from '/@/utils/appInfo';
+  import artUrl from '/@/assets/images/ying-art.webp';
 
   // noinspection JSUnusedGlobalSymbols
   const _components = { PageWrapper, Description, LoadGitee };
@@ -152,6 +171,153 @@
 
   .db-hero__desc a {
     color: var(--g-blue);
+  }
+
+  /* -------- 品牌卡：插画 + 视觉说明 -------- */
+  .db-about__brand {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .db-about__brandart {
+    position: relative;
+    flex: 0 0 auto;
+    width: 132px;
+    margin: 0;
+    overflow: hidden;
+    aspect-ratio: 520 / 927;
+    border-radius: 14px;
+    box-shadow: 0 14px 32px -16px rgb(53 99 180 / 58%);
+  }
+
+  .db-about__brandart img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 内描边画在图片之上，否则会被 img 铺满盖掉 */
+  .db-about__brandart::after {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    content: '';
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 55%);
+  }
+
+  html[data-theme='dark'] .db-about__brandart img {
+    filter: brightness(0.88) saturate(1.02);
+  }
+
+  .db-about__brandbody {
+    min-width: 0;
+  }
+
+  .db-about__brandtitle {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--g-text);
+    letter-spacing: 0.2px;
+  }
+
+  .db-about__brandtitle::before {
+    width: 3px;
+    height: 14px;
+    content: '';
+    background: linear-gradient(180deg, var(--g-gold), var(--g-blue));
+    border-radius: 2px;
+  }
+
+  .db-about__brandbody p {
+    max-width: 720px;
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    line-height: 1.9;
+    color: var(--g-text-sub);
+  }
+
+  .db-about__brandbody b {
+    font-weight: 650;
+    color: var(--g-text);
+  }
+
+  .db-about__brandbody code {
+    padding: 1px 5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: var(--g-blue);
+    background: rgb(98 168 234 / 12%);
+    border-radius: 5px;
+  }
+
+  .db-about__brandnote {
+    font-size: 11.5px !important;
+    color: var(--g-text-mute) !important;
+  }
+
+  /* 品牌色卡：把主色写进页面本身，比只写 hex 更有说服力 */
+  .db-about__swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .db-about__swatches span {
+    display: inline-flex;
+    gap: 7px;
+    align-items: center;
+    padding: 4px 10px 4px 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--g-text-mute);
+    background: var(--g-card-bg-soft);
+    border: 1px solid var(--g-card-border);
+    border-radius: 20px;
+  }
+
+  .db-about__swatches em {
+    font-family: inherit;
+    font-style: normal;
+    color: var(--g-text-sub);
+  }
+
+  .db-about__swatches i {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%);
+  }
+
+  .db-about__swatches .is-sky i {
+    background: linear-gradient(160deg, #8ec7f3, #4f8fd8);
+  }
+
+  .db-about__swatches .is-gold i {
+    background: linear-gradient(160deg, #f0c877, #e2ab4a);
+  }
+
+  .db-about__swatches .is-mist i {
+    background: linear-gradient(160deg, #ffffff, #eef5ff);
+  }
+
+  @media (max-width: 640px) {
+    .db-about__brand {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    /* 竖排时靠左会留一大块空，直接居中当封面图更自然 */
+    .db-about__brandart {
+      align-self: center;
+      width: 108px;
+    }
   }
 
   /* 每块「项目信息 / 依赖」都是一张 g-card，内部表格不再自带外框与阴影 */
