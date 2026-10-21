@@ -302,10 +302,10 @@
 
     <!-- 用户详情弹窗（统一居中弹窗，规范见 docs/design-spec.md） -->
     <GModal
-      v-model:visible="drawer.visible"
+      v-model:visible="detailModal.visible"
       eyebrow="USER PROFILE"
       title="用户详情"
-      :subtitle="drawer.uid"
+      :subtitle="detailModal.uid"
       size="xl"
       body-height="64vh"
     >
@@ -313,12 +313,12 @@
         <aside class="dm__side">
           <div class="dm-panel">
             <div class="dm-user">
-              <span class="dm-user__avatar" :style="avatarStyle(drawer.uid || '')">
-                {{ drawerName ? drawerName.slice(0, 1) : '?' }}
+              <span class="dm-user__avatar" :style="avatarStyle(detailModal.uid || '')">
+                {{ detailName ? detailName.slice(0, 1) : '?' }}
               </span>
               <div class="dm-user__body">
-                <div class="dm-user__name" :title="drawerName">{{ drawerName || '未命名用户' }}</div>
-                <div class="dm-user__id" :title="drawer.uid">{{ drawer.uid }}</div>
+                <div class="dm-user__name" :title="detailName">{{ detailName || '未命名用户' }}</div>
+                <div class="dm-user__id" :title="detailModal.uid">{{ detailModal.uid }}</div>
               </div>
             </div>
 
@@ -356,7 +356,7 @@
       </div>
 
       <template #footer>
-        <Button @click="drawer.visible = false">关闭</Button>
+        <Button @click="detailModal.visible = false">关闭</Button>
       </template>
     </GModal>
   </PageWrapper>
@@ -755,17 +755,15 @@
 
   /* ------------------------------ 详情 ------------------------------ */
 
-  const drawer = reactive<{ visible: boolean; uid: string }>({ visible: false, uid: '' });
+  const detailModal = reactive<{ visible: boolean; uid: string }>({ visible: false, uid: '' });
   const detail = ref<UserDetailResult | null>(null);
   const detailRef = ref<HTMLDivElement | null>(null);
   const detailChart = useECharts(detailRef);
   const monthRef = ref<HTMLDivElement | null>(null);
   const monthChart = useECharts(monthRef);
 
-  const drawerTitle = computed(() => '用户详情');
-
   /** 当前弹窗用户的昵称（取自列表行，详情接口不返回昵称） */
-  const drawerName = computed(() => list.value.find((r) => r.uid === drawer.uid)?.name || '');
+  const detailName = computed(() => list.value.find((r) => r.uid === detailModal.uid)?.name || '');
 
   const detailStats = computed(() => {
     const d = detail.value;
@@ -781,9 +779,9 @@
   });
 
   async function openDetail(record: UserRow) {
-    drawer.uid = record.uid;
+    detailModal.uid = record.uid;
     detail.value = { ...record, available: true, daily: [], monthly: [] } as UserDetailResult;
-    drawer.visible = true;
+    detailModal.visible = true;
     try {
       const res = await statsApi.getUserDetail(record.uid);
       if (res?.available) detail.value = res;
@@ -861,7 +859,7 @@
   watch(isDark, () =>
     nextTick(() => {
       renderTrend();
-      if (drawer.visible) renderDetail();
+      if (detailModal.visible) renderDetail();
     }),
   );
 

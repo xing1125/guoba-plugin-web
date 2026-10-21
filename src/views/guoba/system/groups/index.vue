@@ -68,7 +68,7 @@
             <Button class="icon-btn" :loading="loading" title="刷新" @click="loadAll">
               <Icon :icon="$gm('refresh')" :size="14" />
             </Button>
-            <Button :loading="invalidDrawer.loading" @click="openInvalid">
+            <Button :loading="invalidModal.loading" @click="openInvalid">
               <Icon :icon="$gm('close')" :size="13" />
               无效群检测
             </Button>
@@ -213,8 +213,8 @@
       </div>
     </div>
 
-    <!-- 群详情抽屉 -->
-    <GModal v-model:visible="drawer.visible" eyebrow="GROUP DETAIL" title="群详情" :subtitle="drawerTitle" size="lg" body-height="60vh">
+    <!-- 群详情弹窗 -->
+    <GModal v-model:visible="detailModal.visible" eyebrow="GROUP DETAIL" title="群详情" :subtitle="detailTitle" size="lg" body-height="60vh">
       <template v-if="detail">
         <div class="dm-stats dm-stats--panel">
           <div v-for="s in detailStats" :key="s.label" class="dm-stat">
@@ -333,27 +333,27 @@
         </div>
       </template>
       <template #footer>
-        <Button @click="drawer.visible = false">关闭</Button>
+        <Button @click="detailModal.visible = false">关闭</Button>
       </template>
     </GModal>
 
-    <!-- 无效群检测抽屉（标准 antd 风格） -->
-    <GModal v-model:visible="invalidDrawer.visible" eyebrow="GROUP HEALTH" title="无效群检测" subtitle="已退群 / 零活跃 / 低活跃群汇总" size="lg" body-height="62vh">
-      <template v-if="invalidDrawer.data">
+    <!-- 无效群检测弹窗 -->
+    <GModal v-model:visible="invalidModal.visible" eyebrow="GROUP HEALTH" title="无效群检测" subtitle="已退群 / 零活跃 / 低活跃群汇总" size="lg" body-height="62vh">
+      <template v-if="invalidModal.data">
         <p class="inv-line">
-          共跟踪 <b>{{ invalidDrawer.data.trackedCount }}</b> 个群，Bot 当前在群
-          <b>{{ invalidDrawer.data.botGroupCount }}</b> 个；已退群
-          <b class="inv-num--warn">{{ invalidDrawer.data.left.length }}</b>、零活跃
-          <b class="inv-num--warn">{{ invalidDrawer.data.idle.length }}</b>、低活跃
-          <b>{{ invalidDrawer.data.low.length }}</b>
-          <span class="inv-line__time">检测于 {{ shortTime(invalidDrawer.data.updatedAt) }}</span>
+          共跟踪 <b>{{ invalidModal.data.trackedCount }}</b> 个群，Bot 当前在群
+          <b>{{ invalidModal.data.botGroupCount }}</b> 个；已退群
+          <b class="inv-num--warn">{{ invalidModal.data.left.length }}</b>、零活跃
+          <b class="inv-num--warn">{{ invalidModal.data.idle.length }}</b>、低活跃
+          <b>{{ invalidModal.data.low.length }}</b>
+          <span class="inv-line__time">检测于 {{ shortTime(invalidModal.data.updatedAt) }}</span>
         </p>
 
-        <Tabs v-model:activeKey="invalidDrawer.tab" size="small" class="inv-tabs">
+        <Tabs v-model:activeKey="invalidModal.tab" size="small" class="inv-tabs">
           <TabPane
             v-for="t in invTabs"
             :key="t.key"
-            :tab="`${t.label} (${(invalidDrawer.data[t.key] || []).length})`"
+            :tab="`${t.label} (${(invalidModal.data[t.key] || []).length})`"
           />
         </Tabs>
 
@@ -366,7 +366,7 @@
             全选本组
           </GCheckbox>
           <span class="inv-toolbar__tip">
-            {{ invalidDrawer.tab === 'left' ? '已退群的群清除残留后将不再出现在检测结果中' : '低活跃群仅提醒，建议先观察再处理' }}
+            {{ invalidModal.tab === 'left' ? '已退群的群清除残留后将不再出现在检测结果中' : '低活跃群仅提醒，建议先观察再处理' }}
           </span>
         </div>
 
@@ -385,7 +385,7 @@
               <span>近14天 <b>{{ thousands(g.recent14) }}</b></span>
               <span>最后活跃 {{ g.lastDate ? g.lastDate.slice(5) : '—' }}</span>
             </div>
-            <Tag v-if="invalidDrawer.tab === 'left'" color="orange">Bot 已退出</Tag>
+            <Tag v-if="invalidModal.tab === 'left'" color="orange">Bot 已退出</Tag>
             <Button v-else type="link" danger size="small" @click="openQuit(g)">退群</Button>
           </div>
         </div>
@@ -394,7 +394,7 @@
         <div class="inv-foot">
           <span>已选 {{ invChecked.length }} 个群</span>
           <div class="inv-foot__btns">
-            <Button @click="invalidDrawer.visible = false">取消</Button>
+            <Button @click="invalidModal.visible = false">取消</Button>
             <Button
               type="primary"
               danger
@@ -402,14 +402,14 @@
               :loading="invClearModal.loading"
               @click="openInvClear"
             >
-              {{ invalidDrawer.tab === 'left' ? '清除残留数据' : '清空群数据' }}
+              {{ invalidModal.tab === 'left' ? '清除残留数据' : '清空群数据' }}
             </Button>
           </div>
         </div>
       </template>
       <div v-else class="gm-skeleton" style="height: 300px" />
       <template #footer>
-        <Button @click="invalidDrawer.visible = false">关闭</Button>
+        <Button @click="invalidModal.visible = false">关闭</Button>
       </template>
     </GModal>
 
@@ -831,7 +831,7 @@
     { key: 'low', label: '低活跃' },
   ] as const;
 
-  const invalidDrawer = reactive({
+  const invalidModal = reactive({
     visible: false,
     loading: false,
     tab: 'left' as 'left' | 'idle' | 'low',
@@ -839,7 +839,7 @@
   });
   const invChecked = ref<string[]>([]);
 
-  const currentInvList = computed<InvalidGroupItem[]>(() => invalidDrawer.data?.[invalidDrawer.tab] ?? []);
+  const currentInvList = computed<InvalidGroupItem[]>(() => invalidModal.data?.[invalidModal.tab] ?? []);
 
   const allCurrentChecked = computed(
     () => currentInvList.value.length > 0 && currentInvList.value.every((g) => invChecked.value.includes(g.gid)),
@@ -865,23 +865,23 @@
   }
 
   async function openInvalid() {
-    invalidDrawer.visible = true;
-    invalidDrawer.loading = true;
-    invalidDrawer.data = null;
+    invalidModal.visible = true;
+    invalidModal.loading = true;
+    invalidModal.data = null;
     invChecked.value = [];
     try {
       const res = await statsApi.getInvalidGroups();
-      invalidDrawer.data = res;
+      invalidModal.data = res;
       if (res) {
-        invalidDrawer.tab = res.left.length ? 'left' : res.idle.length ? 'idle' : 'low';
+        invalidModal.tab = res.left.length ? 'left' : res.idle.length ? 'idle' : 'low';
         // 已退群 + 零活跃默认全选；低活跃仅提醒，不默认选中
         invChecked.value = [...res.left.map((g) => g.gid), ...res.idle.map((g) => g.gid)];
       }
     } catch (e: any) {
       message.error(e?.message || '检测失败，请确认 Bot 已重启（接口 /admin/groups/invalid）');
-      invalidDrawer.visible = false;
+      invalidModal.visible = false;
     } finally {
-      invalidDrawer.loading = false;
+      invalidModal.loading = false;
     }
   }
 
@@ -889,7 +889,7 @@
 
   function openInvClear() {
     const n = invChecked.value.length;
-    invClearModal.scope = invalidDrawer.tab === 'left' ? 'trace' : 'all';
+    invClearModal.scope = invalidModal.tab === 'left' ? 'trace' : 'all';
     if (invClearModal.scope === 'trace') {
       invClearModal.content = `即将彻底清除 ${n} 个已退群的 Redis 残留数据：消息计数（Yz:count）、活跃榜、拓展记录、群主/群管名单等。`;
       invClearModal.hint = '清除后这些群将不再出现在「已退群」检测结果中，操作不可恢复。';
@@ -984,10 +984,10 @@
     if (!uids.length) return;
     roleModal.loading = true;
     try {
-      await statsApi.setGroupRole(drawer.gid, roleModal.role, uids, true);
+      await statsApi.setGroupRole(detailModal.gid, roleModal.role, uids, true);
       message.success(`已添加 ${uids.length} 人到${roleModal.role === 'owner' ? '群主' : '群管'}名单`);
       roleModal.visible = false;
-      await loadRoles(drawer.gid);
+      await loadRoles(detailModal.gid);
     } catch (e: any) {
       message.error(e?.message || '操作失败');
     } finally {
@@ -997,9 +997,9 @@
 
   async function removeRole(role: 'owner' | 'groupAdmin', uid: string) {
     try {
-      await statsApi.setGroupRole(drawer.gid, role, uid, false);
+      await statsApi.setGroupRole(detailModal.gid, role, uid, false);
       message.success('已移除');
-      await loadRoles(drawer.gid);
+      await loadRoles(detailModal.gid);
     } catch (e: any) {
       message.error(e?.message || '操作失败');
     }
@@ -1024,7 +1024,7 @@
   async function toggleAI(scope: 'ying' | 'gm', on: boolean) {
     aiLoading[scope] = true;
     try {
-      await statsApi.setAISwitch(scope, [drawer.gid], !on);
+      await statsApi.setAISwitch(scope, [detailModal.gid], !on);
       message.success(`${scope === 'ying' ? '荧' : '群管拓展 AI'} 已在该群${on ? '开启' : '关闭'}`);
       aiState[scope] = on;
     } catch (e: any) {
@@ -1069,14 +1069,14 @@
 
   /* ------------------------------ 详情 ------------------------------ */
 
-  const drawer = reactive<{ visible: boolean; gid: string }>({ visible: false, gid: '' });
+  const detailModal = reactive<{ visible: boolean; gid: string }>({ visible: false, gid: '' });
   const detail = ref<GroupDetailResult | null>(null);
   const detailRef = ref<HTMLDivElement | null>(null);
   const detailChart = useECharts(detailRef);
 
-  const drawerTitle = computed(() => {
+  const detailTitle = computed(() => {
     const name = detail.value?.name || '';
-    return name ? `${name} · 群详情` : `群 ${shortGid(drawer.gid) || ''} 详情`;
+    return name ? `${name} · 群详情` : `群 ${shortGid(detailModal.gid) || ''} 详情`;
   });
 
   const detailStats = computed(() => {
@@ -1093,9 +1093,9 @@
   });
 
   async function openDetail(record: GroupRow) {
-    drawer.gid = record.gid;
+    detailModal.gid = record.gid;
     detail.value = { ...record, available: true, top: [] } as GroupDetailResult;
-    drawer.visible = true;
+    detailModal.visible = true;
     loadRoles(record.gid);
     loadAIState(record.gid);
     try {
@@ -1106,7 +1106,7 @@
     }
     await nextTick();
     renderDetail();
-    // 抽屉有展开动画，容器高度可能仍为 0，延迟补一次渲染
+    // 弹窗有展开动画，容器高度可能仍为 0，延迟补一次渲染
     setTimeout(() => renderDetail(), 320);
   }
 
@@ -1146,7 +1146,7 @@
   watch(isDark, () =>
     nextTick(() => {
       renderTrend();
-      if (drawer.visible) renderDetail();
+      if (detailModal.visible) renderDetail();
     }),
   );
 
@@ -1154,7 +1154,7 @@
 </script>
 
 <style scoped lang="less">
-  /* ---------------- 无效群检测抽屉（标准 antd 风格） ---------------- */
+  /* ---------------- 无效群检测弹窗 ---------------- */
   .inv-line {
     padding: 0 0 4px;
     margin: 0;

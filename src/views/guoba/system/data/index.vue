@@ -267,8 +267,8 @@
       </template>
     </div>
 
-    <!-- ============================ Redis 值抽屉 ============================ -->
-    <GModal v-model:visible="keyDrawer.visible" eyebrow="REDIS KEY" title="键详情" :subtitle="keyDetail?.key || ''" size="xl" body-height="64vh">
+    <!-- ============================ Redis 值弹窗 ============================ -->
+    <GModal v-model:visible="keyModal.visible" eyebrow="REDIS KEY" title="键详情" :subtitle="keyDetail?.key || ''" size="xl" body-height="64vh">
       <template v-if="keyDetail">
         <dl class="dm-meta">
           <div class="dm-meta__item dm-meta__item--wide">
@@ -299,10 +299,13 @@
         <div class="dm-editor">
           <div class="dm-editor__head">
             <span>值{{ keyDetail.type === 'string' ? '' : '（JSON 格式编辑）' }}</span>
-            <span class="g-muted">{{ keyDetail.editable ? '可直接修改' : '过大或类型不支持，只读' }}</span>
+            <div class="dm-editor__head-right">
+              <span class="g-muted">{{ keyDetail.editable ? '可直接修改' : '过大或类型不支持，只读' }}</span>
+              <Button type="link" danger size="small" @click="openDeleteKey(keyDetail.key)">删除键</Button>
+            </div>
           </div>
           <GInput
-            v-model="keyDrawer.text"
+            v-model="keyModal.text"
             type="textarea"
             :rows="14"
             class="dm-editor__area mono"
@@ -316,13 +319,13 @@
       <template #footer>
         <div v-if="keyDetail" class="dm-actions">
           <div class="dm-actions__left">
-            <GNumber v-model="keyDrawer.ttl" :min="-1" style="width: 130px" />
+            <GNumber v-model="keyModal.ttl" :min="-1" style="width: 130px" />
             <span class="dm-hint">秒</span>
             <Button size="small" @click="applyTtl">设置 TTL</Button>
           </div>
           <div class="dm-actions__right">
-            <Button danger @click="openDeleteKey(keyDetail.key)">删除键</Button>
-            <Button type="primary" :loading="keyDrawer.saving" :disabled="!keyDetail.editable" @click="saveKey">
+            <Button @click="keyModal.visible = false">关闭</Button>
+            <Button type="primary" :loading="keyModal.saving" :disabled="!keyDetail.editable" @click="saveKey">
               保存修改
             </Button>
           </div>
@@ -330,8 +333,8 @@
       </template>
     </GModal>
 
-    <!-- ============================ 文件编辑抽屉 ============================ -->
-    <GModal v-model:visible="fileDrawer.visible" eyebrow="PLUGIN FILE" title="文件预览" :subtitle="fileDrawer.path" size="xl" body-height="64vh">
+    <!-- ============================ 文件编辑弹窗 ============================ -->
+    <GModal v-model:visible="fileModal.visible" eyebrow="PLUGIN FILE" title="文件预览" :subtitle="fileModal.path" size="xl" body-height="64vh">
       <template v-if="fileContent">
         <dl class="dm-meta">
           <div class="dm-meta__item">
@@ -347,7 +350,7 @@
             <dd>{{ (fileContent.mtime || '').replace('T', ' ').slice(0, 19) }}</dd>
           </div>
         </dl>
-        <GInput v-model="fileDrawer.text" type="textarea" :rows="20" class="mono dm-editor__area" />
+        <GInput v-model="fileModal.text" type="textarea" :rows="20" class="mono dm-editor__area" />
         <div v-if="fileBackups.length" class="dm-backups">
           <div v-for="b in fileBackups.slice(0, 8)" :key="b.name" class="dm-backups__row">
             <span class="mono fs-12">{{ b.name }}</span>
@@ -360,13 +363,14 @@
       <template #footer>
         <div class="dm-actions">
           <div class="dm-actions__left">
-            <Button size="small" :loading="fileDrawer.loadingBackups" @click="loadFileBackups">
+            <Button size="small" :loading="fileModal.loadingBackups" @click="loadFileBackups">
               备份记录（{{ fileBackups.length }}）
             </Button>
           </div>
           <div class="dm-actions__right">
+            <Button @click="fileModal.visible = false">关闭</Button>
             <Button :disabled="!fileBackups.length" @click="restoreLatestFile">恢复上一版</Button>
-            <Button type="primary" :loading="fileDrawer.saving" @click="saveFile">保存修改</Button>
+            <Button type="primary" :loading="fileModal.saving" @click="saveFile">保存修改</Button>
           </div>
         </div>
       </template>
@@ -395,15 +399,15 @@
       @ok="doDeletePrefix"
     />
 
-    <!-- ============================ 备份记录抽屉 ============================ -->
-    <GModal v-model:visible="backupDrawer.visible" eyebrow="REDIS BACKUP" title="Redis 备份记录" subtitle="最近 100 条修改/删除前的旧值" size="xl" body-height="62vh">
+    <!-- ============================ 备份记录弹窗 ============================ -->
+    <GModal v-model:visible="backupModal.visible" eyebrow="REDIS BACKUP" title="Redis 备份记录" subtitle="最近 100 条修改/删除前的旧值" size="xl" body-height="62vh">
       <div class="dm-note">每次修改 / 删除 Redis 键前都会备份旧值；这里是最近 100 条。</div>
       <Table
         row-key="id"
         size="small"
         :columns="backupColumns"
         :data-source="backups"
-        :loading="backupDrawer.loading"
+        :loading="backupModal.loading"
         :pagination="{ pageSize: 10, size: 'small' }"
       >
         <template #bodyCell="{ column, record }">
@@ -413,7 +417,7 @@
         </template>
       </Table>
       <template #footer>
-        <Button @click="backupDrawer.visible = false">关闭</Button>
+        <Button @click="backupModal.visible = false">关闭</Button>
       </template>
     </GModal>
   </PageWrapper>
@@ -650,7 +654,7 @@
 
   /* ------------------------------ 键详情 ------------------------------ */
 
-  const keyDrawer = reactive({ visible: false, saving: false, text: '', ttl: -1 });
+  const keyModal = reactive({ visible: false, saving: false, text: '', ttl: -1 });
   const keyDetail = ref<KeyDetail | null>(null);
 
   /** string 值若本身是 JSON，格式化后再展示，避免一坨挤在一行 */
@@ -669,42 +673,42 @@
   }
 
   async function openKey(key: string) {
-    keyDrawer.visible = true;
-    keyDrawer.text = '';
+    keyModal.visible = true;
+    keyModal.text = '';
     keyDetail.value = null;
     try {
       const d = await dataApi.getKey(key);
       keyDetail.value = d;
-      keyDrawer.ttl = d.ttl;
-      keyDrawer.text = prettyValue(d);
+      keyModal.ttl = d.ttl;
+      keyModal.text = prettyValue(d);
     } catch (e: any) {
       message.error(e?.message || '读取键失败');
-      keyDrawer.visible = false;
+      keyModal.visible = false;
     }
   }
 
   async function saveKey() {
     const d = keyDetail.value;
     if (!d) return;
-    let value: any = keyDrawer.text;
+    let value: any = keyModal.text;
     if (d.type !== 'string') {
       try {
-        value = JSON.parse(keyDrawer.text);
+        value = JSON.parse(keyModal.text);
       } catch (e: any) {
         message.error(`JSON 格式不合法：${e.message}`);
         return;
       }
     }
-    keyDrawer.saving = true;
+    keyModal.saving = true;
     try {
       await dataApi.setKey({ key: d.key, type: d.type, value });
       message.success('已保存，旧值已备份');
-      keyDrawer.visible = false;
+      keyModal.visible = false;
       loadKeys();
     } catch (e: any) {
       message.error(e?.message || '保存失败');
     } finally {
-      keyDrawer.saving = false;
+      keyModal.saving = false;
     }
   }
 
@@ -712,7 +716,7 @@
     const d = keyDetail.value;
     if (!d) return;
     try {
-      await dataApi.setTtl(d.key, keyDrawer.ttl);
+      await dataApi.setTtl(d.key, keyModal.ttl);
       message.success('TTL 已更新');
       loadKeys();
     } catch (e: any) {
@@ -762,7 +766,7 @@
         try {
           await dataApi.deleteKey(key, isHigh ? key : undefined);
           message.success('已删除，旧值已备份');
-          keyDrawer.visible = false;
+          keyModal.visible = false;
           loadKeys();
           loadDomains(true);
         } catch (e: any) {
@@ -796,7 +800,7 @@
 
   /* ------------------------------ 备份记录 ------------------------------ */
 
-  const backupDrawer = reactive({ visible: false, loading: false });
+  const backupModal = reactive({ visible: false, loading: false });
   const backups = ref<any[]>([]);
   const backupColumns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
@@ -808,8 +812,8 @@
   ];
 
   async function openRedisBackups() {
-    backupDrawer.visible = true;
-    backupDrawer.loading = true;
+    backupModal.visible = true;
+    backupModal.loading = true;
     try {
       const res = await dataApi.getBackups(100);
       backups.value = (res?.list ?? []).map((x) => ({
@@ -819,7 +823,7 @@
     } catch {
       backups.value = [];
     } finally {
-      backupDrawer.loading = false;
+      backupModal.loading = false;
     }
   }
 
@@ -893,51 +897,51 @@
     refreshFiles();
   }
 
-  const fileDrawer = reactive({ visible: false, saving: false, loadingBackups: false, path: '' });
+  const fileModal = reactive({ visible: false, saving: false, loadingBackups: false, path: '', text: '' });
   const fileContent = ref<FileContent | null>(null);
   const fileBackups = ref<any[]>([]);
 
   async function openFile(path: string) {
-    fileDrawer.visible = true;
-    fileDrawer.path = path;
+    fileModal.visible = true;
+    fileModal.path = path;
     fileContent.value = null;
     fileBackups.value = [];
     try {
       const d = await dataApi.readFile(filePlugin.value, path);
       fileContent.value = d;
-      fileDrawer.text = d.content;
+      fileModal.text = d.content;
       loadFileBackups();
     } catch (e: any) {
       message.error(e?.message || '读取文件失败');
-      fileDrawer.visible = false;
+      fileModal.visible = false;
     }
   }
 
   async function loadFileBackups() {
     if (!fileContent.value) return;
-    fileDrawer.loadingBackups = true;
+    fileModal.loadingBackups = true;
     try {
       const res = await dataApi.getFileBackups(fileContent.value.plugin, fileContent.value.path);
       fileBackups.value = res?.list ?? [];
     } catch {
       fileBackups.value = [];
     } finally {
-      fileDrawer.loadingBackups = false;
+      fileModal.loadingBackups = false;
     }
   }
 
   async function saveFile() {
     if (!fileContent.value) return;
-    fileDrawer.saving = true;
+    fileModal.saving = true;
     try {
-      await dataApi.saveFile(fileContent.value.plugin, fileContent.value.path, fileDrawer.text);
+      await dataApi.saveFile(fileContent.value.plugin, fileContent.value.path, fileModal.text);
       message.success('已保存，旧版本已备份');
       await openFile(fileContent.value.path);
       refreshFiles();
     } catch (e: any) {
       message.error(e?.message || '保存失败');
     } finally {
-      fileDrawer.saving = false;
+      fileModal.saving = false;
     }
   }
 
@@ -1289,7 +1293,7 @@
   .dm-risk.is-mid { color: var(--g-amber); background: rgb(168 129 63 / 12%); }
   .dm-risk.is-low { color: var(--g-green); background: rgb(69 185 124 / 12%); }
 
-  /* 抽屉内容 */
+  /* 弹窗内容 */
   .dm-meta {
     display: grid;
     gap: 10px 20px;
@@ -1342,13 +1346,19 @@
     color: var(--g-text-sub);
   }
 
+  .dm-editor__head-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
   .dm-editor__area {
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-size: 12px;
     line-height: 1.7;
   }
 
-  /* 抽屉里的编辑区跟随主题，避免深色模式下出现白底代码块 */
+  /* 弹窗里的编辑区跟随主题，避免深色模式下出现白底代码块 */
   :deep(.dm-editor__area.ant-input) {
     color: var(--g-text);
     background: var(--g-card-bg-soft);

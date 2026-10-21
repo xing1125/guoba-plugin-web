@@ -215,7 +215,7 @@
         </div>
       </div>
 
-      <!-- 聊天记录抽屉 -->
+      <!-- 聊天记录弹窗 -->
       <GModal
         v-model:visible="chat.visible"
         eyebrow="CHAT LOG"

@@ -23,7 +23,7 @@
     <div v-if="searchable || $slots.filters" class="gtp__bar">
       <GSearch v-if="searchable" v-model="searchModel" :placeholder="searchPlaceholder" size="small" width="240px" @search="$emit('search')" />
       <slot name="filters" />
-      <Button v-if="searchable" size="small" type="primary" ghost @click="$emit('search')">查询</Button>
+      <Button v-if="searchable" size="small" type="primary" @click="$emit('search')">查询</Button>
     </div>
 
     <!-- 表格 -->

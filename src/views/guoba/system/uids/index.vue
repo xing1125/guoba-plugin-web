@@ -48,7 +48,7 @@
           <div class="toolbar">
             <Button type="primary" @click="openEdit()">添加 UID</Button>
             <GSearch v-model="q" placeholder="搜索 UID / ltuid" width="240px" @search="handleSearch" />
-            <Button type="primary" ghost @click="handleSearch">查询</Button>
+            <Button @click="handleSearch">查询</Button>
             <Button @click="handleReset">重置</Button>
             <Button :loading="loading" @click="loadData">刷新</Button>
           </div>

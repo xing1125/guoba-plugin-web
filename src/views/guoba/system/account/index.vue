@@ -316,24 +316,24 @@
     />
 
     <!-- 删除记录 / 恢复 -->
-    <GModal v-model:visible="binDrawer.visible" eyebrow="DELETED ACCOUNTS" title="删除记录（可恢复）" subtitle="最近 100 条，删除前自动备份" size="lg" body-height="58vh">
+    <GModal v-model:visible="binModal.visible" eyebrow="DELETED ACCOUNTS" title="删除记录（可恢复）" subtitle="最近 100 条，删除前自动备份" size="lg" body-height="58vh">
       <div class="bin-tip">删除账号前会把整行备份到后台库；这里是最近 100 条记录。</div>
       <Table
         row-key="id"
         size="small"
         :columns="binColumns"
         :data-source="binList"
-        :loading="binDrawer.loading"
+        :loading="binModal.loading"
         :pagination="{ pageSize: 10, size: 'small' }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'action'">
-            <Button type="link" size="small" :loading="binDrawer.restoring" @click="doRestore(record)">恢复</Button>
+            <Button type="link" size="small" :loading="binModal.restoring" @click="doRestore(record)">恢复</Button>
           </template>
         </template>
       </Table>
       <template #footer>
-        <Button @click="binDrawer.visible = false">关闭</Button>
+        <Button @click="binModal.visible = false">关闭</Button>
       </template>
     </GModal>
   </PageWrapper>
@@ -717,12 +717,12 @@
 
   /* ------------------------------ 删除记录 ------------------------------ */
 
-  const binDrawer = reactive({ visible: false, loading: false, restoring: false });
+  const binModal = reactive({ visible: false, loading: false, restoring: false });
   const binList = ref<any[]>([]);
 
   async function openBin() {
-    binDrawer.visible = true;
-    binDrawer.loading = true;
+    binModal.visible = true;
+    binModal.loading = true;
     try {
       const res = await adminApi.getDeleted(100);
       binList.value = (res?.list ?? []).map((x) => ({
@@ -732,12 +732,12 @@
     } catch {
       binList.value = [];
     } finally {
-      binDrawer.loading = false;
+      binModal.loading = false;
     }
   }
 
   async function doRestore(row: any) {
-    binDrawer.restoring = true;
+    binModal.restoring = true;
     try {
       await adminApi.restoreAccount(row.id);
       message.success(`账号 ${row.ltuid} 已恢复`);
@@ -746,7 +746,7 @@
     } catch (e: any) {
       message.error(e?.message || '恢复失败');
     } finally {
-      binDrawer.restoring = false;
+      binModal.restoring = false;
     }
   }
 

@@ -432,7 +432,7 @@
     </div>
 
     <!-- ============================ 某天明细弹窗 ============================ -->
-    <GModal v-model:visible="dayDrawer.visible" eyebrow="SIGN DETAIL" title="签到明细" :subtitle="dayDrawer.date" size="xl" body-height="62vh">
+    <GModal v-model:visible="dayModal.visible" eyebrow="SIGN DETAIL" title="签到明细" :subtitle="dayModal.date" size="xl" body-height="62vh">
       <!-- 游戏签到 -->
       <template v-if="scope === 'mys' && dayData">
         <div class="dm-tabs">
@@ -615,7 +615,7 @@
       </template>
       <div v-else class="gm-skeleton" style="height: 240px" />
       <template #footer>
-        <Button @click="dayDrawer.visible = false">关闭</Button>
+        <Button @click="dayModal.visible = false">关闭</Button>
       </template>
     </GModal>
 
@@ -630,6 +630,16 @@
     >
       <div class="dm-tabs">
         <GSegmented v-model="issueTab" :options="issueTabs" label="异常类型" @update:model-value="resetIssueSel" />
+        <Button
+          v-if="issueTab !== 'stale'"
+          danger
+          size="small"
+          :loading="cleaning"
+          :disabled="!selKeys.length"
+          @click="askClean"
+        >
+          {{ issueTab === 'expired' ? '清除选中失效账号' : '清除选中无效用户' }}
+        </Button>
       </div>
 
       <div v-if="issuesLoading" class="gm-skeleton" style="height: 260px" />
@@ -771,17 +781,8 @@
           <template v-else-if="issueTab === 'orphan'">共 {{ issues.counts.orphan }} 个无效用户</template>
           <template v-else>共 {{ issues.counts.stale }} 个失败账号（只读）</template>
         </span>
-        <Button size="small" :loading="issuesLoading" @click="loadIssues">重新体检</Button>
+        <Button :loading="issuesLoading" @click="loadIssues">重新体检</Button>
         <Button @click="issueModal.visible = false">关闭</Button>
-        <Button
-          v-if="issueTab !== 'stale'"
-          danger
-          :loading="cleaning"
-          :disabled="!selKeys.length"
-          @click="askClean"
-        >
-          {{ issueTab === 'expired' ? '清除选中失效账号' : '清除选中无效用户' }}
-        </Button>
       </template>
     </GModal>
 
@@ -1659,13 +1660,13 @@
 
   /* ------------------------------ 某天明细 ------------------------------ */
 
-  const dayDrawer = reactive({ visible: false, date: '' });
+  const dayModal = reactive({ visible: false, date: '' });
   const dayData = ref<SignDay | null>(null);
   const dayTab = ref('overview');
 
   async function openDay(date: string) {
-    dayDrawer.visible = true;
-    dayDrawer.date = date;
+    dayModal.visible = true;
+    dayModal.date = date;
     dayTab.value = 'overview';
     dayAccountFilter.value = 'all';
     if (scope.value === 'mys') {
@@ -2097,9 +2098,11 @@
     }
   }
 
-  /* 抽屉 */
+  /* 弹窗 */
   .dm-tabs {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-bottom: 14px;
   }
 

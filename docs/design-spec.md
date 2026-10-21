@@ -187,6 +187,38 @@
 4. 弹窗内不做二级弹窗跳转；确需二次确认时，用 `GConfirmModal` 叠加并保留第一层。
 5. 同一页面同类详情只允许一个弹窗实例，切换数据时复用（改数据不改实例）。
 
+### 3.3.1 弹窗 footer 按钮规格（硬规则）
+
+| 项 | 规范 |
+| --- | --- |
+| 顺序 | 右对齐，`[次要] [主按钮]`——主按钮永远在**最右**；footer 左侧弱化提示用 `footer-hint` 或 `.g-modal__hint` |
+| 主按钮唯一 | 一个 footer 只允许一个 `type="primary"`；「关闭」永远是默认按钮，排在主按钮左侧 |
+| 尺寸 | footer 内按钮**不写 `size="small"`**，统一走 GModal 的 `32px`（GModal 已 `:deep` 强制 `height:32px`，small 会被压成 28px 冲突） |
+| 文案 | 详情/记录/只读弹窗 → 单按钮「关闭」；表单/编辑 → 「取消 / 确定」或「取消 / 保存」；**不混用**「关闭」和「取消」 |
+| 危险操作归位 | 破坏性动作（删除键/清除数据/退群）**不放 footer**，放弹窗 body 内（编辑区头部右侧、列表上方工具条），用 `type="link" danger` 或 `danger` 按钮，点击接 `GConfirmModal` 二次确认 |
+| 关闭 | 所有 GModal 右上角自带「×」+ ESC，footer 可省略「关闭」；但含表单/编辑的弹窗建议保留明确的「关闭」按钮 |
+
+**示例（合规）**：
+
+```vue
+<!-- 详情弹窗：单按钮 -->
+<template #footer>
+  <Button @click="open = false">关闭</Button>
+</template>
+
+<!-- 编辑弹窗：取消 + 主按钮 -->
+<template #footer>
+  <Button @click="open = false">取消</Button>
+  <Button type="primary" :loading="saving" @click="save">保存</Button>
+</template>
+
+<!-- 危险操作：放 body，不放 footer -->
+<div class="dm-editor__head">
+  <span>值</span>
+  <Button type="link" danger size="small" @click="openDeleteConfirm">删除键</Button>
+</div>
+```
+
 ### 3.4 组件
 
 | 组件 | 文件 | 用途 |
