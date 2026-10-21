@@ -7,7 +7,7 @@ const enum YingAiLiveApi {
   reply = '/admin/yingai-live/reply',
 }
 
-/** 一条实时对话记录（荧的回复 / 后台代发） */
+/** 一条实时对话记录 */
 export interface LiveRow {
   ts: number;
   gid: string;
@@ -19,6 +19,8 @@ export interface LiveRow {
   fellBack: boolean;
   strategy?: string;
   fromConsole?: boolean;
+  /** diag = 荧的问答对；chat = 群友说话但荧没回的普通群消息 */
+  source?: 'diag' | 'chat';
 }
 
 export interface LiveStreamResult {
@@ -30,6 +32,8 @@ export interface LiveStreamResult {
 
 export interface LiveGroup {
   gid: string;
+  /** 群名称（来自运行时 Bot.gl，可能为空串） */
+  name?: string;
   nick: string;
   lastTs: number;
   lastReply: string;

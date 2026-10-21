@@ -15,7 +15,7 @@
           size="sm"
           width="210px"
           searchable
-          placeholder="全部群"
+          placeholder="按群名称筛选"
           @change="onGroupChange"
         />
         <span class="yls__count">{{ rows.length }} 条</span>
@@ -34,25 +34,30 @@
           <circle cx="24" cy="21" r="1.4" fill="currentColor" stroke="none" />
           <circle cx="31" cy="21" r="1.4" fill="currentColor" stroke="none" />
         </svg>
-        <p>还没有实时对话</p>
-        <p class="yls__empty-sub">荧在群里回复时会自动出现在这里</p>
+        <p>还没有实时消息</p>
+        <p class="yls__empty-sub">群里的发言和荧的回复都会实时出现在这里</p>
       </div>
 
       <template v-else>
-        <div v-for="(r, i) in rows" :key="r.ts + '-' + i" class="yls-row" :class="{ 'is-mine': r.fromConsole }">
+        <div
+          v-for="(r, i) in rows"
+          :key="r.ts + '-' + i"
+          class="yls-row"
+          :class="{ 'is-mine': r.fromConsole, 'is-chat': r.source === 'chat' }"
+        >
           <div class="yls-row__head">
-            <span class="yls-row__gid" :title="r.gid">{{ shortGid(r.gid) }}</span>
+            <span class="yls-row__gid" :title="r.gid">{{ groupName(r.gid) || shortGid(r.gid) }}</span>
             <span class="yls-row__time">{{ fmtTime(r.ts) }}</span>
           </div>
           <div v-if="r.msg" class="yls-row__user">
             <span class="yls-row__nick">{{ r.nick || '匿名' }}：</span>
             <span class="yls-row__msg">{{ r.msg }}</span>
           </div>
-          <div class="yls-row__reply">
-            <span class="yls-row__me">荧</span>
+          <div v-if="r.reply || r.fromConsole" class="yls-row__reply">
+            <span class="yls-row__me">{{ r.fromConsole ? 'Bot' : '荧' }}</span>
             <span class="yls-row__text">{{ r.reply }}</span>
           </div>
-          <div class="yls-row__meta">
+          <div v-if="!isPlainChat(r)" class="yls-row__meta">
             <span v-if="r.model" class="yls-chip">{{ r.model }}</span>
             <span v-if="r.fellBack" class="yls-chip is-warn">降级</span>
             <span v-if="r.strategy" class="yls-chip is-mute">{{ r.strategy }}</span>
@@ -128,9 +133,27 @@
   const groupOptions = computed(() =>
     groups.value.map((g) => ({
       value: g.gid,
-      label: `${g.nick ? g.nick + ' · ' : ''}${shortGid(g.gid)}`,
+      label: g.name || g.nick || shortGid(g.gid),
     })),
   );
+
+  /** 群名缓存（groups 列表下发），行头优先显示群名 */
+  const nameMap = computed(() => {
+    const m = new Map<string, string>();
+    for (const g of groups.value) {
+      if (g.name) m.set(String(g.gid), g.name);
+    }
+    return m;
+  });
+
+  function groupName(id: string) {
+    return nameMap.value.get(String(id)) || '';
+  }
+
+  /** 纯群消息（群友说话、荧没回）：不渲染回复行与 meta */
+  function isPlainChat(r: LiveRow) {
+    return r.source === 'chat' && !r.fromConsole;
+  }
 
   const canSend = computed(() => !!gid.value && !!text.value.trim() && !sending.value);
 
@@ -353,6 +376,16 @@
 
     &:last-child {
       border-bottom: none;
+    }
+
+    /* 纯群消息（荧没回）：弱化 + 左侧细条标识 */
+    &.is-chat {
+      padding: 5px 10px 5px 12px;
+      border-left: 2px solid var(--g-card-border-strong);
+
+      .yls-row__user {
+        color: var(--g-text-sub);
+      }
     }
 
     &.is-mine {
