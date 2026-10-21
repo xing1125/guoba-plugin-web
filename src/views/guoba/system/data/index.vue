@@ -1401,8 +1401,9 @@
   }
 
   @media (max-width: 1180px) {
+    /* minmax(0,1fr)：3-9 栅格里放着图表/宽表，裸 1fr 会被固有宽度顶破 */
     .db-grid--3-9 {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 </style>

@@ -1598,7 +1598,7 @@
     }
 
     .cs-opts {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .cs-editor__hint {
@@ -1613,11 +1613,81 @@
   @media (max-width: 760px) {
     .cs-metrics {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    /* 手机：账户号让位给操作按钮，指标卡压扁一档 */
+    .cs-hero__bot {
+      display: none;
     }
 
     .cs-hero__aside {
-      width: 100%;
-      justify-content: space-between;
+      width: auto;
+      gap: 8px;
+    }
+
+    .cs-metric {
+      gap: 10px;
+      align-items: center;
+      padding: 12px 13px;
+      border-radius: 14px;
+    }
+
+    .cs-metric__icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+    }
+
+    .cs-metric__value {
+      font-size: 19px;
+    }
+
+    .cs-metric__sub {
+      font-size: 10.5px;
+    }
+
+    /* 会话列表改成横向滑动的条带：手机上纵向每省 100px 都是可用的 */
+    .cs-targets {
+      max-height: none;
+    }
+
+    .cs-targets__head,
+    .cs-targets__search {
+      padding: 10px 10px 0;
+    }
+
+    .cs-targets__search {
+      padding-bottom: 8px;
+    }
+
+    .cs-targets__list {
+      display: flex;
+      gap: 8px;
+      padding: 8px 10px 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x proximity;
+    }
+
+    .cs-target {
+      flex: 0 0 auto;
+      width: 154px;
+      margin-bottom: 0;
+      scroll-snap-align: start;
+    }
+
+    .cs-target__name {
+      font-size: 12.5px;
+    }
+
+    .cs-target__go {
+      display: none;
+    }
+
+    /* 动态栏在手机上价值低于工作区，收起来（全量记录仍在「最近记录」） */
+    .cs-aside {
+      display: none;
     }
 
     .cs-ws__target {

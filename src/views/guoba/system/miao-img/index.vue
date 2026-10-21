@@ -65,7 +65,7 @@
             </div>
           </div>
           <div v-else class="mi-main__empty">
-            <div class="mi-main__empty-main">{{ char ? '该角色还没有图片' : '在左侧选择或添加角色' }}</div>
+            <div class="mi-main__empty-main">{{ char ? '该角色还没有图片' : '请选择或添加角色' }}</div>
             <div class="mi-main__empty-sub">
               {{
                 kind === 'profile'
@@ -719,6 +719,67 @@
       max-width: 100%;
       max-height: 70vh;
       border-radius: 8px;
+    }
+  }
+
+  /* ---------------- 移动端：左右栏纵向堆叠 ----------------
+   * 桌面是 flex 双栏，左栏写死 260px。390px 屏下右栏只剩 ~83px，
+   * 「未选择角色」被挤成每行一个字。这里改成上下排列。 */
+  @media (max-width: 768px) {
+    .mi-body {
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    /* 角色栏：整行宽。不要在外面限高——上限会把「目录」那行裁掉半截，
+     * 改成让角色列表自己滚，卡片随内容自然长高。 */
+    .mi-side {
+      width: 100%;
+      max-height: none;
+    }
+
+    .mi-side__list {
+      max-height: 232px;
+    }
+
+    .mi-side__new {
+      padding: 6px 10px;
+    }
+
+    .mi-side__list {
+      padding: 4px 6px;
+    }
+
+    .mi-char {
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+
+    /* 重命名按钮在触摸设备上没有 hover，常显 */
+    .mi-char__ren {
+      opacity: 1;
+    }
+
+    .mi-main {
+      min-height: 320px;
+    }
+
+    .mi-main__bar {
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 10px;
+    }
+
+    .mi-main__empty {
+      padding: 44px 12px;
+    }
+
+    /* 缩略图两列，比 auto-fill minmax(150px) 在 390px 下更稳（避免单列巨图） */
+    .mi-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px;
     }
   }
 </style>

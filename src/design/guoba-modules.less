@@ -328,7 +328,7 @@ html[data-theme='dark'] .gm-hero__art::after {
   .gm-grid--2-1,
   .gm-grid--1-1,
   .gm-grid--3 {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1475,10 +1475,11 @@ html[data-theme='light'] .db-hero::before {
 
 /* -------- 响应式：窄屏把导航压成横向滚动条 -------- */
 @media (max-width: 1180px) {
+  /* minmax(0, 1fr)，不是 1fr：图表 canvas 的固有宽度会把 1fr 撑破容器 */
   .db-grid--8-4,
   .db-grid--5-7,
   .db-grid--6-6 {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .db-cfg {

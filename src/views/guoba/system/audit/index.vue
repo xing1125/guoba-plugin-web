@@ -40,6 +40,7 @@
         :total="total"
         :loading="loading"
         row-key="id"
+        :scroll="{ x: 1080 }"
         csv-name="audit-log"
         :csv-columns="csvColumns"
         empty-title="暂无审计记录"
@@ -252,6 +253,8 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 11.5px;
     color: var(--g-text-sub);
+    /* 手机上列被压窄时，日期会在连字符处断成「2026-10-」+「21」，强制不断行 */
+    white-space: nowrap;
   }
 
   .au-target {

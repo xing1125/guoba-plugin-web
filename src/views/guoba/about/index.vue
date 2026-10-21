@@ -1,5 +1,5 @@
 <template>
-  <PageWrapper title="" dense>
+  <PageWrapper title="">
     <section class="db-hero">
       <div class="db-hero__main">
         <div class="db-hero__eyebrow">ABOUT</div>
@@ -122,21 +122,22 @@
     title: '生产环境依赖',
     data: dependencies,
     schema: schema,
-    column: 3,
+    // 手机上必须降列：3 列时每格只有 ~100px，版本号「^6.0.0」会被拆成一字一行
+    column: { xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 },
   });
 
   const [registerDev] = useDescription({
     title: '开发环境依赖',
     data: devDependencies,
     schema: devSchema,
-    column: 3,
+    column: { xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 },
   });
 
   const [infoRegister] = useDescription({
     title: '项目信息',
     data: infoData,
     schema: infoSchema,
-    column: 2,
+    column: { xxl: 2, xl: 2, lg: 2, md: 2, sm: 1, xs: 1 },
   });
 </script>
 

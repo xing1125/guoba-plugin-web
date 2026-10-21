@@ -247,4 +247,24 @@
       border-radius: 20px;
     }
   }
+
+  /* ---------------- 移动端 ----------------
+   * 悬浮保存胶囊在 390px 下会压住最后一个配置项（截图里盖住「日志 ID」输入框）。
+   * 改成贴底通栏；.db-cfg__body 已有 64px 底部留白，正好挡住高度。 */
+  @media (max-width: 768px) {
+    .cfg-fab {
+      right: 12px;
+      bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      left: 12px;
+      justify-content: center;
+      height: 44px;
+      padding: 0 16px;
+      font-size: 13px;
+      border-radius: 12px;
+    }
+
+    .db-hero__time {
+      font-size: 11.5px;
+    }
+  }
 </style>

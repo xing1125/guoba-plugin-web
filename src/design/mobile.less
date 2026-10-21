@@ -1,0 +1,305 @@
+/**
+ * 移动端适配层（≤760px）
+ *
+ * 原则：
+ *  1. 收紧节奏——桌面 16/14 的间距在手机上会吃掉一屏，统一降到 10~14
+ *  2. 放大触摸目标——按钮/输入最小 32px，避免误触
+ *  3. 单列优先——双栏在窄屏必须纵向堆叠（页面级另行处理）
+ *  4. 次要信息降级——过长的描述、装饰性文案让位给操作
+ *
+ * 注意：页面 scoped 样式的权重高于本文件（带 [data-v-xxx]），
+ * 页面级布局（如文件管理三栏、控制台三栏）在各页自己的 media query 里改。
+ */
+
+@media (max-width: 760px) {
+  /* ---------------- 页面容器 ---------------- */
+  .g-page {
+    padding-bottom: 4px;
+  }
+
+  /* ---------------- 页头 hero ---------------- */
+  .db-hero {
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 14px;
+  }
+
+  .cs-hero__title,
+  .dh-hero__title,
+  .ws-hero__title,
+  .db-hero__title {
+    font-size: 19px;
+  }
+
+  /* ---------------- 首页横幅 gm-hero ----------------
+   * 桌面 min-height 312px 是为了放右侧插画；手机上画已隐藏，高度必须交还内容，
+   * 否则标题下方留出一大块空白。 */
+  .gm-hero {
+    min-height: 0;
+    border-radius: 14px;
+  }
+
+  .gm-hero__main {
+    gap: 8px;
+    padding: 18px 16px;
+  }
+
+  .gm-hero__title {
+    font-size: 22px;
+  }
+
+  .gm-hero__desc {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .gm-hero__chips {
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .gm-hero__chip {
+    height: 26px;
+    padding: 0 9px;
+    font-size: 11.5px;
+  }
+
+  /* 首页指标卡：2 列已由 guoba-modules.less 的 ≤720 规则保证，这里只收节奏 */
+  .gm-kpi {
+    gap: 10px;
+  }
+
+  .gm-kpi__card {
+    gap: 10px;
+    padding: 12px 13px;
+    border-radius: 12px;
+  }
+
+  .gm-kpi__value {
+    font-size: 19px;
+    white-space: nowrap;
+  }
+
+  .gm-kpi__value small {
+    margin-left: 2px;
+    font-size: 10.5px;
+  }
+
+  .gm-kpi__foot {
+    margin-top: 3px;
+    font-size: 10.5px;
+  }
+
+  /* ---------------- 卡片 ---------------- */
+  .ant-card-body {
+    padding: 14px;
+  }
+
+  /* ---------------- 面板头 ----------------
+   * 标题 + 右侧补充说明在窄屏会互相挤，标题被压成两行（如「游戏数据 / 域」）。
+   * 允许换行，标题不折，补充说明整行落到下面。 */
+  .gm-panel__head {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  .gm-panel__title {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .gm-panel__extra {
+    font-size: 11px;
+    /* 「共 27 个」这类短句被挤成「共 / 27 / 个」三行，禁掉 */
+    white-space: nowrap;
+  }
+
+  /* ---------------- 按钮：触摸目标 ---------------- */
+  .ant-btn {
+    min-height: 32px;
+    font-size: 12.5px;
+  }
+
+  .ant-btn-sm {
+    min-height: 30px;
+    padding: 3px 10px;
+  }
+
+  .ant-btn > .anticon + span {
+    margin-left: 4px;
+  }
+
+  /* ---------------- 指标卡（全局原语 .db-kpi 来自 guoba-modules.less） ----------------
+   * 原语是 auto-fit minmax(190px, 1fr)，390px 屏只排得下 1 列 → 4 张卡占满 4 屏。
+   * 这里强制 2 列；dashboard 自己的 scoped 版本已在页面内单独处理。 */
+  .db-kpi {
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .db-kpi--6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .db-kpi__card {
+    gap: 10px;
+    padding: 12px 13px;
+    border-radius: 12px;
+  }
+
+  .db-kpi__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+  }
+
+  /* 数值 + 单字单位（条/人/个）必须同行，否则会掉到第二行 */
+  .db-kpi__value {
+    font-size: 19px;
+    white-space: nowrap;
+  }
+
+  .db-kpi__value small {
+    margin-left: 2px;
+    font-size: 10.5px;
+  }
+
+  /* 说明文字给两行，别一上来就省略号 */
+  .db-kpi__foot {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 10.5px;
+    line-height: 1.35;
+    white-space: normal;
+    word-break: break-all;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  /* ---------------- 表格 ----------------
+   * 表格的移动端紧凑规则统一写在 design/guoba-table.less 文末的 @media 块里。
+   * 那里必须用 `html body .ant-table-wrapper ×3` 前缀（(0,3,2)）才压得住桌面规则，
+   * 在本文件里写 td/th padding 是无效的（权重 (0,1,2) 直接输）。 */
+
+  /* ---------------- 指标卡（g-stat 原语，来自 guoba-admin.less） ---------------- */
+  .g-stat {
+    gap: 4px;
+    padding: 12px 13px;
+    border-radius: 12px;
+  }
+
+  .g-stat__label {
+    gap: 6px;
+    font-size: 11.5px;
+  }
+
+  .g-stat__dot {
+    width: 6px;
+    height: 6px;
+    box-shadow: 0 0 0 2px var(--g-accent-soft);
+  }
+
+  /* 27px 在 170px 宽的卡里放不下「31% / 22%」这种复合值 */
+  .g-stat__value {
+    font-size: 17px;
+    letter-spacing: -0.2px;
+    white-space: nowrap;
+  }
+
+  .g-stat__unit {
+    margin-left: 2px;
+    font-size: 10.5px;
+  }
+
+  .g-stat__foot {
+    font-size: 10.5px;
+  }
+
+  /* ---------------- 分页 ---------------- */
+  html body .ant-pagination.ant-pagination {
+    gap: 2px;
+  }
+
+  html body .ant-pagination .ant-pagination-item,
+  html body .ant-pagination .ant-pagination-prev,
+  html body .ant-pagination .ant-pagination-next {
+    min-width: 28px;
+    height: 28px;
+    line-height: 26px;
+  }
+
+  html body .ant-pagination .ant-pagination-options {
+    display: none;
+  }
+
+  /* ---------------- 弹窗：贴边留 12px ---------------- */
+  html body .ant-modal.ant-modal {
+    top: 12px;
+    max-width: calc(100vw - 24px);
+    padding-bottom: 12px;
+  }
+
+  html body .ant-modal .ant-modal-content {
+    border-radius: 14px;
+  }
+
+  html body .ant-modal .ant-modal-body {
+    padding: 14px 16px;
+  }
+
+  /* ---------------- 工具条 ---------------- */
+  .g-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* 搜索框在手机上一律占满一行 */
+  .g-toolbar .gc-input,
+  .g-toolbar .g-search {
+    width: 100% !important;
+  }
+
+  /* ---------------- 空状态 ---------------- */
+  :root:root .ant-empty {
+    padding: 18px 0;
+  }
+
+  /* ---------------- 浮层 ---------------- */
+  .ant-message .ant-message-notice-content {
+    max-width: calc(100vw - 32px);
+  }
+
+  .ant-tooltip-inner {
+    max-width: 240px;
+  }
+}
+
+/* 超窄屏（≤380px）：进一步压字号，避免横向溢出 */
+@media (max-width: 380px) {
+  .cs-hero__title,
+  .dh-hero__title,
+  .ws-hero__title,
+  .db-hero__title {
+    font-size: 17px;
+  }
+
+  .db-kpi__card {
+    gap: 8px;
+    padding: 11px 11px;
+  }
+
+  .db-kpi__icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .db-kpi__value {
+    font-size: 17px;
+  }
+
+  .db-kpi__foot {
+    font-size: 10px;
+  }
+}

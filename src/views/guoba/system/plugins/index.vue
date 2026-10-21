@@ -538,7 +538,30 @@
 
   @media (max-width: 860px) {
     .ns-grid {
-      grid-template-columns: 1fr;
+      /* 必须是 minmax(0, 1fr)：纯 1fr 会被卡内长键名/明细行的固有宽度顶开
+       * （实测 390px 视口下单卡被撑到 1232px，整列飞出屏幕）。 */
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .ns-card {
+      gap: 7px;
+      padding: 13px 14px;
+      border-radius: 12px;
+    }
+
+    .ns-card__name {
+      font-size: 13px;
+    }
+
+    .ns-card__keys {
+      font-size: 15px;
+    }
+
+    /* 长键名允许折行，否则又会把卡片顶宽 */
+    .ns-card__desc,
+    .ns-card__detail {
+      word-break: break-all;
     }
   }
 

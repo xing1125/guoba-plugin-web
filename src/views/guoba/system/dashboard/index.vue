@@ -1051,16 +1051,59 @@
   }
 
   @media (max-width: 1180px) {
+    /* 必须写 minmax(0, 1fr)：纯 1fr 等价 minmax(auto, 1fr)，
+     * 会被图表 canvas 的固有宽度顶到 390px，比容器（357px）还宽 33px。 */
     .db-grid--8-4,
     .db-grid--5-7,
     .db-grid--6-6 {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
   @media (max-width: 720px) {
     .db-kpi {
+      gap: 10px;
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .db-kpi__card {
+      gap: 10px;
+      padding: 12px 13px;
+      border-radius: 12px;
+    }
+
+    .db-kpi__icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+    }
+
+    .db-kpi__label {
+      font-size: 11.5px;
+    }
+
+    /* 数值与单位焊死在一行，单字单位（条/人/个）不会被挤到第二行 */
+    .db-kpi__value {
+      font-size: 19px;
+      letter-spacing: -0.2px;
+      white-space: nowrap;
+    }
+
+    .db-kpi__value small {
+      margin-left: 2px;
+      font-size: 10.5px;
+    }
+
+    /* 说明文字给两行，别一上来就省略号（手机上「覆盖 46 个命…」等于没说） */
+    .db-kpi__foot {
+      display: -webkit-box;
+      overflow: hidden;
+      font-size: 10.5px;
+      line-height: 1.35;
+      white-space: normal;
+      word-break: break-all;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
     }
   }
 </style>

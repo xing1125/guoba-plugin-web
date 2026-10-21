@@ -410,3 +410,53 @@ html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-tag-magent
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ==========================================================================
+ * 移动端紧凑层（≤768px）
+ * 必须放在文件最末尾：与上方桌面规则同权重，靠书写顺序生效。
+ * 不要挪到 mobile.less —— 那边的选择器没有三层 .ant-table-wrapper 前缀，
+ * 权重 (0,1,2) 打不过这里的 (0,3,2)，实测行高完全压不下来。
+ * ========================================================================== */
+@media (max-width: 768px) {
+  html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-thead > tr > th.ant-table-cell {
+    height: 34px;
+    padding: 0 10px;
+    font-size: 11px;
+    line-height: 34px;
+    letter-spacing: 0.2px;
+  }
+
+  html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .ant-table-tbody > tr > td {
+    padding: 8px 10px;
+    font-size: 12.5px;
+  }
+
+  /* 单元格内的双行堆叠（.g-cell-stack）跟着收一档 */
+  html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .g-cell-stack {
+    gap: 1px;
+  }
+
+  html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .g-cell-stack > small,
+  html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .g-cell-stack > span + small {
+    font-size: 10.5px;
+  }
+
+  /* 行内 chip / 徽标瘦身，别把行高撑起来 */
+  html body .ant-table-wrapper.ant-table-wrapper.ant-table-wrapper .g-chip {
+    height: 19px;
+    padding: 0 6px;
+    font-size: 10.5px;
+    border-radius: 5px;
+  }
+
+  /* 分页：只留页码 + 上下页，去掉每页条数与快速跳转（已由 mobile.less 处理条数，这里兜快速跳转） */
+  html body .ant-pagination.ant-pagination .ant-pagination-options-quick-jumper {
+    display: none;
+  }
+
+  /* 分页整体居中，触摸更顺手 */
+  html body .ant-pagination.ant-pagination {
+    justify-content: center;
+    padding-top: 12px;
+  }
+}

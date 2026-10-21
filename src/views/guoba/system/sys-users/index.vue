@@ -29,6 +29,7 @@
         searchable
         v-model:search-value="userKeyword"
         search-placeholder="搜索用户名 / 昵称"
+        :scroll="{ x: 1060 }"
         csv-name="admin-users"
         :csv-columns="userCsv"
         empty-title="还没有后台账号"
@@ -76,6 +77,7 @@
         :total="roles.length"
         :loading="loadingRoles"
         row-key="role"
+        :scroll="{ x: 860 }"
         csv-name="admin-roles"
         :csv-columns="roleCsv"
         empty-title="暂无角色"
@@ -122,6 +124,7 @@
         searchable
         v-model:search-value="logKeyword"
         search-placeholder="搜索用户名"
+        :scroll="{ x: 900 }"
         csv-name="login-log"
         :csv-columns="logCsv"
         @search="loadLog"

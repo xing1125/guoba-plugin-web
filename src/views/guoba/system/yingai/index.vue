@@ -14,7 +14,7 @@
           </div>
         </div>
         <div class="db-hero__side">
-          <span class="ya-updated">更新于 {{ overview.updatedAt || '—' }}</span>
+          <span class="ya-updated">更新于 {{ updatedText }}</span>
           <Button size="small" :loading="loading" @click="loadAll">刷新</Button>
         </div>
       </section>
@@ -271,10 +271,14 @@
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { ThemeEnum } from '/@/enums/appEnum';
   import { chartBase, chartColors, hexToRgba } from '../_shared/stats';
+  import { fmtDateTime } from '/@/utils/localTime';
   import type { YingCompare, YingCompareRow, YingInsights, YingMessage, YingOverview, YingUserRow } from './api';
   import { yingaiApi } from './api';
 
   defineOptions({ name: 'YingAi' });
+
+  /** 后端给的是 UTC ISO 串（…Z），直接插值会显示成 2026-10-21T00:25:52.894Z */
+  const updatedText = computed(() => fmtDateTime(overview.value.updatedAt) || '—');
 
   const { getDarkMode } = useRootSetting();
   const isDark = computed(() => unref(getDarkMode) === ThemeEnum.DARK);
@@ -723,7 +727,8 @@
   .ya-kpi { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
   @media (max-width: 1180px) { .ya-kpi { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 900px) { .ya-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 620px) { .ya-kpi { grid-template-columns: minmax(0, 1fr); } }
+  /* 手机上 5 张 KPI 单列要滚 5 屏，改 2 列（与 db-kpi 一致） */
+  @media (max-width: 620px) { .ya-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 
   /* 分布可视化：环形 + 散点 + 排行 */
   .ya-viz { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.1fr); gap: 12px; }

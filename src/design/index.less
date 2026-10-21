@@ -9,6 +9,8 @@
 @import './guoba-controls.less';
 @import './guoba-table.less';
 @import './guoba-dialog.less';
+// 移动端适配层必须最后导入：同权重下靠顺序压住上面的桌面规则
+@import './mobile.less';
 
 input:-webkit-autofill {
   box-shadow: 0 0 0 1000px white inset !important;

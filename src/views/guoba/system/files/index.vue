@@ -29,7 +29,7 @@
       </section>
 
       <!-- ============================ 主体 ============================ -->
-      <div class="ws-body">
+      <div class="ws-body" :class="{ 'is-editing': viewMode === 'edit' }">
         <!-- 左：目录树 -->
         <aside class="ws-side">
           <div class="ws-side__tree">
@@ -96,6 +96,7 @@
                 :data-source="filteredRows"
                 :loading="tableLoading"
                 :pagination="false"
+                :scroll="{ x: 620 }"
                 size="small"
                 row-key="path"
               >
@@ -1027,9 +1028,40 @@
   @media (max-width: 768px) {
     .ws-main__bar {
       flex-wrap: wrap;
+      gap: 8px;
     }
     .ws-search {
       width: 100%;
+    }
+
+    /* 手机：三栏改为上下堆叠，目录树限高，主区占满剩余 */
+    .ws-body {
+      flex-direction: column;
+      height: auto;
+      min-height: 0;
+      gap: 10px;
+    }
+
+    .ws-side {
+      width: 100%;
+      max-height: 176px;
+    }
+
+    .ws-side__tree {
+      padding: 4px 6px;
+    }
+
+    .ws-main {
+      min-height: 340px;
+    }
+
+    /* 编辑文件时目录树没有意义，让编辑器独占屏幕 */
+    .ws-body.is-editing .ws-side {
+      display: none;
+    }
+
+    .ws-edit-head__path {
+      display: none;
     }
   }
 
@@ -1080,6 +1112,9 @@
   .ws-dim {
     color: var(--ws-text-dim);
     font-size: 12px;
+    /* 表格已开 :scroll="{ x: 620 }"，单元格不需要再自己换行；
+     * 否则「修改时间」会在窄列里折成两行，把行高从 36px 顶到 56px。 */
+    white-space: nowrap;
   }
 
   .ws-acts {

@@ -264,4 +264,31 @@
     color: var(--g-blue);
     border-top: 1px dashed var(--g-card-border);
   }
+
+  /* ---------------- 移动端 ----------------
+   * 390px 下 name / path / 开关 三栏互相挤：菜单名被压成两行、路径只剩「/ho…」、
+   * 「固定显示」叠成两行。路径在手机上属于装饰信息，直接让位。 */
+  @media (max-width: 768px) {
+    .nv-row {
+      gap: 8px;
+      padding: 9px 10px;
+    }
+
+    .nv-row__path {
+      display: none;
+    }
+
+    .nv-row__name {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nv-chip--muted {
+      white-space: nowrap;
+    }
+  }
 </style>

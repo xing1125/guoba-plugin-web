@@ -1402,4 +1402,44 @@
       }
     }
   }
+
+  /* ---------------- 移动端：当前游戏指标条 ----------------
+   * 桌面 .ac-hero 是 flex 行：标题固定 180px + 右侧三格指标。
+   * 390px 下三格只剩 ~43px，「绑定 U / CK 已存 / SK 已存」被压成竖排。
+   * 手机改成标题独占一行，指标 3 列均分整宽。 */
+  @media (max-width: 768px) {
+    .ac-hero {
+      gap: 10px;
+      padding: 12px 13px;
+    }
+
+    .ac-hero__title {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .ac-hero__cards {
+      flex: 1 1 100%;
+      gap: 8px;
+    }
+
+    .ac-metric {
+      gap: 3px;
+      padding: 8px 10px 9px;
+      border-radius: 10px;
+    }
+
+    .ac-metric__label {
+      font-size: 10.5px;
+    }
+
+    .ac-metric__value {
+      font-size: 17px;
+    }
+
+    /* 比例数字在 100px 宽的卡里只会挤压标签，手机上去掉 */
+    .ac-metric__ratio {
+      display: none;
+    }
+  }
 </style>
