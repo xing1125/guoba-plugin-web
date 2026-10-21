@@ -97,7 +97,7 @@
           </div>
           <div v-else class="ym-memories">
             <div v-for="m in memories" :key="m.id" class="ym-mem">
-              <div class="ym-mem__bar" :style="{ width: clamp01(m.value * 100) + '%' }" :class="'is-' + tierClass(m.tier)" />
+              <i class="ym-mem__bar" :class="'is-' + tierClass(m.tier)" />
               <div class="ym-mem__body">
                 <div class="ym-mem__text">{{ m.text }}</div>
                 <div class="ym-mem__meta">
