@@ -180,15 +180,25 @@
     align-items: center;
   }
 
+  /* 插画自带 alpha（白底已在 gen-login-art.py 里抠掉），所以不需要卡片/描边/投影，
+   * 方形只是构图：cover 裁到胸口 + 下沿羽化，人物直接从卡片底色上浮出来 */
   .db-about__brandart {
     position: relative;
     flex: 0 0 auto;
-    width: 132px;
+    width: 148px;
+    height: 148px; /* 显式给高：竖排 flex 里 aspect-ratio 会被图片的固有比例顶开 */
     margin: 0;
-    overflow: hidden;
-    aspect-ratio: 520 / 927;
-    border-radius: 14px;
-    box-shadow: 0 14px 32px -16px rgb(53 99 180 / 58%);
+    align-self: center;
+  }
+
+  /* 卡片底色是白的，白衬衫会跟着糊掉 —— 身后垫一层天蓝柔光，人物才有轮廓 */
+  .db-about__brandart::before {
+    position: absolute;
+    inset: -14%;
+    z-index: -1;
+    content: '';
+    background: radial-gradient(62% 58% at 50% 42%, rgb(142 199 243 / 58%), rgb(142 199 243 / 0) 76%);
+    filter: blur(8px);
   }
 
   .db-about__brandart img {
@@ -196,20 +206,16 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: 50% 2%;
+    mask-image: linear-gradient(180deg, #000 0 88%, rgb(0 0 0 / 0) 100%);
   }
 
-  /* 内描边画在图片之上，否则会被 img 铺满盖掉 */
-  .db-about__brandart::after {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    content: '';
-    border-radius: inherit;
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 55%);
+  html[data-theme='dark'] .db-about__brandart::before {
+    background: radial-gradient(56% 50% at 50% 40%, rgb(98 168 234 / 26%), rgb(98 168 234 / 0) 74%);
   }
 
   html[data-theme='dark'] .db-about__brandart img {
-    filter: brightness(0.88) saturate(1.02);
+    filter: brightness(0.88) saturate(1.04);
   }
 
   .db-about__brandbody {
@@ -317,6 +323,7 @@
     .db-about__brandart {
       align-self: center;
       width: 108px;
+      height: 108px;
     }
   }
 

@@ -215,13 +215,15 @@
   /* ---------------- 布局 ---------------- */
   .@{prefix-cls}__inner {
     position: relative;
-    z-index: 2;
+    /* 不加 z-index：一旦形成层叠上下文，插画的 mix-blend-mode 就只能跟
+     * 这个空上下文混合（背景是透明的），白底会重新显形成一块白方块。
+     * 靠 DOM 顺序（sky 在前）就已经在下层了，不需要 z-index。 */
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
     gap: 64px;
     align-items: center;
     width: 100%;
-    max-width: 1260px;
+    max-width: 1320px;
     padding: 56px 40px;
     margin: 0 auto;
   }
@@ -244,17 +246,17 @@
     min-width: 0;
   }
 
-  /* ---------------- 插画（竖版卡片） ----------------
-   * 直接用二创原图：白底 + 气泡 + 水手服本身就是这套品牌视觉，
-   * 不再手绘。图由 build/brand/gen-login-art.py 从截图裁黑边后导出。 */
+  /* ---------------- 插画（方形 · 融进背景） ----------------
+   * 图谱本身带 alpha：白底在 build/brand/gen-login-art.py 里从四边 flood fill 掉，
+   * 所以浅色/深色都不需要 blend 兜底，也没有卡片边。
+   * 方框只决定构图：cover 裁到胸口，下沿羽化，人物像从背景里浮出来。 */
   .@{prefix-cls}__art {
     position: relative;
     flex: 0 0 auto;
-    width: clamp(200px, 19vw, 250px);
-    aspect-ratio: 520 / 927;
+    width: clamp(300px, 25vw, 360px);
+    aspect-ratio: 1;
     margin: 0;
-    border-radius: 22px;
-    box-shadow: 0 30px 70px -34px rgb(53 99 180 / 58%);
+    pointer-events: none;
   }
 
   .@{prefix-cls}__art img {
@@ -262,45 +264,13 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: inherit;
+    object-position: 50% 4%;
+    mask-image: linear-gradient(180deg, #000 0 82%, rgb(0 0 0 / 0) 100%);
   }
 
-  /* 身后一层天蓝柔光，避免白底卡片像"贴"上去 */
-  .@{prefix-cls}__art::before {
-    position: absolute;
-    inset: -12% -16% -8%;
-    z-index: -1;
-    background:
-      radial-gradient(62% 54% at 50% 40%, rgb(142 199 243 / 44%), transparent 72%),
-      radial-gradient(52% 40% at 50% 96%, rgb(226 171 74 / 22%), transparent 76%);
-    content: '';
-    filter: blur(14px);
-  }
-
-  /* 深色下才需要底部收暗；浅色页面本身是白的，再叠一层反而把裙摆洗白。
-   * 内描边也放这里 —— 图铺满 figure，figure 自身的 inset 阴影会被盖住。 */
-  .@{prefix-cls}__art::after {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    content: '';
-    border-radius: inherit;
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 66%);
-  }
-
-  html[data-theme='dark'] .@{prefix-cls}__art {
-    box-shadow: 0 34px 80px -30px rgb(0 0 0 / 90%);
-  }
-
-  /* 白底原图在深色下刺眼，压一点亮度即可 —— 压太狠会发灰发脏，
-   * 深色底 + 一张亮色挂画本来就是好看的对比。 */
+  /* 深色下白衬衫会有点刺眼，压一点亮度即可（没有白底了，不需要压很狠） */
   html[data-theme='dark'] .@{prefix-cls}__art img {
-    filter: brightness(0.88) saturate(1.02);
-  }
-
-  html[data-theme='dark'] .@{prefix-cls}__art::after {
-    background: linear-gradient(180deg, rgb(0 0 0 / 0) 76%, rgb(6 14 26 / 26%));
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 18%);
+    filter: brightness(0.86) saturate(1.04);
   }
 
   .@{prefix-cls}__lockup {
@@ -497,7 +467,7 @@
   .@{prefix-cls}__card {
     position: relative;
     width: 100%;
-    max-width: 420px;
+    max-width: 400px;
     padding: 28px 28px 20px;
     overflow: hidden;
     background: var(--g-card-bg);
