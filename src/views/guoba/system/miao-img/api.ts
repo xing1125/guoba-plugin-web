@@ -20,6 +20,36 @@ export interface MiaoCharsResult {
   list: MiaoChar[];
 }
 
+/** 角色总表条目（官方角色 + 磁盘自定义目录合并） */
+export interface MiaoCatalogChar {
+  name: string;
+  /** 该角色在这类图库下的图片数（0 = 还没上传） */
+  count: number;
+  /** '' | 'gs' | 'sr' */
+  game: string;
+  /** 原神 / 星铁 */
+  gameLabel: string;
+  /** 星级 0（无官方档案）/ 4 / 5 */
+  star: number;
+  /** 属性中文名（冰 / 火 / 虚无 …），无档案时为空 */
+  elem: string;
+  /** true = 不在官方角色表里（自定义目录） */
+  custom: boolean;
+}
+
+export interface MiaoCatalogResult {
+  kind: string;
+  label: string;
+  list: MiaoCatalogChar[];
+  stats: {
+    gs: number;
+    sr: number;
+    custom: number;
+    total: number;
+    withImages: number;
+  };
+}
+
 export interface MiaoListResult {
   kind: string;
   label: string;
@@ -38,6 +68,7 @@ export interface MiaoSaveItem {
 
 const Api = {
   characters: '/admin/miao-img/characters',
+  catalog: '/admin/miao-img/catalog',
   list: '/admin/miao-img/list',
   upload: '/admin/miao-img/upload',
   mkdir: '/admin/miao-img/mkdir',
@@ -55,6 +86,7 @@ export function imgUrl(rel: string) {
 export const miaoImgApi = {
   characters: (kind: string) =>
     defHttp.get<MiaoCharsResult>({ url: Api.characters, params: { kind } }),
+  catalog: (kind: string) => defHttp.get<MiaoCatalogResult>({ url: Api.catalog, params: { kind } }),
   list: (kind: string, name: string) =>
     defHttp.get<MiaoListResult>({ url: Api.list, params: { kind, name } }),
   upload: (kind: string, name: string, files: File[]) => {
