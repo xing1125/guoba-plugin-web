@@ -233,6 +233,27 @@ export interface SignCleanResult {
   detail?: any[];
 }
 
+/* ------------------------------ 签到健康度 + 告警 ------------------------------ */
+
+export interface SignHealthAlert {
+  key: string;
+  level: 'ok' | 'warn' | 'bad';
+  title: string;
+  detail?: string;
+}
+
+export interface SignHealth {
+  checkedAt: string;
+  /** 0-100，把 CK 失效 / 连续失败 / 悬空绑定 / 成功率折算到一起 */
+  score: number;
+  level: 'ok' | 'warn' | 'bad';
+  dataAvailable: boolean;
+  today: { date: string; total: number; ok: number; fail: number; users: number; rate: number } | null;
+  todayEmpty: boolean;
+  counts: { expired: number; staleAllFail: number; orphanDangling: number; orphanEmpty: number };
+  alerts: SignHealthAlert[];
+}
+
 const enum SignApi {
   overview = '/admin/sign/overview',
   records = '/admin/sign/records',
@@ -241,6 +262,8 @@ const enum SignApi {
   clean = '/admin/sign/issues/clean',
   userDelete = '/admin/sign/users/delete',
   userRestore = '/admin/sign/users/restore',
+  health = '/admin/sign/health',
+  healthCheck = '/admin/sign/health/check',
 }
 
 export const signApi = {
@@ -268,6 +291,14 @@ export const signApi = {
       url: SignApi.userRestore,
       params: { id },
     });
+  },
+  /** 健康度快照（实时评估，不推送） */
+  getHealth() {
+    return defHttp.get<SignHealth>({ url: SignApi.health });
+  },
+  /** 立即体检：评估 + 新告警推送主人 */
+  runHealthCheck() {
+    return defHttp.post<SignHealth>({ url: SignApi.healthCheck, params: { confirm: true } });
   },
 };
 

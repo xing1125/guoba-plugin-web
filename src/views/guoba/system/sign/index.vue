@@ -47,6 +47,57 @@
         </div>
       </section>
 
+      <!-- ============================ 签到健康度 ============================ -->
+      <section v-if="scope === 'mys'" class="g-card sign-health">
+        <template v-if="health">
+          <div class="sign-health__score">
+            <svg class="sign-health__ring" viewBox="0 0 96 96">
+              <circle class="sign-health__track" cx="48" cy="48" r="40" />
+              <circle
+                class="sign-health__value"
+                :class="`is-${health.level}`"
+                cx="48"
+                cy="48"
+                r="40"
+                :stroke-dasharray="`${(health.score / 100) * 251.2} 251.2`"
+              />
+            </svg>
+            <div class="sign-health__num">
+              <b>{{ health.score }}</b>
+              <i :class="`is-${health.level}`">{{ healthLevelText }}</i>
+            </div>
+          </div>
+          <div class="sign-health__body">
+            <div class="sign-health__head">
+              <span class="sign-health__title">签到健康度</span>
+              <span class="gm-panel__extra">
+                评估于 {{ fmtTimeShort(health.checkedAt) }} · CK {{ health.counts.expired }} 失效 /
+                连续失败 {{ health.counts.staleAllFail }} / 悬空 {{ health.counts.orphanDangling }}
+              </span>
+            </div>
+            <div v-if="health.alerts.length" class="sign-health__alerts">
+              <div v-for="a in health.alerts" :key="a.key" class="sign-health__alert">
+                <i class="sign-health__dot" :class="`is-${a.level}`" />
+                <b>{{ a.title }}</b>
+                <span v-if="a.detail" class="sign-health__alert-detail">{{ a.detail }}</span>
+              </div>
+            </div>
+            <div v-else class="sign-health__ok">
+              <Icon :icon="$gm('success')" :size="14" />
+              一切正常：CK、绑定、今日成功率都没有异常
+            </div>
+            <div class="sign-health__foot">
+              <Button size="small" :loading="healthChecking" @click="runHealthCheck">
+                <Icon :icon="$gm('pulse')" :size="13" style="margin-right: 4px" />
+                立即体检并推送
+              </Button>
+              <span class="sign-health__hint">新告警第一次出现会自动私聊第一个主人 · 每 30 分钟自动巡检一次</span>
+            </div>
+          </div>
+        </template>
+        <div v-else class="gm-skeleton" style="height: 96px" />
+      </section>
+
       <!-- ============================ 指标卡 ============================ -->
       <section class="db-kpi db-kpi--6">
         <template v-if="scope === 'mys' ? booting : wBooting">
@@ -838,7 +889,7 @@
   import GModal from '../_shared/dialog/GModal.vue';
   import GameIcon from '../_shared/GameIcon.vue';
   import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
-  import type { SignDay, SignIssues, SignOverview, SignRecord, WavesDay, WavesOverview } from './api';
+  import type { SignDay, SignHealth, SignIssues, SignOverview, SignRecord, WavesDay, WavesOverview } from './api';
   import { signApi, wavesApi } from './api';
   import { downloadCsv } from '/@/utils/export/csv';
   import { gm } from '/@/design/gmIcons';
@@ -1761,7 +1812,45 @@
     await loadAll();
     loadNames();
     loadIssues();
+    loadHealth();
   });
+
+  /* ------------------------------ 签到健康度 ------------------------------ */
+
+  const health = ref<SignHealth | null>(null);
+  const healthChecking = ref(false);
+
+  const healthLevelText = computed(() => {
+    const lv = health.value?.level;
+    if (lv === 'bad') return '需要处理';
+    if (lv === 'warn') return '有隐患';
+    return '健康';
+  });
+
+  async function loadHealth() {
+    try {
+      health.value = await signApi.getHealth();
+    } catch {
+      health.value = null;
+    }
+  }
+
+  async function runHealthCheck() {
+    healthChecking.value = true;
+    try {
+      const res = await signApi.runHealthCheck();
+      health.value = res;
+      if (res.alerts?.length) {
+        message.warning(`评估完成：${res.alerts.length} 条告警，新告警已私聊主人`, 4);
+      } else {
+        message.success('评估完成，没有需要处理的告警');
+      }
+    } catch {
+    } finally {
+      healthChecking.value = false;
+    }
+  }
+
 </script>
 
 <style scoped lang="less">
@@ -2442,5 +2531,196 @@
     background: var(--g-card-bg-soft);
     border: 1px dashed var(--g-card-border);
     border-radius: 12px;
+  }
+
+  /* ------------------------------ 签到健康度 ------------------------------ */
+
+  .sign-health {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    padding: 14px 18px;
+  }
+
+  .sign-health__score {
+    position: relative;
+    flex: 0 0 auto;
+    width: 104px;
+    height: 104px;
+  }
+
+  .sign-health__ring {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .sign-health__track {
+    fill: none;
+    stroke: var(--g-chip-bg);
+    stroke-width: 8;
+  }
+
+  .sign-health__value {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.4s ease;
+
+    &.is-ok {
+      stroke: #4fbf8b;
+    }
+
+    &.is-warn {
+      stroke: #d99b3a;
+    }
+
+    &.is-bad {
+      stroke: #e0664a;
+    }
+  }
+
+  .sign-health__num {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+    justify-content: center;
+
+    b {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+      color: var(--g-text);
+    }
+
+    i {
+      font-size: 11px;
+      font-style: normal;
+
+      &.is-ok {
+        color: #2f8f60;
+      }
+
+      &.is-warn {
+        color: #a8791f;
+      }
+
+      &.is-bad {
+        color: #c25a6e;
+      }
+    }
+  }
+
+  .sign-health__body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .sign-health__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: baseline;
+
+    .gm-panel__extra {
+      font-size: 11.5px;
+    }
+  }
+
+  .sign-health__title {
+    font-size: 13.5px;
+    font-weight: 650;
+    color: var(--g-text);
+  }
+
+  .sign-health__alerts {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .sign-health__alert {
+    display: flex;
+    gap: 7px;
+    align-items: baseline;
+    font-size: 12.5px;
+    color: var(--g-text-sub);
+
+    b {
+      flex: 0 0 auto;
+      font-weight: 600;
+      color: var(--g-text);
+    }
+  }
+
+  .sign-health__alert-detail {
+    overflow: hidden;
+    font-size: 12px;
+    color: var(--g-text-mute);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sign-health__dot {
+    flex: 0 0 auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+
+    &.is-ok {
+      background: #4fbf8b;
+    }
+
+    &.is-warn {
+      background: #d99b3a;
+    }
+
+    &.is-bad {
+      background: #e0664a;
+    }
+  }
+
+  .sign-health__ok {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    font-size: 12.5px;
+    color: var(--g-text-sub);
+  }
+
+  .sign-health__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .sign-health__hint {
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+  }
+
+  /* 窄屏：分数环与文字改为上下排 */
+  @media (max-width: 900px) {
+    .sign-health {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .sign-health__score {
+      align-self: center;
+      width: 92px;
+      height: 92px;
+    }
   }
 </style>
