@@ -39,6 +39,7 @@
           <span class="ym-emotion__val">{{ emotion.value.toFixed(1) }}</span>
         </div>
         <span class="ym-emotion__time">{{ emotion.updatedAt ? fmtDateTime(emotion.updatedAt) : '暂无记录' }}</span>
+        <Button size="small" @click="openEmotion">校正</Button>
       </section>
 
       <!-- ============================ 概览 KPI ============================ -->
@@ -104,6 +105,10 @@
                   <span class="ym-tier" :class="'is-' + tierClass(m.tier)">{{ tierText(m.tier) }}</span>
                   <span class="ym-mem__val">重要度 {{ (m.value * 100).toFixed(0) }}</span>
                   <span class="ym-mem__time">{{ fmtDateTime(m.createdAt) }}</span>
+                  <span class="ym-mem__ops">
+                    <button type="button" class="g-link" @click="openEditMem(m)">编辑</button>
+                    <button type="button" class="g-link is-danger" @click="askDelMem(m)">删除</button>
+                  </span>
                 </div>
               </div>
             </div>
@@ -158,18 +163,69 @@
           </div>
         </section>
       </div>
+
+      <!-- ============================ 编辑记忆弹窗 ============================ -->
+      <GModal v-model:visible="editModal.visible" eyebrow="MEMORY EDIT" title="编辑记忆" :subtitle="gid" size="md">
+        <GField label="记忆内容">
+          <GInput v-model="editModal.text" type="textarea" :rows="6" />
+        </GField>
+        <GField label="重要度（0~100）" extra="影响荧回忆这段记忆的优先级">
+          <GNumber v-model="editModal.value" :min="0" :max="100" style="width: 140px" />
+        </GField>
+        <template #footer>
+          <Button @click="editModal.visible = false">取消</Button>
+          <Button type="primary" :loading="editModal.saving" @click="doEditMem">保存</Button>
+        </template>
+      </GModal>
+
+      <!-- ============================ 情绪校正弹窗 ============================ -->
+      <GModal v-model:visible="emoModal.visible" eyebrow="MOOD CALIBRATION" title="校正情绪" :subtitle="gid" size="sm">
+        <GField label="情绪词" extra="如：开心、平静、兴奋">
+          <GInput v-model="emoModal.mood" />
+        </GField>
+        <GField label="情绪值（0~100）" extra="影响荧说话的语气与主动性">
+          <GNumber v-model="emoModal.value" :min="0" :max="100" style="width: 140px" />
+        </GField>
+        <template #footer>
+          <Button @click="emoModal.visible = false">取消</Button>
+          <Button type="primary" :loading="emoModal.saving" @click="doEmotion">保存</Button>
+        </template>
+      </GModal>
+
+      <!-- ============================ 删除记忆确认 ============================ -->
+      <GConfirmModal
+        v-model:visible="delModal.visible"
+        title="删除这条记忆"
+        :content="delModal.text"
+        hint="删除后荧会彻底忘记这件事；她后续可能在群里重新认识、重新记忆。"
+        danger
+        :loading="delModal.loading"
+        ok-text="确认删除"
+        @ok="doDelMem"
+      />
     </div>
   </PageWrapper>
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue';
-  import { Button } from 'ant-design-vue';
+  import { computed, onMounted, reactive, ref } from 'vue';
+  import { Button, message } from 'ant-design-vue';
   import { PageWrapper } from '/@/components/Page';
   import { Icon } from '/@/components/Icon';
+  import GModal from '../_shared/dialog/GModal.vue';
+  import GConfirmModal from '../_shared/dialog/GConfirmModal.vue';
+  import GField from '../_shared/form/GField.vue';
+  import GInput from '../_shared/form/GInput.vue';
+  import GNumber from '../_shared/form/GNumber.vue';
   import GSelect from '../_shared/form/GSelect.vue';
   import { fmtDateTime } from '/@/utils/localTime';
-  import { yingMindApi, type MindEmotion, type MindGroup, type MindMemory, type MindRelation } from './api';
+  import {
+    yingMindApi,
+    type MindEmotion,
+    type MindGroup,
+    type MindMemory,
+    type MindRelation,
+  } from './api';
 
   defineOptions({ name: 'YingMind' });
 
@@ -287,6 +343,78 @@
       if (gid.value) await loadDetail();
     } finally {
       loading.value = false;
+    }
+  }
+
+  /* ------------------------------ 干预：记忆编辑 / 删除 / 情绪校正 ------------------------------ */
+
+  const editModal = reactive({ visible: false, saving: false, index: -1, text: '', value: 50, oldText: '' });
+  const emoModal = reactive({ visible: false, saving: false, mood: '', value: 50 });
+  const delModal = reactive({ visible: false, loading: false, index: -1, text: '' });
+
+  function openEditMem(m: MindMemory) {
+    editModal.index = m.id;
+    editModal.text = m.text;
+    editModal.value = Math.round(m.value * 100);
+    editModal.oldText = m.text;
+    editModal.visible = true;
+  }
+
+  async function doEditMem() {
+    if (!editModal.text.trim()) {
+      message.warning('记忆内容不能为空');
+      return;
+    }
+    editModal.saving = true;
+    try {
+      await yingMindApi.updateMemory(gid.value, editModal.index, editModal.text, editModal.value, editModal.oldText);
+      message.success('已保存');
+      editModal.visible = false;
+      await loadDetail();
+    } catch (e: any) {
+      message.error(e?.message || '保存失败');
+    } finally {
+      editModal.saving = false;
+    }
+  }
+
+  function askDelMem(m: MindMemory) {
+    delModal.index = m.id;
+    delModal.text = m.text;
+    delModal.visible = true;
+  }
+
+  async function doDelMem() {
+    delModal.loading = true;
+    try {
+      await yingMindApi.deleteMemory(gid.value, delModal.index, delModal.text);
+      message.success('已删除');
+      delModal.visible = false;
+      await loadDetail();
+    } catch (e: any) {
+      message.error(e?.message || '删除失败');
+    } finally {
+      delModal.loading = false;
+    }
+  }
+
+  function openEmotion() {
+    emoModal.mood = emotion.value?.mood || '';
+    emoModal.value = Math.round(emotion.value?.value ?? 50);
+    emoModal.visible = true;
+  }
+
+  async function doEmotion() {
+    emoModal.saving = true;
+    try {
+      await yingMindApi.setEmotion(gid.value, emoModal.mood, emoModal.value);
+      message.success('已校正');
+      emoModal.visible = false;
+      await loadDetail();
+    } catch (e: any) {
+      message.error(e?.message || '校正失败');
+    } finally {
+      emoModal.saving = false;
     }
   }
 
@@ -483,6 +611,28 @@
       gap: 10px;
       align-items: center;
       margin-top: 6px;
+    }
+
+    &__ops {
+      display: inline-flex;
+      gap: 8px;
+      margin-left: auto;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+
+      .g-link {
+        font-size: 11px;
+        color: var(--g-blue);
+        cursor: pointer;
+
+        &.is-danger {
+          color: var(--g-rose);
+        }
+      }
+    }
+
+    &:hover &__ops {
+      opacity: 1;
     }
 
     &__val {

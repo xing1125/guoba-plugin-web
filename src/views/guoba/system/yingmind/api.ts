@@ -62,4 +62,19 @@ export const yingMindApi = {
       params: { gid },
     }),
   emotion: (gid: string) => defHttp.get<MindEmotion>({ url: YingMindApi.emotion, params: { gid } }),
+  deleteMemory: (gid: string, index: number, oldText: string) =>
+    defHttp.post<{ text: string; remaining: number }>({
+      url: '/admin/yingmind/memories/delete',
+      data: { gid, index, oldText, confirm: true },
+    }),
+  updateMemory: (gid: string, index: number, text: string, value: number, oldText: string) =>
+    defHttp.post<{ text: string; value: number }>({
+      url: '/admin/yingmind/memories/update',
+      data: { gid, index, text, value, oldText, confirm: true },
+    }),
+  setEmotion: (gid: string, mood: string, value: number) =>
+    defHttp.post<{ mood: string; value: number }>({
+      url: '/admin/yingmind/emotion/set',
+      data: { gid, mood, value, confirm: true },
+    }),
 };
