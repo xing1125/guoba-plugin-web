@@ -11,6 +11,29 @@ import { RequestEnum } from '/@/enums/httpEnum';
 
 export * from './axiosTransform';
 
+/* ------------------------- 写请求在途去重（防重复提交） -------------------------
+ * 后台的危险按钮（删除 / 清空 / 重启 / 恢复备份）点快了会发两次请求，
+ * 后端各接口自己有没有幂等保护不好保证，所以在客户端兜一道：
+ * 同一个 METHOD+URL+参数 的写请求还在飞的时候，第二次直接复用第一次的 Promise。
+ * 页面照常 await，拿到同一个结果，不会产生第二次副作用。
+ * FormData 上传不参与（内容不可序列化比较）。
+ */
+const inflightWrites = new Map<string, Promise<any>>();
+
+function writeKey(conf: CreateAxiosOptions): string | null {
+  const method = String(conf.method || 'get').toUpperCase();
+  if (method === RequestEnum.GET) return null;
+  const data = (conf as any).data;
+  if (typeof window !== 'undefined' && data instanceof window.FormData) return null;
+  try {
+    const body = typeof data === 'string' ? data : JSON.stringify(data ?? null);
+    return `${method} ${conf.url} ${JSON.stringify((conf as any).params ?? null)} ${body}`;
+  } catch {
+    // 循环引用之类，宁可不去重也不要报错
+    return null;
+  }
+}
+
 /**
  * @description:  axios module
  */
@@ -193,7 +216,14 @@ export class VAxios {
 
     conf = this.supportFormData(conf);
 
-    return new Promise((resolve, reject) => {
+    // 同一次写操作还在飞行中就直接复用，避免双击造成两次副作用
+    const dedupeKey = writeKey(conf);
+    if (dedupeKey) {
+      const running = inflightWrites.get(dedupeKey);
+      if (running) return running as Promise<T>;
+    }
+
+    const promise = new Promise<T>((resolve, reject) => {
       this.axiosInstance
         .request<any, AxiosResponse<Result>>(conf)
         .then((res: AxiosResponse<Result>) => {
@@ -219,5 +249,14 @@ export class VAxios {
           reject(e);
         });
     });
+
+    if (dedupeKey) {
+      inflightWrites.set(dedupeKey, promise);
+      // 用 then 而不是 finally：finally 会产生一条没人接的派生 Promise，失败时报未捕获
+      const clear = () => inflightWrites.delete(dedupeKey);
+      promise.then(clear, clear);
+    }
+
+    return promise;
   }
 }

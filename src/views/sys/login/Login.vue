@@ -185,7 +185,8 @@
     gap: 72px;
     align-items: center;
     width: 100%;
-    max-width: 1040px;
+    /* 容器放宽到 1200：左栏整体再往左推一档，同时卡片的右侧留白与左栏对称 */
+    max-width: 1200px;
     padding: 56px 40px;
     margin: 0 auto;
   }
@@ -195,7 +196,7 @@
     display: flex;
     flex-direction: column;
     gap: 26px;
-    align-items: center;
+    align-items: flex-start; /* 三件都贴左：锁定区、立绘、版本行同一条竖线 */
     justify-content: center;
     min-width: 0;
   }

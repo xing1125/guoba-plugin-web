@@ -20,20 +20,25 @@
   opacity: 0;
 }
 
-/* fade-slide */
-.fade-slide-leave-active,
+/* fade-slide
+ * out-in 模式下进出场是相加的，原来各 0.3s + 30px 位移，切页要等 600ms 才见到新页面。
+ * 压缩成 0.12s 出 / 0.2s 进、位移 12px，总耗时约 320ms，仍然"有过渡"但不拖沓。 */
+.fade-slide-leave-active {
+  transition: opacity 0.12s ease-in, transform 0.12s ease-in;
+}
+
 .fade-slide-enter-active {
-  transition: all 0.3s;
+  transition: opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-12px);
 }
 
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(10px);
 }
 
 // ///////////////////////////////////////////////

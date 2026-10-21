@@ -50,6 +50,7 @@ html[data-theme='dark'] {
 // =================================
 // ==============nprogress==========
 // =================================
+// 顶部进度条：品牌色渐变（青 → 蓝 → 金），比默认单色更容易在浅色头部上看见
 #nprogress {
   pointer-events: none;
 
@@ -59,8 +60,17 @@ html[data-theme='dark'] {
     left: 0;
     z-index: 99999;
     width: 100%;
-    height: 2px;
-    background-color: @primary-color;
-    opacity: 0.75;
+    height: 2.5px;
+    background: linear-gradient(90deg, var(--g-cyan), var(--g-blue) 58%, var(--g-gold));
+    box-shadow: 0 0 10px rgb(47 134 196 / 45%);
+  }
+
+  // nprogress 自带的 peg 是个用 box-shadow 拖尾的小方块，换成同色柔光
+  .peg {
+    box-shadow: 0 0 10px var(--g-blue), 0 0 5px var(--g-cyan);
+  }
+
+  .spinner {
+    display: none;
   }
 }

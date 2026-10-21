@@ -7,7 +7,7 @@
           <kbd v-for="(s, i) in k.keys" :key="i">{{ s }}</kbd>
         </span>
       </div>
-      <p class="gk__tip">输入框聚焦时快捷键不生效</p>
+      <p class="gk__tip">输入框里打字时快捷键不生效，{{ mod }} + K 除外</p>
     </div>
   </Modal>
 </template>
@@ -30,7 +30,10 @@
   const router = useRouter();
   const visible = ref(false);
 
+  const mod = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform) ? '⌘' : 'Ctrl';
+
   const keys = [
+    { label: '命令面板（搜索页面）', keys: [mod, 'K'] },
     { label: '打开快捷键帮助', keys: ['?'] },
     { label: '回到首页', keys: ['g', 'h'] },
     { label: '审计日志', keys: ['g', 'a'] },

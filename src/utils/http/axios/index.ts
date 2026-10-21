@@ -23,6 +23,28 @@ const globSetting = useGlobSetting();
 const urlPrefix = globSetting.urlPrefix;
 const { createMessage, createErrorModal } = useMessage();
 
+/* ------------------------------ 失败提示兜底 ------------------------------
+ * 后台页面普遍是 try/catch 之后静默兜底（catch {} 里把列表置空），
+ * 后端真出错时用户只会看到「点了没反应」——比没有提示更糟。
+ * 这里在请求层兜住所有没显式指定 errorMessageMode 的失败：
+ *   · 写操作（POST/PUT/DELETE）3s 窗口，保证用户一定知道刚才那下没成功；
+ *   · 读操作 15s 窗口，接口整体挂掉时会提示，但不会把轮询页面刷满。
+ * 相同文案在窗口期内只弹一次。
+ */
+const errorMemo = new Map<string, number>();
+
+function notifyRequestError(msg: string, isWrite: boolean) {
+  if (!msg) return;
+  const now = Date.now();
+  const win = isWrite ? 3000 : 15000;
+  if (now - (errorMemo.get(msg) || 0) < win) return;
+  if (errorMemo.size > 40) errorMemo.clear();
+  errorMemo.set(msg, now);
+  createMessage.error({ content: msg, duration: isWrite ? 4 : 3 });
+}
+
+const isWriteMethod = (config?: { method?: string }) => String(config?.method || 'get').toUpperCase() !== 'GET';
+
 /**
  * @description: 数据处理，方便区分多种处理方式
  */
@@ -80,6 +102,9 @@ const transform: AxiosTransform = {
       createErrorModal({ title: t('sys.api.errorTip'), content: timeoutMsg });
     } else if (options.errorMessageMode === 'message') {
       createMessage.error(timeoutMsg);
+    } else {
+      // 没显式指定提示方式的业务失败，走统一的兜底提示
+      notifyRequestError(timeoutMsg || t('sys.api.apiRequestFailed'), isWriteMethod(res?.config));
     }
 
     throw new Error(timeoutMsg || t('sys.api.apiRequestFailed'));
@@ -183,11 +208,22 @@ const transform: AxiosTransform = {
           createErrorModal({ title: t('sys.api.errorTip'), content: errMessage });
         } else if (errorMessageMode === 'message') {
           createMessage.error(errMessage);
+        } else {
+          notifyRequestError(errMessage, isWriteMethod(config));
         }
         return Promise.reject(error);
       }
     } catch (error) {
       throw new Error(error as unknown as string);
+    }
+
+    // 4xx / 5xx 这类"服务器有回应但失败"：checkStatus 在 'none' 下不出声，这里补一条。
+    // 只处理真有 response 的情况——业务异常是 transformResponseHook 抛的普通 Error，
+    // 那边已经提示过了，别重复弹。
+    if (errorMessageMode === 'none' && response) {
+      const data = response?.data || {};
+      const text = msg || data?.msg || data?.message || `请求失败（HTTP ${response.status}）`;
+      notifyRequestError(text, isWriteMethod(config));
     }
 
     checkStatus(error?.response?.status, msg, errorMessageMode);

@@ -27,13 +27,17 @@
     </div>
 
     <!-- 表格 -->
-    <div class="gtp__body">
+    <div class="gtp__body" :class="{ 'is-refreshing': loading && !!dataSource.length }">
       <div v-if="loading && !dataSource.length" class="gtp__skeleton">
         <div v-for="i in 6" :key="i" class="g-skeleton g-skeleton--text" />
       </div>
       <Table v-else :columns="columns" :data-source="dataSource" :row-key="rowKey" :pagination="false" :scroll="scroll" size="middle" :row-class-name="rowClassName">
         <template #emptyText>
-          <GEmpty :title="emptyTitle" :desc="emptyDesc" />
+          <slot name="empty">
+            <GEmpty :title="emptyTitleText" :desc="emptyDescText">
+              <Button v-if="hasFilter" size="small" @click="clearFilter">清空筛选</Button>
+            </GEmpty>
+          </slot>
         </template>
         <template #bodyCell="scope">
           <slot name="bodyCell" v-bind="scope">{{ scope.text }}</slot>
@@ -53,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue';
+  import { computed, onBeforeMount } from 'vue';
   import { Table, Button, Pagination } from 'ant-design-vue';
   import GEmpty from './GEmpty.vue';
   import GSearch from './form/GSearch.vue';
@@ -135,15 +139,58 @@
 
   const total = computed(() => props.total || 0);
 
+  /* ---------------- 空态：区分「本来就没有」和「筛掉了」 ---------------- */
+  const hasFilter = computed(() => !!String(props.searchValue ?? '').trim());
+
+  const emptyTitleText = computed(() => (hasFilter.value ? '没有匹配的结果' : props.emptyTitle));
+
+  const emptyDescText = computed(() =>
+    hasFilter.value
+      ? // desc 走 v-html，用户输入里的尖括号要剔掉
+        `「${String(props.searchValue).trim().replace(/[<>&]/g, '')}」没有命中任何记录，换个关键字或清空筛选试试`
+      : props.emptyDesc,
+  );
+
+  function clearFilter() {
+    emit('update:searchValue', '');
+    emit('update:page', 1);
+    emit('search');
+  }
+
+  /* ---------------- 每页条数按页面记住，不必每次重新选 ---------------- */
+  const SIZE_STORE = 'guoba:gtp:size:';
+  const SIZES = [10, 20, 50, 100];
+
+  const sizeStoreKey = () => `${SIZE_STORE}${props.csvName || props.title || 'default'}`;
+
+  onBeforeMount(() => {
+    try {
+      const n = Number(localStorage.getItem(sizeStoreKey()));
+      if (SIZES.includes(n) && n !== props.pageSize) emit('update:pageSize', n);
+    } catch {
+      /* 隐私模式下 localStorage 不可用，忽略即可 */
+    }
+  });
+
+  function rememberSize(n: number) {
+    try {
+      localStorage.setItem(sizeStoreKey(), String(n));
+    } catch {
+      /* 同上 */
+    }
+  }
+
   function onPageChange(p: number) {
     emit('update:page', p);
     emit('search');
   }
 
   function onSizeChange(v: any) {
-    emit('update:pageSize', Number(v) || 20);
+    const n = Number(v) || 20;
+    rememberSize(n);
+    emit('update:pageSize', n);
     emit('update:page', 1);
-    emit('sizeChange', Number(v) || 20);
+    emit('sizeChange', n);
     emit('search');
   }
 
@@ -205,6 +252,42 @@
     align-items: center;
     font-size: 12px;
     color: var(--g-text-mute);
+  }
+
+  /* 二次加载（翻页 / 筛选 / 刷新）：不清空表格，只压暗加一条扫光，
+     避免整块闪白造成的"页面重载"错觉 */
+  .gtp__body {
+    position: relative;
+
+    &.is-refreshing :deep(.ant-table) {
+      opacity: 0.5;
+      transition: opacity 0.15s;
+    }
+
+    &.is-refreshing::before {
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      z-index: 3;
+      height: 2px;
+      content: '';
+      background: linear-gradient(90deg, transparent, var(--g-blue), transparent);
+      background-repeat: no-repeat;
+      background-size: 40% 100%;
+      border-radius: 2px;
+      animation: gtp-sweep 0.9s linear infinite;
+    }
+  }
+
+  @keyframes gtp-sweep {
+    from {
+      background-position: -40% 0;
+    }
+
+    to {
+      background-position: 140% 0;
+    }
   }
 
   /* 表格与分页样式统一由 design/guoba-table.less 接管，页面不再各自覆盖 */
