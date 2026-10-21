@@ -99,7 +99,7 @@
             <div v-for="m in memories" :key="m.id" class="ym-mem">
               <i class="ym-mem__bar" :class="'is-' + tierClass(m.tier)" />
               <div class="ym-mem__body">
-                <div class="ym-mem__text">{{ m.text }}</div>
+                <div class="ym-mem__text" :title="m.text">{{ m.text }}</div>
                 <div class="ym-mem__meta">
                   <span class="ym-tier" :class="'is-' + tierClass(m.tier)">{{ tierText(m.tier) }}</span>
                   <span class="ym-mem__val">重要度 {{ (m.value * 100).toFixed(0) }}</span>
@@ -430,12 +430,13 @@
     flex-direction: column;
     gap: 10px;
     padding: 14px 16px;
-    max-height: 520px;
+    max-height: 560px;
     overflow-y: auto;
   }
 
   .ym-mem {
     position: relative;
+    flex-shrink: 0;
     padding: 10px 12px 10px 16px;
     overflow: hidden;
     background: var(--g-card-bg-soft);
@@ -466,10 +467,15 @@
     }
 
     &__text {
+      display: -webkit-box;
+      overflow: hidden;
       font-size: 12.5px;
       line-height: 1.65;
       color: var(--g-text);
       word-break: break-word;
+      cursor: default;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
     }
 
     &__meta {
@@ -499,7 +505,7 @@
     flex-direction: column;
     gap: 8px;
     padding: 14px 16px;
-    max-height: 520px;
+    max-height: 560px;
     overflow-y: auto;
   }
 
@@ -507,6 +513,7 @@
     display: flex;
     gap: 12px;
     align-items: flex-start;
+    flex-shrink: 0;
     padding: 10px 12px;
     background: var(--g-card-bg-soft);
     border: 1px solid var(--g-card-border);
