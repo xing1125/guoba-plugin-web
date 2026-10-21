@@ -10,7 +10,7 @@
             <em>{{ tip }}</em>
           </div>
           <div class="gm-hero__desc">
-            Yunzai-Bot <b class="mono">v{{ conf.version }}</b> · 锅巴 <b class="mono">v{{ conf.guobaVersion }}</b>
+            Yunzai-Bot <b class="mono">v{{ conf.VERSION }}</b> · 荧后台 <b class="mono">v{{ conf.GUOBA_VERSION }}</b>
             <template v-if="overview.updatedAt"> · 数据更新于 {{ shortTime(overview.updatedAt) }}</template>
           </div>
           <div class="gm-hero__chips">

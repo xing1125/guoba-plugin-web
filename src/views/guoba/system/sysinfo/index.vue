@@ -195,7 +195,7 @@
           <div v-else-if="mobile.loading" class="si-mobile__empty">正在生成访问链接…</div>
           <div v-else class="si-mobile__empty">
             未获取到可用的局域网地址
-            <div class="si-mobile__empty-sub">请确认设备与 bot 主机在同一网络，或检查锅巴「服务地址」配置</div>
+            <div class="si-mobile__empty-sub">请确认设备与 bot 主机在同一网络，或检查荧后台「服务地址」配置</div>
           </div>
         </div>
         <template #footer>

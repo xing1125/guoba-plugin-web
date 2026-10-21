@@ -60,6 +60,10 @@ export const GM_COLLECTION = {
     database: {
       body: `<path d="M4.7 6.3c0-1.5 3.3-2.8 7.3-2.8s7.3 1.3 7.3 2.8-3.3 2.8-7.3 2.8-7.3-1.3-7.3-2.8z" fill="currentColor" fill-opacity=".28"/><g ${S}><ellipse cx="12" cy="6.3" rx="7.3" ry="2.8"/><path d="M4.7 6.3v11.4c0 1.5 3.3 2.8 7.3 2.8s7.3-1.3 7.3-2.8V6.3"/></g><path d="M4.7 11.4c0 1.5 3.3 2.8 7.3 2.8s7.3-1.3 7.3-2.8M4.7 16c0 1.5 3.3 2.8 7.3 2.8s7.3-1.3 7.3-2.8" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-opacity=".5"/>`,
     },
+    /* 数据健康 —— 数据库筒（偏左）+ 右下对勾 */
+    dbcheck: {
+      body: `<path d="M3.8 5.8c0-1.3 2.8-2.4 6.2-2.4s6.2 1.1 6.2 2.4-2.8 2.4-6.2 2.4-6.2-1.1-6.2-2.4z" fill="currentColor" fill-opacity=".26"/><g ${S} stroke-width="1.6"><ellipse cx="10" cy="5.8" rx="6.2" ry="2.4"/><path d="M3.8 5.8v9.4c0 1.3 2.8 2.4 6.2 2.4"/><path d="M16.2 5.8v4.6"/></g><path d="M14.6 17l2.2 2.2 4-4.4" ${SD}/>`,
+    },
     /* 签到中心 —— 日历 + 对勾 */
     'calendar-check': {
       body: `<path d="M3.9 8.4c0-1.7 1.3-3 3-3h10.2c1.7 0 3 1.3 3 3v1.2H3.9z" fill="currentColor" fill-opacity=".25"/><g ${S}><rect x="3.9" y="5.4" width="16.2" height="14.6" rx="3"/><path d="M8.3 3.4v3M15.7 3.4v3"/><path d="M8.8 14.3l2.3 2.3 4.3-4.5" stroke-width="1.9"/></g>`,

@@ -6,7 +6,7 @@ export interface NavMenuItem {
   title: string;
   path: string;
   icon: string;
-  /** 锅巴自带插件菜单页，暂不参与屏蔽/排序 */
+  /** 平台自带插件菜单页，暂不参与屏蔽/排序 */
   plugin: boolean;
   /** 固定显示项（首页 / 导航管理），开关禁用 */
   fixed: boolean;

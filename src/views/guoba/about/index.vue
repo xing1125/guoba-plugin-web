@@ -5,10 +5,11 @@
         <div class="db-hero__eyebrow">ABOUT</div>
         <div class="db-hero__title">关于</div>
         <div class="db-hero__desc">
-          <a :href="GITHUB_URL" target="_blank">Guoba-Plugin</a>
-          是
+          <b>YingPanel（荧后台）</b> 是
           <a href="https://github.com/Le-niao/Yunzai-Bot" target="_blank">Yunzai-Bot</a>
-          的后台管理插件，基于 Vue-Vben-Admin / Vue3 / Vite / Ant-Design-Vue / TypeScript 构建。
+          的后台管理面板，基于 Vue-Vben-Admin / Vue3 / Vite / Ant-Design-Vue / TypeScript 构建，由开源项目
+          <a :href="GITHUB_URL" target="_blank">Guoba-Plugin</a>
+          fork 后深度定制。
         </div>
       </div>
       <div class="db-hero__side">

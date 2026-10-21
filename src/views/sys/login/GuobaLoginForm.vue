@@ -60,7 +60,7 @@
         <li class="glf__step">
           <span class="glf__no">1</span>
           <div class="glf__step-body">
-            向机器人发送 <code class="glf__code">#锅巴登录</code>
+            向机器人发送 <code class="glf__code">#荧后台登录</code>
           </div>
         </li>
         <li class="glf__step">

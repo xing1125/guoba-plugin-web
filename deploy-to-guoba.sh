@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 部署前端产物到 Guoba-Plugin/server/static
+# 部署前端产物到 YingPanel（荧后台）的静态目录 server/static
 # 用法：bash deploy-to-guoba.sh
 set -euo pipefail
 
@@ -35,5 +35,5 @@ if [ -n "$OLD" ]; then
   echo "  → 已清理 ${OLD_N} 份过期备份（保留最近 ${KEEP} 份）"
 fi
 
-echo "  → 重启锅巴后生效（发送 #锅巴登录 或重启 Bot）"
+echo "  → 重启 Bot 后生效（发送 #荧后台登录 或重启 Bot）"
 echo "  → 回滚: mv '$STATIC' '$STATIC.failed' && mv '$BACKUP' '$STATIC'"

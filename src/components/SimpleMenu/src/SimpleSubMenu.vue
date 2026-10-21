@@ -1,7 +1,7 @@
 <template>
   <MenuItem :name="item.path" v-if="!menuHasChildren(item) && getShowMenu" v-bind="$props" :class="getLevelClass">
-    <PluginIcon v-if="item.guobaMeta?.plugin" :plugin="item.guobaMeta?.plugin" :size="16" />
-    <Icon v-else-if="getIcon" :icon="getIcon" :size="16" />
+    <PluginIcon v-if="item.guobaMeta?.plugin" :plugin="item.guobaMeta?.plugin" :size="18" />
+    <Icon v-else-if="getIcon" :icon="getIcon" :size="18" />
     <div v-if="collapsedShowTitle && getIsCollapseParent" class="mt-1 collapse-title">
       {{ getI18nName }}
     </div>
@@ -14,8 +14,8 @@
   </MenuItem>
   <SubMenu :name="item.path" v-if="menuHasChildren(item) && getShowMenu" :class="[getLevelClass, theme]" :collapsedShowTitle="collapsedShowTitle">
     <template #title>
-      <PluginIcon v-if="item.guobaMeta?.plugin" :plugin="item.guobaMeta?.plugin" :size="16" />
-      <Icon v-else-if="getIcon" :icon="getIcon" :size="16" />
+      <PluginIcon v-if="item.guobaMeta?.plugin" :plugin="item.guobaMeta?.plugin" :size="18" />
+      <Icon v-else-if="getIcon" :icon="getIcon" :size="18" />
 
       <div v-if="collapsedShowTitle && getIsCollapseParent" class="mt-2 collapse-title">
         {{ getI18nName }}

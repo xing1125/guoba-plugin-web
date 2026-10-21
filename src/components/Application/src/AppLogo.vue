@@ -63,6 +63,15 @@
     cursor: pointer;
     transition: all 0.2s ease;
 
+    /* 图标尺寸必须显式约束：img 默认按原始像素渲染，换成分辨率更高的实心图标后
+     * 会直接撑破侧栏/登录页的 logo 槽位。用变量让各处按需覆盖。 */
+    img {
+      flex: 0 0 auto;
+      width: var(--app-logo-size, 32px);
+      height: var(--app-logo-size, 32px);
+      object-fit: contain;
+    }
+
     &.light {
       border-bottom: 1px solid @border-color-base;
     }
@@ -71,19 +80,22 @@
       padding-left: 20px;
     }
 
+    /* 品牌名用正文色，不再占用品牌蓝：侧栏的蓝色只留给选中态，视觉重心才稳
+     * （换 荧 头像图标后，蓝色文字 + 彩色头像会变成两处高饱和争夺视线） */
     &.light &__title {
-      color: @primary-color;
+      color: var(--g-text, @primary-color);
     }
 
     &.dark &__title {
-      color: @white;
+      color: var(--g-text, @white);
     }
 
     &__title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       transition: all 0.5s;
       line-height: normal;
+      letter-spacing: 0.2px;
     }
   }
 </style>

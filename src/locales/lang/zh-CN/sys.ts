@@ -66,7 +66,7 @@ export default {
     forgetFormTitle: '重置密码',
 
     signInTitle: 'Yunzai-Bot 后台管理系统',
-    signInDesc: '锅巴！喷火~',
+    signInDesc: '荧火不熄，后台常亮',
     policy: '我同意xxx隐私政策',
     scanSign: `扫码后点击"确认"，即可完成登录`,
 

@@ -22,7 +22,7 @@
         <MenuItem v-if="getUseLockPage" key="lock" :text="t('layout.header.tooltipLock')" :icon="$gm('lock')" />
         <MenuItem key="logout" :text="t('layout.header.dropdownItemLoginOut')" :icon="$gm('power')" />
         <MenuDivider />
-        <MenuItem key="restart-guoba" text="重启Guoba" :icon="$gm('refresh')" />
+        <MenuItem key="restart-guoba" text="重启荧后台" :icon="$gm('refresh')" />
         <MenuItem key="restart-bot" text="重启Bot" :icon="$gm('refresh')" />
       </Menu>
     </template>
@@ -115,7 +115,7 @@
           iconType: 'warning',
           content: (
             <div>
-              <p style="color: #333">确定要立即重启Guoba吗？</p>
+              <p style="color: #333">确定要立即重启荧后台吗？</p>
               <p style="color: #999">不会重启Bot</p>
             </div>
           ),

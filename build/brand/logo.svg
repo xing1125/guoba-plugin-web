@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!--
+    YingPanel（荧后台）应用图标
+    设计语义：「荧」= 微光 / 萤火。四角星芒是光的通用符号，主星 + 右上副星 + 左下余烬点，
+    构成「一处光源、两处反光、一点余烬」的层次。duotone 走项目主色（g-blue 系）。
+
+    可读性约束：
+      · 主星芒外接半径 134 / 画布 512 = 26%，缩到 16px 仍有约 4.2px 实体，不会被糊掉
+      · 星芒四尖用二次贝塞尔收腰，避免小尺寸下变成「加号」
+      · 顶部柔光用径向渐变而非斜切多边形：斜切边在小尺寸会出现一条硬线
+  -->
+  <defs>
+    <linearGradient id="hi" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16" />
+      <stop offset="0.42" stop-color="#ffffff" stop-opacity="0.02" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="bg" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#4aa6e6" />
+      <stop offset="0.52" stop-color="#2f86c4" />
+      <stop offset="1" stop-color="#19567f" />
+    </linearGradient>
+  </defs>
+
+  <!-- 底板 -->
+  <rect width="512" height="512" rx="116" fill="url(#bg)" />
+  <rect width="512" height="512" rx="116" fill="url(#hi)" />
+
+  <!-- 主星芒 -->
+  <path
+    d="M256 122
+       C268 204 308 244 390 256
+       C308 268 268 308 256 390
+       C244 308 204 268 122 256
+       C204 244 244 204 256 122 Z"
+    fill="#ffffff"
+  />
+
+  <!-- 副星芒（右上反光） -->
+  <path
+    d="M394 84
+       C400 116 412 128 444 134
+       C412 140 400 152 394 184
+       C388 152 376 140 344 134
+       C376 128 388 116 394 84 Z"
+    fill="#ffffff"
+    fill-opacity="0.58"
+  />
+
+  <!-- 余烬点（左下） -->
+  <circle cx="118" cy="392" r="18" fill="#ffffff" fill-opacity="0.38" />
+</svg>

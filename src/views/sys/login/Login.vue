@@ -10,10 +10,19 @@
     <div class="db-login__inner">
       <!-- 左：品牌区（xl 以上显示） -->
       <section class="db-login__brand">
-        <AppLogo class="db-login__logo" />
+        <!-- 品牌锁定区：图标 + 字标。这里不复用 AppLogo —— 它带标题，
+             会和下面的字标重复一遍产品名，且 32px 固定尺寸装不下 44px 图标。 -->
+        <div class="db-login__lockup">
+          <span class="db-login__mark">
+            <img :src="logoUrl" alt="荧后台" />
+          </span>
+          <span class="db-login__wordmark">
+            <strong class="db-login__name">荧后台</strong>
+            <em class="db-login__en">YINGPANEL · YUNZAI ADMIN</em>
+          </span>
+        </div>
 
-        <div class="db-login__eyebrow">YUNZAI BOT · ADMIN CONSOLE</div>
-        <h1 class="db-login__title">云崽管理后台</h1>
+        <h1 class="db-login__title">一个面板，管完整个云崽</h1>
         <p class="db-login__desc">账号、群聊、插件与签到数据，一个面板全部管起来。用主人身份登录后即可开始。</p>
 
         <ul class="db-login__feats">
@@ -53,7 +62,7 @@
 </template>
 <script lang="ts" setup>
   import { computed } from 'vue';
-  import { AppLogo, AppDarkModeToggle } from '/@/components/Application';
+  import { AppDarkModeToggle } from '/@/components/Application';
   import Icon from '/@/components/Icon';
   import GuobaLoginForm from './GuobaLoginForm.vue';
   import ForgetPasswordForm from './ForgetPasswordForm.vue';
@@ -62,6 +71,7 @@
   import QrCodeForm from './QrCodeForm.vue';
   import { useGlobSetting } from '/@/hooks/setting';
   import artUrl from '/@/assets/images/yunzai-right.png';
+  import logoUrl from '/@/assets/images/logo.png';
 
   defineProps({
     sessionTimeout: {
@@ -76,8 +86,8 @@
   const version = computed(() => {
     const conf = (window as any)['__GUOBA_CONF__'] || {};
     const bot = (window as any)['__YUNZAI_BOT_CONF__'] || {};
-    if (conf.VERSION && bot.VERSION) return `锅巴 v${conf.VERSION} · 云崽 v${bot.VERSION}`;
-    if (conf.VERSION) return `锅巴 v${conf.VERSION}`;
+    if (conf.VERSION && bot.VERSION) return `荧后台 v${conf.VERSION} · 云崽 v${bot.VERSION}`;
+    if (conf.VERSION) return `荧后台 v${conf.VERSION}`;
     return '';
   });
 
@@ -152,27 +162,58 @@
     padding-right: 12px;
   }
 
-  .@{prefix-cls}__logo {
-    height: 34px;
-    margin-bottom: 26px;
+  /* 品牌锁定区：44px 圆角图标 + 两行字标（中文名 / 英文副标） */
+  .@{prefix-cls}__lockup {
+    display: flex;
+    gap: 13px;
+    align-items: center;
   }
 
-  .@{prefix-cls}__logo .@{namespace}-app-logo__title {
-    font-size: 18px;
-    font-weight: 650;
+  .@{prefix-cls}__mark {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    overflow: hidden;
+    border-radius: 13px;
+    box-shadow: 0 8px 22px -8px rgb(47 134 196 / 62%);
+  }
+
+  .@{prefix-cls}__mark img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .@{prefix-cls}__wordmark {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .@{prefix-cls}__name {
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.1;
     color: var(--g-text);
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
   }
 
-  .@{prefix-cls}__eyebrow {
-    font-size: 11px;
+  .@{prefix-cls}__en {
+    font-size: 9.5px;
+    font-style: normal;
     font-weight: 600;
+    line-height: 1;
     color: var(--g-text-mute);
-    letter-spacing: 2.2px;
+    letter-spacing: 1.9px;
   }
 
   .@{prefix-cls}__title {
-    margin: 10px 0 0;
+    margin: 30px 0 0;
     font-size: 34px;
     font-weight: 700;
     line-height: 1.25;

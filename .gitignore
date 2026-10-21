@@ -13,6 +13,11 @@ preview-server.mjs
 preview-server.log
 build/preview/
 
+# 品牌图渲染的中间产物（矢量源与生成脚本入库，PNG 预览不入库）
+build/brand/preview/
+build/brand/check-*.png
+build/brand/.tmp-*/
+
 tests/server/static
 tests/server/static/upload
 

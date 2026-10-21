@@ -849,3 +849,10 @@ html[data-theme='dark'] ::selection {
     color: var(--g-text-mute);
   }
 }
+
+/* ------------------------------ 侧栏菜单图标 ------------------------------ */
+/*
+ * 菜单图标从线性换成毛玻璃方块后，16px 下图形会糊成一团（方块 14.7px、图形只有 10.6px）。
+ * 尺寸在 SimpleSubMenu.vue 里直接改成 18px（Icon 的 size 会写成行内 font-size，
+ * CSS 覆盖不过行内样式，所以不在这里写 font-size）。
+ */
