@@ -7,7 +7,7 @@
           <div class="db-hero__eyebrow">LOG CENTER</div>
           <div class="db-hero__title">运行日志</div>
           <div class="db-hero__desc">
-            Bot 运行流水与错误堆栈，按级别筛选、关键字定位、实时跟随 —— 不用再去翻 app/logs
+            实时控制台（启动 → 连接微信全过程）+ 运行流水与错误堆栈，按级别筛选、关键字定位、自动跟随
             <span v-if="summary.dir" class="db-hero__time">· {{ summary.dir }}</span>
           </div>
         </div>
@@ -53,14 +53,15 @@
           </div>
           <GEmpty v-else-if="!files.length" title="没有日志文件" desc="Bot 还没有产生 app/logs 下的流水" />
           <div v-else class="lg-files__list">
-            <button v-for="f in files" :key="f.file" type="button" class="lg-file" :class="{ 'is-active': f.file === activeFile, 'is-error': f.kind === 'error' }" @click="switchFile(f)">
+            <button v-for="f in files" :key="f.file" type="button" class="lg-file" :class="{ 'is-active': f.file === activeFile, 'is-error': f.kind === 'error', 'is-console': f.console }" @click="switchFile(f)">
               <span class="lg-file__main">
                 <span class="lg-file__name">
                   {{ f.label }}
-                  <em v-if="f.today" class="lg-file__tag">今天</em>
+                  <em v-if="f.console" class="lg-file__tag is-live">实时</em>
+                  <em v-if="f.today && !f.console" class="lg-file__tag">今天</em>
                   <em v-else-if="f.gz" class="lg-file__tag is-dim">归档</em>
                 </span>
-                <span class="lg-file__meta">{{ fmtSize(f.size) }} · {{ fmtDate(f.mtime) }}</span>
+                <span class="lg-file__meta">{{ f.desc || `${fmtSize(f.size)} · ${fmtDate(f.mtime)}` }}</span>
               </span>
               <span class="lg-file__bar">
                 <i :style="{ width: `${fileBar(f.size)}%` }" />
@@ -97,7 +98,7 @@
               <Button size="small" @click="download">
                 <Icon :icon="$gm('download')" :size="13" />
               </Button>
-              <Button size="small" danger :disabled="!activeFile" @click="clearVisible = true">清空</Button>
+              <Button size="small" danger :disabled="!activeFile || isConsoleFile" @click="clearVisible = true">清空</Button>
             </div>
           </div>
 
@@ -212,6 +213,8 @@
 
   const activeFile = ref('');
   const activeLabel = computed(() => files.value.find((f) => f.file === activeFile.value)?.label || '日志');
+  const activeMeta = computed(() => files.value.find((f) => f.file === activeFile.value));
+  const isConsoleFile = computed(() => !!activeMeta.value?.console);
   const maxSize = computed(() => Math.max(1, ...files.value.map((f) => f.size)));
 
   const levelOptions = [
@@ -318,8 +321,10 @@
       const res = await logApi.getFiles();
       files.value = res.files || [];
       if (!activeFile.value && files.value.length) {
+        // 默认打开「实时控制台」：覆盖启动 → 连接微信全过程
+        const consoleFile = files.value.find((f) => f.console && /stdout/i.test(f.file));
         const today = files.value.find((f) => f.today && f.kind === 'command' && !f.gz);
-        activeFile.value = (today || files.value[0]).file;
+        activeFile.value = (consoleFile || today || files.value[0]).file;
       }
     } catch (e: any) {
       $message.error(e?.message || '读取日志文件列表失败');
@@ -360,6 +365,7 @@
     if (activeFile.value === f.file) return;
     activeFile.value = f.file;
     expanded.value = new Set();
+    startTimer();
     loadEntries();
   }
 
@@ -371,6 +377,17 @@
   /* ------------------------------ 跟随 ------------------------------ */
 
   let timer: any = null;
+
+  /** 轮询频率：控制台文件 1.5s（启动/连接过程变化快），普通日志 2.5s */
+  function pollInterval() {
+    const f = files.value.find((x) => x.file === activeFile.value);
+    return f?.console ? 1500 : 2500;
+  }
+
+  function startTimer() {
+    if (timer) clearInterval(timer);
+    timer = setInterval(tick, pollInterval());
+  }
 
   function scrollBottom() {
     const el = streamRef.value;
@@ -411,7 +428,7 @@
     await loadEntries();
     await nextTick();
     scrollBottom();
-    timer = setInterval(tick, 2500);
+    startTimer();
   });
 
   onBeforeUnmount(() => {
@@ -611,6 +628,11 @@
     color: var(--g-blue);
     background: var(--g-blue-soft);
     border-radius: 4px;
+
+    &.is-live {
+      color: var(--g-green);
+      background: color-mix(in srgb, var(--g-green) 14%, transparent);
+    }
 
     &.is-dim {
       color: var(--g-text-mute);

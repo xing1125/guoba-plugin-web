@@ -1,0 +1,10 @@
+# 独立 workspace 根标记：阻止 pnpm 向上攀到 D:\trss-yunzai\pnpm-workspace.yaml
+# （否则安装范围会扩成整个 Yunzai workspace，且被 Yunzai 根的构建策略影响）
+
+# hoisted：不使用符号链接/junction（本机 pnpm isolated 模式下 junction 创建静默失败，
+# 导致 node_modules 顶层为空），直接硬链接成扁平目录，和 Yunzai 根一致
+nodeLinker: hoisted
+
+overrides:
+  # 75MB 巨型图标包：curl 断点续传下到本地再安装（pnpm 直连/代理必超时）
+  '@iconify/json': file:vendor/iconify-json.tgz

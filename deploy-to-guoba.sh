@@ -5,7 +5,12 @@ set -euo pipefail
 
 FORK_DIR="$(cd "$(dirname "$0")" && pwd)"
 YUNZAI_ROOT="$(cd "$FORK_DIR/.." && pwd)"
-STATIC="$YUNZAI_ROOT/app/plugins/Guoba-Plugin/server/static"
+# 兼容新旧目录结构：优先平铺（trss-yunzai 根 = Yunzai 根），否则回退 app/ 嵌套
+if [ -d "$YUNZAI_ROOT/plugins/Guoba-Plugin/server/static" ]; then
+  STATIC="$YUNZAI_ROOT/plugins/Guoba-Plugin/server/static"
+else
+  STATIC="$YUNZAI_ROOT/app/plugins/Guoba-Plugin/server/static"
+fi
 
 if [ ! -d "$FORK_DIR/dist" ]; then
   echo "✗ dist 不存在，请先执行: npm run build"

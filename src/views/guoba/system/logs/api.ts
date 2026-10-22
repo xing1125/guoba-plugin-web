@@ -3,7 +3,10 @@ import { defHttp } from '/@/utils/http/axios';
 /** 日志文件条目 */
 export interface LogFile {
   file: string;
-  kind: 'error' | 'command' | 'other';
+  kind: 'error' | 'command' | 'console' | 'other';
+  /** 控制台虚拟文件（进程 stdout/stderr 重定向，含完整启动过程） */
+  console?: boolean;
+  desc?: string;
   gz: boolean;
   pinned: boolean;
   date: string;
@@ -37,6 +40,8 @@ export interface LogEntry {
 export interface LogEntriesResult {
   file: string;
   gz: boolean;
+  /** 是否为控制台虚拟文件（stdout/stderr） */
+  console?: boolean;
   size: number;
   mtime: string;
   /** 窗口内解析出的条目总数 */

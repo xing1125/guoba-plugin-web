@@ -190,5 +190,10 @@
     "commitizen": {
       "path": "node_modules/cz-git"
     }
+  },
+  "pnpm": {
+    "overrides": {
+      "@iconify/json": "file:vendor/iconify-json.tgz"
+    }
   }
 }

@@ -53,3 +53,5 @@ package-lock.json
 
 dist.bad-*
 dist.tmp-*
+vendor/
+*.log
