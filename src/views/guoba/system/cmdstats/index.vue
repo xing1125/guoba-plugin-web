@@ -51,6 +51,42 @@
         </div>
       </section>
 
+      <!-- ============================ 每日趋势 ============================ -->
+      <section class="g-card cs2-trend">
+        <div class="gm-panel__head">
+          <div class="gm-panel__title">
+            <i><Icon :icon="$gm('chart-bar')" :size="13" /></i>
+            每日趋势
+          </div>
+          <div v-if="trendBars.length" class="cs2-trend__meta">
+            {{ data?.days ?? days }} 天共 {{ thousands(trendTotal) }} 次 · 日均 {{ trendAvg }}
+          </div>
+        </div>
+
+        <div v-if="trendBars.length" class="cs2-trend__chart">
+          <div v-for="bar in trendBars" :key="bar.date" class="cs2-trend__col" :title="bar.tip">
+            <div class="cs2-trend__track">
+              <div class="cs2-trend__bar" :style="{ height: bar.h + '%' }">
+                <i
+                  class="cs2-trend__fill"
+                  :class="{ 'is-max': bar.isMax, 'is-zero': bar.total === 0 }"
+                  :style="{ opacity: bar.op }"
+                />
+                <span class="cs2-trend__val">{{ bar.total }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="cs2-empty">这个范围内没有指令记录</div>
+
+        <div v-if="trendBars.length" class="cs2-trend__axis">
+          <span v-for="bar in trendBars" :key="bar.date" class="cs2-trend__date">
+            <span class="cs2-trend__d-full">{{ bar.label }}</span>
+            <span class="cs2-trend__d-short">{{ bar.short }}</span>
+          </span>
+        </div>
+      </section>
+
       <div v-if="data?.skippedDays?.length" class="cs2-note">
         有 {{ data.skippedDays.length }} 天日志缺失或无法读取（{{ data.skippedDays.slice(0, 3).join('、') }}…），统计范围可能偏小
       </div>
@@ -148,6 +184,40 @@
     return Math.max(4, Math.round((count / max) * 100));
   }
 
+  // ---- 每日趋势：高度归一 / 透明度 / 日均都在这里算好，模板只负责画 ----
+  const trendTotal = computed(() => (data.value?.daily ?? []).reduce((sum, d) => sum + d.total, 0));
+
+  const trendAvg = computed(() => {
+    const list = data.value?.daily ?? [];
+    const activeDays = list.filter((d) => d.total > 0).length;
+    return activeDays ? Math.round(trendTotal.value / activeDays) : 0;
+  });
+
+  const trendBars = computed(() => {
+    const list = data.value?.daily ?? [];
+    const max = list.reduce((m, d) => Math.max(m, d.total), 0);
+    // 没有 daily、或整段全是 0：交给模板走空态
+    if (!list.length || max <= 0) return [];
+    return list.map((d) => {
+      const ratio = d.total / max;
+      return {
+        date: d.date,
+        label: d.date.slice(5),
+        short: d.date.slice(8),
+        total: d.total,
+        // 百分比高度，最高那天 = 100%；0 的那天交给 CSS 的 min-height 兜底
+        h: Math.round(ratio * 1000) / 10,
+        // 高的更实：0.55 → 1；无日志那天固定 0.9 让灰条看得清
+        op: d.total === 0 ? 0.9 : Math.round((0.55 + 0.45 * ratio) * 100) / 100,
+        isMax: d.total === max,
+        tip:
+          d.total === 0
+            ? `${d.date} · 这天没有日志`
+            : `${d.date} · ${d.total} 次 · ${d.cmds} 种指令 · ${d.groups} 个群 · ${d.users} 人`,
+      };
+    });
+  });
+
   function thousands(n: number) {
     return String(n ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
@@ -174,6 +244,134 @@
     color: var(--g-text-mute);
     background: var(--g-chip-bg);
     border-radius: 8px;
+  }
+
+  /* ---------------------------- 每日趋势（纯 CSS 柱状图） ---------------------------- */
+  .cs2-trend__meta {
+    flex: none;
+    font-family: var(--cs-mono, monospace);
+    font-size: 11.5px;
+    color: var(--g-text-sub);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cs2-trend__chart {
+    display: flex;
+    gap: 6px;
+    height: 120px;
+    padding: 10px 8px 0;
+    background: var(--g-card-bg-soft);
+    border-bottom: 1px solid var(--g-row-sep);
+    border-radius: 10px;
+    box-sizing: border-box;
+  }
+
+  /* 每列均分：天数再多也不撑破卡片 */
+  .cs2-trend__col {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+  }
+
+  .cs2-trend__track {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding-top: 20px; // 给 hover 数值留出头上的空间
+    box-sizing: border-box;
+  }
+
+  .cs2-trend__bar {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 44px;
+    min-height: 3px;
+  }
+
+  .cs2-trend__fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 3px;
+    background: var(--g-blue);
+    border-radius: 4px 4px 2px 2px;
+    transition: filter 0.18s ease, opacity 0.18s ease;
+
+    &.is-max {
+      background: var(--g-gold);
+    }
+
+    &.is-zero {
+      background: var(--g-text-mute);
+    }
+  }
+
+  .cs2-trend__col:hover .cs2-trend__fill {
+    filter: brightness(1.12);
+  }
+
+  /* 平时不显示数字，hover 整列才出来 */
+  .cs2-trend__val {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    font-family: var(--cs-mono, monospace);
+    font-size: 10.5px;
+    color: var(--g-text-sub);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: opacity 0.16s ease;
+    pointer-events: none;
+  }
+
+  .cs2-trend__col:hover .cs2-trend__val {
+    opacity: 1;
+  }
+
+  .cs2-trend__axis {
+    display: flex;
+    gap: 6px;
+    padding: 0 8px; // 与柱状图左右内边距一致，列才能对齐
+    margin-top: 7px;
+  }
+
+  .cs2-trend__date {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    font-family: var(--cs-mono, monospace);
+    font-size: 10.5px;
+    color: var(--g-text-mute);
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cs2-trend__d-short {
+    display: none;
+  }
+
+  @media (max-width: 480px) {
+    .cs2-trend__d-full {
+      display: none;
+    }
+
+    .cs2-trend__d-short {
+      display: inline;
+    }
+
+    .cs2-trend__meta {
+      font-size: 11px;
+    }
   }
 
   .cs2-grid {

@@ -22,6 +22,15 @@ export interface CmdUser {
   count: number;
 }
 
+/** 每日趋势：后端已按日期正序（旧 → 新），长度等于请求的 days */
+export interface CmdDailyItem {
+  date: string;
+  total: number;
+  cmds: number;
+  groups: number;
+  users: number;
+}
+
 export interface CmdStatsResult {
   days: number;
   parsedDays: string[];
@@ -31,6 +40,7 @@ export interface CmdStatsResult {
   groups: CmdGroup[];
   users: CmdUser[];
   plugins: CmdCount[];
+  daily: CmdDailyItem[];
 }
 
 export const cmdStatsApi = {
