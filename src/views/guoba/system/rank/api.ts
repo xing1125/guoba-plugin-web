@@ -67,9 +67,95 @@ export interface RankBoard {
   summary?: { total: number; shown: number; avg: number; max: number };
 }
 
+/* ------------------------------ 跨群视图 ------------------------------ */
+
+/** 群总览里的一行：一个群的体量（角色数 / 键数 / 人数） */
+export interface RankOverviewGroup {
+  /** 归一后的群号，不带 @chatroom 与 group- 前缀 */
+  gid: string;
+  /** 可以直接回传给 /board 的群号（保留 @chatroom） */
+  boardGid: string;
+  /** Redis 里的原始前缀，可能带 group- */
+  rawGid: string;
+  name: string;
+  /** 去重后的 type:charId 数 */
+  charCount: number;
+  /** 原始 zset 键数（两种前缀合计） */
+  keys: number;
+  /** 各角色榜单人数取最大后求和 */
+  members: number;
+  types: Partial<Record<RankType, number>>;
+  topChar: { id: string; name: string; count: number } | null;
+}
+
+export interface RankOverview {
+  available: boolean;
+  types: { key: RankType; label: string; groups: number }[];
+  groups: RankOverviewGroup[];
+  scannedAt?: string;
+}
+
+/** 单个角色在所有群里的普及度 */
+export interface CharUsageItem {
+  id: string;
+  name: string;
+  game: '' | 'gs' | 'sr';
+  star: number;
+  /** 属性原值：原神是英文（pyro / hydro …），星铁是中文（火 / 雷 …），展示前需映射 */
+  elem: string;
+  /** 有该角色榜单的群数 */
+  groups: number;
+  /** 各群榜单人数之和 */
+  count: number;
+  /** 平均每群人数 */
+  avg: number;
+}
+
+export interface CharUsageResult {
+  available: boolean;
+  type: RankType;
+  typeLabel: string;
+  game: '' | 'gs' | 'sr';
+  /** 过滤后的角色总数（不只是返回的 limit 条） */
+  total: number;
+  chars: CharUsageItem[];
+  scannedAt?: string;
+}
+
+/** 同一个角色在某个群的榜首 */
+export interface RankCompareTop {
+  uid: string;
+  wxid: string;
+  name: string;
+  score: number;
+}
+
+export interface RankCompareGroup {
+  gid: string;
+  name: string;
+  /** 原始 Redis 前缀，可能带 group-；回跳单群榜单时用它 */
+  rawGid: string;
+  count: number;
+  /** 该群这个角色还没有榜单数据时为 null */
+  top: RankCompareTop | null;
+}
+
+export interface RankCompareResult {
+  available: boolean;
+  empty?: boolean;
+  type: RankType;
+  typeLabel: string;
+  char: { id: string; name: string; game: '' | 'gs' | 'sr'; star: number; elem: string } | null;
+  groups: RankCompareGroup[];
+  scannedAt?: string;
+}
+
 const enum RankApi {
   groups = '/admin/rank/groups',
   board = '/admin/rank/board',
+  overview = '/admin/rank/overview',
+  charUsage = '/admin/rank/char-usage',
+  compare = '/admin/rank/compare',
 }
 
 export const rankApi = {
@@ -79,5 +165,20 @@ export const rankApi = {
   },
   getBoard(params: { gid: string; type?: RankType; charId?: string; limit?: number }) {
     return defHttp.get<RankBoard>({ url: RankApi.board, params });
+  },
+  /** 每群体量总览（force=true 跳过聚合缓存） */
+  getOverview(force = false) {
+    return defHttp.get<RankOverview>({ url: RankApi.overview, params: { force: force ? 'true' : '' } });
+  },
+  /** 角色使用率：type 固定 dmg/mark，game 为空表示不过滤 */
+  getCharUsage(params: { type?: RankType; game?: '' | 'gs' | 'sr'; limit?: number; force?: boolean }) {
+    return defHttp.get<CharUsageResult>({
+      url: RankApi.charUsage,
+      params: { ...params, force: params.force ? 'true' : '' },
+    });
+  },
+  /** 同角色跨群对比：charId 为空时后端自动挑人数最多的角色 */
+  getCompare(params: { type?: RankType; charId?: string }) {
+    return defHttp.get<RankCompareResult>({ url: RankApi.compare, params });
   },
 };
