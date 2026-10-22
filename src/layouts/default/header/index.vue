@@ -28,6 +28,9 @@
 
       <FullScreen v-if="getShowFullScreen" :class="`${prefixCls}-action__item fullscreen-item`" />
 
+      <!-- BOT 在线状态：10s 轮询，点击跳状态大屏 -->
+      <BotStatusPill :class="`${prefixCls}-action__item`" />
+
       <!-- 深浅色主题切换 -->
       <AppDarkModeToggle v-if="getShowDarkModeToggle" :class="`${prefixCls}-action__item darkmode-item`" />
 
@@ -58,6 +61,7 @@
 
   import { AppSearch } from '/@/components/Application';
   import { AppDarkModeToggle } from '/@/components/Application';
+  import { BotStatusPill } from '/@/components/Application';
 
   import { useHeaderSetting } from '/@/hooks/setting/useHeaderSetting';
   import { useMenuSetting } from '/@/hooks/setting/useMenuSetting';
@@ -94,6 +98,7 @@
       // AppLocalePicker,
       FullScreen,
       GuobaNotice,
+      BotStatusPill,
       GuobaShortcuts,
       // Notify,
       AppSearch,

@@ -15,8 +15,9 @@
   </div>
 </template>
 <script lang="ts" setup>
-  import { computed, ref } from 'vue';
+  import { computed, nextTick, onMounted, ref } from 'vue';
   import { SvgIcon } from '/@/components/Icon';
+  import { darkCssIsReady, loadDarkThemeCss } from '@rys-fe/vite-plugin-theme/es/client';
   import { useDesign } from '/@/hooks/web/useDesign';
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
   import { updateHeaderBgColor, updateSidebarBgColor } from '/@/logics/theme/updateBackground';
@@ -40,14 +41,78 @@
 
   const getClass = computed(() => [prefixCls, `${prefixCls}--${pref.value}`]);
 
+  /**
+   * 深色样式是独立的 css 文件，生产环境下首次切换要等它加载完才生效 ——
+   * 表现为「点了没反应，过一会儿才变」，这就是切换不跟手的主因。
+   * 提前在挂载时静默预热，切换时就不用等网络了。
+   */
+  let preloading: Promise<unknown> | null = null;
+  function preloadDarkCss() {
+    if (!import.meta.env.PROD || darkCssIsReady) return;
+    if (!preloading) {
+      preloading = loadDarkThemeCss().catch(() => {
+        preloading = null;
+      });
+    }
+  }
+
+  onMounted(() => {
+    // 不阻塞首屏：空闲时再预取
+    const idle = (window as any).requestIdleCallback || ((fn: any) => setTimeout(fn, 1200));
+    idle(() => preloadDarkCss());
+  });
+
+  /** 切换期间给 html 挂过渡类，让背景/文字颜色平滑过渡而不是硬切 */
+  let transitionTimer = 0;
+  function withThemeTransition(fn: () => unknown) {
+    const htmlRoot = document.getElementById('htmlRoot');
+    if (!htmlRoot) {
+      fn();
+      return;
+    }
+    htmlRoot.classList.add('theme-switching');
+    fn();
+    window.clearTimeout(transitionTimer);
+    transitionTimer = window.setTimeout(() => {
+      htmlRoot.classList.remove('theme-switching');
+    }, 380);
+  }
+
   function apply(next: ThemePref) {
     pref.value = next;
     setThemePref(next);
     const mode = resolveTheme(next);
-    appStore.setResolvedDarkMode(mode === ThemeEnum.DARK ? ThemeEnum.DARK : ThemeEnum.LIGHT);
-    updateDarkTheme(mode);
-    updateHeaderBgColor();
-    updateSidebarBgColor();
+
+    /** 真正落地主题的一步（改 store + 换 class + 重算头/侧栏底色） */
+    const commit = () => {
+      appStore.setResolvedDarkMode(mode === ThemeEnum.DARK ? ThemeEnum.DARK : ThemeEnum.LIGHT);
+      updateDarkTheme(mode);
+      updateHeaderBgColor();
+      updateSidebarBgColor();
+    };
+
+    preloadDarkCss();
+
+    /**
+     * 换主题要重新匹配整份 antd 深色样式表，实测一次切换有 0.4~0.9s 的
+     * 全文档样式重算（主线程被占住，期间一帧都出不来）。
+     * 用 View Transition 把「旧画面」先拍成快照，重算期间画面不动，
+     * 算完再做 260ms 交叉淡入 —— 观感从「卡一下再硬切」变成一次顺滑的过渡。
+     * 深色样式还没就绪时不能走这条路（class 是异步生效，快照会拍错），退回颜色过渡。
+     */
+    const startVT = (document as any).startViewTransition?.bind(document);
+    const cssReady = !import.meta.env.PROD || darkCssIsReady;
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (startVT && cssReady && !calm) {
+      startVT(() => {
+        commit();
+        return nextTick();
+      });
+      return;
+    }
+
+    // 兜底：挂过渡类让颜色平滑过渡，380ms 后摘掉（常驻 transition 会拖慢滚动）
+    withThemeTransition(commit);
   }
 
   function cycle() {

@@ -1,0 +1,60 @@
+/* 控制台底图透明度：浅色底图是浅色系，要抬得更高一点才看得见；深色下压低避免压掉日志对比度 */
+html {
+  --lg-bg-opacity: 0.34;
+}
+
+html[data-theme='dark'] {
+  --lg-bg-opacity: 0.3;
+}
+
+/* 主题切换过渡层
+ *
+ * 深/浅色是整体换一套颜色变量，直接切会「啪」地一下跳过去，观感很生硬。
+ * 这里只在切换的瞬间给 <html> 挂 .theme-switching，让颜色相关属性走 320ms 过渡，
+ * 动画结束就摘掉 —— 常驻 transition 会拖慢滚动与列表渲染。
+ */
+
+/* View Transition 交叉淡入：换主题时先冻结旧画面，重算完再 260ms 淡到新画面。
+ * Chrome 111+ 生效；不支持时下面的 .theme-switching 过渡兜底。 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.26s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html.theme-switching,
+html.theme-switching body,
+html.theme-switching .ant-layout,
+html.theme-switching .ant-layout *:not(svg):not(path) {
+  transition:
+    background-color 0.32s ease,
+    border-color 0.32s ease,
+    color 0.32s ease,
+    box-shadow 0.32s ease,
+    outline-color 0.32s ease !important;
+}
+
+/* 图标/渐变不参与过渡：大批量 svg 加 transition 反而会掉帧 */
+html.theme-switching svg,
+html.theme-switching path,
+html.theme-switching .anticon,
+html.theme-switching [class*='g-gradient'] {
+  transition: none !important;
+}
+
+/* 日志流有上千行 .lg-row，逐个走 320ms 过渡会把主线程拖住，
+ * 这里整段直切 —— 视觉上仍被外层卡片的渐变压住，看不出生硬 */
+html.theme-switching .lg-stream,
+html.theme-switching .lg-stream * {
+  transition: none !important;
+}
+
+/* 尊重系统「减弱动态效果」 */
+@media (prefers-reduced-motion: reduce) {
+  html.theme-switching,
+  html.theme-switching body,
+  html.theme-switching .ant-layout,
+  html.theme-switching .ant-layout * {
+    transition: none !important;
+  }
+}
