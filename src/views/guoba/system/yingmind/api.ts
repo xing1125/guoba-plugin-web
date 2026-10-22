@@ -10,6 +10,11 @@ const enum YingMindApi {
   cleanup = '/admin/yingmind/cleanup',
 }
 
+/** 后台快照服务（独立于 yingmind，按天堆积） */
+const enum SnapshotApi {
+  emotion = '/admin/snapshots/emotion',
+}
+
 export interface MindGroup {
   gid: string;
   name?: string;
@@ -53,6 +58,27 @@ export interface MindEmotion {
   mood: string;
   value: number;
   updatedAt: number;
+}
+
+/** 情绪趋势上的一个采样点（一天一个） */
+export interface MindEmotionPoint {
+  /** YYYY-MM-DD */
+  date: string;
+  mood: string;
+  /** 0~100 */
+  value: number;
+}
+
+/**
+ * 情绪趋势（后台快照按天堆积）
+ * count = 实际有快照的天数，points 已按日期正序（旧 → 新）
+ */
+export interface MindEmotionTrend {
+  /** 空字符串 = 全站平均 */
+  gid: string;
+  days: number;
+  count: number;
+  points: MindEmotionPoint[];
 }
 
 /** 命中原因：低价值 / 僵尸 / 未巩固 / 跨群重复 */
@@ -131,4 +157,7 @@ export const yingMindApi = {
   /** 批量清理候选记忆：oldText 必须传候选原文（后端做漂移校验） */
   cleanup: (payload: { confirm: true; keys: Array<{ gid: string; index: number; oldText: string }> }) =>
     defHttp.post<MindCleanupResult>({ url: YingMindApi.cleanup, data: payload }),
+  /** 情绪趋势：gid 传空 = 全站平均；快照按天积累，count 可能只有 0 / 1 */
+  emotionTrend: (params: { gid?: string; days?: number }) =>
+    defHttp.get<MindEmotionTrend>({ url: SnapshotApi.emotion, params }),
 };

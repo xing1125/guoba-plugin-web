@@ -42,6 +42,106 @@
         <Button size="small" @click="openEmotion">校正</Button>
       </section>
 
+      <!-- ============================ 情绪趋势（快照曲线） ============================ -->
+      <section class="g-card ym-trend">
+        <div class="gm-panel__head">
+          <div class="gm-panel__title">
+            <i><Icon :icon="$gm('pulse')" :size="13" /></i>
+            情绪趋势
+            <span class="gm-panel__extra" style="margin-left: 8px">
+              近 {{ trendDays }} 天 · {{ trendPoints.length }} 个采样日
+            </span>
+          </div>
+          <div class="ym-trend__tools">
+            <GSegmented v-model="trendDays" :options="TREND_RANGES" size="sm" label="趋势范围" @change="loadTrend" />
+          </div>
+        </div>
+
+        <div v-if="trendFailed" class="ym-empty">
+          <span>情绪趋势加载失败</span>
+          <span class="ym-empty__sub">快照服务可能未启动或正在重启</span>
+          <Button size="small" style="margin-top: 10px" :loading="trendLoading" @click="loadTrend">重试</Button>
+        </div>
+        <div v-else-if="trendLoading && !trend" class="gm-skeleton" style="height: 140px" />
+        <div v-else-if="!trendPoints.length" class="ym-empty">
+          <span>还没有情绪快照</span>
+          <span class="ym-empty__sub">后台每小时采一次，明天就能看到趋势</span>
+        </div>
+        <template v-else>
+          <div class="ym-trend__chart">
+            <svg
+              class="ym-trend__svg"
+              viewBox="0 0 640 140"
+              preserveAspectRatio="none"
+              role="img"
+              aria-label="情绪趋势折线"
+            >
+              <defs>
+                <linearGradient id="ymTrendFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--g-violet)" stop-opacity="0.22" />
+                  <stop offset="100%" stop-color="var(--g-violet)" stop-opacity="0.01" />
+                </linearGradient>
+              </defs>
+              <!-- 0 / 50 / 100 三条参考线 -->
+              <line
+                v-for="g in trendGrid"
+                :key="'g' + g.v"
+                :x1="TREND_PLOT.l"
+                :y1="g.y"
+                :x2="TREND_W - TREND_PLOT.r"
+                :y2="g.y"
+                stroke="var(--g-blue)"
+                stroke-opacity="0.14"
+                stroke-width="1"
+                vector-effect="non-scaling-stroke"
+              />
+              <!-- 面积 + 折线：至少两个点才画 -->
+              <path v-if="trendPoints.length > 1" :d="trendArea" fill="url(#ymTrendFill)" />
+              <polyline
+                v-if="trendPoints.length > 1"
+                :points="trendLine"
+                fill="none"
+                stroke="var(--g-violet)"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                vector-effect="non-scaling-stroke"
+              />
+              <!-- 单点时只留一个居中的点 -->
+              <circle
+                v-for="(p, i) in trendPoints"
+                :key="p.date"
+                :cx="trendX(i, trendPoints.length)"
+                :cy="trendY(p.value)"
+                r="3"
+                fill="var(--g-card-bg)"
+                stroke="var(--g-violet)"
+                stroke-width="2"
+                vector-effect="non-scaling-stroke"
+              />
+            </svg>
+            <!-- 轴刻度用 HTML 叠层：SVG 文字在 preserveAspectRatio="none" 下会被横向拉伸 -->
+            <span v-for="g in trendGrid" :key="'y' + g.v" class="ym-trend__ylab" :style="{ top: g.top }">
+              {{ g.v }}
+            </span>
+            <span v-for="t in trendXTicks" :key="t.key" class="ym-trend__xlab" :style="{ left: t.left }">
+              <span class="ym-trend__xdate">{{ t.full }}</span>
+              <span class="ym-trend__xdd">{{ t.dd }}</span>
+            </span>
+          </div>
+          <div class="ym-trend__foot">
+            <template v-if="trendPoints.length === 1">
+              今天刚记录第一个点（{{ trendLatest?.mood || '—' }} {{ trendLatest?.value.toFixed(1) }}），明天开始连成曲线
+            </template>
+            <template v-else>
+              最近：{{ trendLatest?.mood || '—' }}
+              <b>{{ trendLatest?.value.toFixed(1) }}</b>
+              <span class="ym-trend__when">{{ trendLatest?.date }}</span>
+            </template>
+          </div>
+        </template>
+      </section>
+
       <!-- ============================ 概览 KPI ============================ -->
       <section class="db-kpi">
         <div class="db-kpi__card">
@@ -378,6 +478,8 @@
     yingMindApi,
     type MindCandidate,
     type MindEmotion,
+    type MindEmotionPoint,
+    type MindEmotionTrend,
     type MindGroup,
     type MindIssueReason,
     type MindMemory,
@@ -563,6 +665,104 @@
     }
   }
 
+  /* ------------------------------ 情绪趋势（快照） ------------------------------ */
+
+  const TREND_W = 640;
+  const TREND_H = 140;
+  /** 绘图区内边距：左侧留 y 轴刻度，底部留日期 */
+  const TREND_PLOT = { l: 34, r: 10, t: 12, b: 30 };
+
+  const TREND_RANGES = [
+    { value: 7, label: '7 天' },
+    { value: 30, label: '30 天' },
+    { value: 90, label: '90 天' },
+  ];
+
+  const trendDays = ref(30);
+  const trend = ref<MindEmotionTrend | null>(null);
+  const trendLoading = ref(false);
+  const trendFailed = ref(false);
+
+  const trendPoints = computed(() => trend.value?.points ?? []);
+  const trendLatest = computed<MindEmotionPoint | null>(
+    () => trendPoints.value[trendPoints.value.length - 1] ?? null,
+  );
+
+  /** 第 i 个点的 x（只有一个点时居中） */
+  function trendX(i: number, n: number) {
+    const w = TREND_W - TREND_PLOT.l - TREND_PLOT.r;
+    if (n <= 1) return TREND_W / 2;
+    return TREND_PLOT.l + (i / (n - 1)) * w;
+  }
+
+  /** 情绪值 0~100 → y（y 轴固定 0~100，不按数据自适应） */
+  function trendY(v: number) {
+    const h = TREND_H - TREND_PLOT.t - TREND_PLOT.b;
+    const val = Math.max(0, Math.min(100, Number(v) || 0));
+    return TREND_PLOT.t + (1 - val / 100) * h;
+  }
+
+  const trendLine = computed(() =>
+    trendPoints.value
+      .map((p, i) => `${trendX(i, trendPoints.value.length).toFixed(1)},${trendY(p.value).toFixed(1)}`)
+      .join(' '),
+  );
+
+  /** 折线下方的半透明面积，收到 0 基线 */
+  const trendArea = computed(() => {
+    const pts = trendPoints.value;
+    const n = pts.length;
+    if (n < 2) return '';
+    const base = trendY(0).toFixed(1);
+    const line = pts
+      .map((p, i) => `${i ? 'L' : 'M'}${trendX(i, n).toFixed(1)},${trendY(p.value).toFixed(1)}`)
+      .join(' ');
+    return `${line} L${trendX(n - 1, n).toFixed(1)},${base} L${trendX(0, n).toFixed(1)},${base} Z`;
+  });
+
+  /** 0 / 50 / 100 参考线：y 为 viewBox 坐标，top 为容器百分比（给 HTML 刻度用） */
+  const trendGrid = computed(() =>
+    [100, 50, 0].map((v) => {
+      const y = trendY(v);
+      return { v, y, top: `${((y / TREND_H) * 100).toFixed(2)}%` };
+    }),
+  );
+
+  /** x 轴刻度：最多 6 个，点多时等距抽稀 */
+  const trendXTicks = computed(() => {
+    const pts = trendPoints.value;
+    const n = pts.length;
+    if (n < 2) return [];
+    const max = 6;
+    const idx: number[] = [];
+    for (let k = 0; k < Math.min(n, max); k++) {
+      idx.push(n <= max ? k : Math.round((k * (n - 1)) / (max - 1)));
+    }
+    return Array.from(new Set(idx)).map((i) => {
+      const pct = (trendX(i, n) / TREND_W) * 100;
+      return {
+        key: `${i}-${pts[i].date}`,
+        left: `${Math.max(3, Math.min(97, pct)).toFixed(2)}%`,
+        full: pts[i].date.slice(5),
+        dd: pts[i].date.slice(8),
+      };
+    });
+  });
+
+  async function loadTrend() {
+    trendLoading.value = true;
+    try {
+      // gid 为空 = 全站平均；快照按天积累，count 可能只有 0 / 1
+      trend.value = await yingMindApi.emotionTrend({ gid: gid.value, days: trendDays.value });
+      trendFailed.value = false;
+    } catch {
+      trend.value = null;
+      trendFailed.value = true;
+    } finally {
+      trendLoading.value = false;
+    }
+  }
+
   const groupOptions = computed(() =>
     groups.value.map((g) => ({
       value: g.gid,
@@ -661,6 +861,7 @@
     gid.value = String(v ?? '');
     await loadDetail();
     void loadHealth();
+    void loadTrend();
   }
 
   async function loadAll() {
@@ -669,6 +870,7 @@
       await loadGroups();
       if (gid.value) await loadDetail();
       void loadHealth();
+      void loadTrend();
     } finally {
       loading.value = false;
     }
@@ -748,8 +950,9 @@
 
   onMounted(async () => {
     await loadGroups();
-    // 体检不阻塞主数据：主面板渲染后再扫
+    // 体检 / 情绪趋势都不阻塞主数据：主面板渲染后再拉
     void loadHealth();
+    void loadTrend();
   });
 </script>
 
@@ -780,6 +983,29 @@
 
     .ym-health__issues {
       justify-content: flex-start;
+    }
+
+    .ym-trend .gm-panel__head {
+      flex-wrap: wrap;
+    }
+
+    .ym-trend .gm-panel__extra {
+      display: none;
+    }
+
+    .ym-trend__foot {
+      margin-top: 6px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    /* 窄屏 x 轴只留「日」 */
+    .ym-trend__xdate {
+      display: none;
+    }
+
+    .ym-trend__xdd {
+      display: inline;
     }
   }
 
@@ -1112,6 +1338,87 @@
     font-size: 11px;
     color: var(--g-text-mute);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* ------------------------------ 情绪趋势 ------------------------------ */
+
+  .ym-trend {
+    margin-bottom: 14px;
+  }
+
+  .ym-trend__tools {
+    display: flex;
+    flex-shrink: 0;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .ym-trend__chart {
+    position: relative;
+    height: 140px;
+    margin: 6px 0 2px;
+  }
+
+  .ym-trend__svg {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* 轴刻度用 HTML 叠层：SVG 文字在 preserveAspectRatio="none" 下会被横向拉伸 */
+  .ym-trend__ylab {
+    position: absolute;
+    left: 0;
+    font-family: var(--cs-mono, monospace);
+    font-size: 9.5px;
+    line-height: 1;
+    color: var(--g-text-mute);
+    font-variant-numeric: tabular-nums;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .ym-trend__xlab {
+    position: absolute;
+    bottom: 0;
+    font-family: var(--cs-mono, monospace);
+    font-size: 10px;
+    line-height: 1;
+    color: var(--g-text-mute);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .ym-trend__xdd {
+    display: none;
+  }
+
+  .ym-trend__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: baseline;
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+
+    b {
+      font-family: var(--cs-mono, monospace);
+      font-size: 12.5px;
+      color: var(--g-text);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .ym-trend__when {
+    font-family: var(--cs-mono, monospace);
+    font-size: 10.5px;
+    opacity: 0.85;
   }
 
   .ym-emotion {
