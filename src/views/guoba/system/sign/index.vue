@@ -98,6 +98,89 @@
         <div v-else class="gm-skeleton" style="height: 96px" />
       </section>
 
+      <!-- ============================ 实时运行台 ============================ -->
+      <section class="g-card sign-realtime">
+        <div class="sign-realtime__head">
+          <span class="sign-realtime__title">实时运行台</span>
+          <span class="sign-realtime__hint">
+            {{
+              scope === 'mys'
+                ? '当日签到流水每 5 秒自动刷新 · 数据来自 Lotus-Plugin 签到审计'
+                : `当日签到计划每 5 秒自动刷新 · ${wFixedTime} 触发 · 数据来自 Waves 日程归档`
+            }}
+          </span>
+          <span v-if="liveDate" class="sign-realtime__date">{{ liveDate }}</span>
+          <div class="sign-realtime__actions">
+            <Button size="small" @click="toggleLivePoll">{{ rtPaused ? '继续轮询' : '暂停轮询' }}</Button>
+            <Button size="small" :loading="rtFetching" @click="pollLive(true)">手动刷新</Button>
+            <Button v-if="scope === 'mys' && rtUrl" size="small" @click="openRealtimeWindow">Lotus 原生看板</Button>
+          </div>
+        </div>
+
+        <div class="sign-live">
+          <div class="sign-live__stats">
+            <div v-for="s in liveStatChips" :key="s.label" class="sign-live__chip" :class="s.cls">
+              <b>{{ s.value }}</b>
+              <i>{{ s.label }}</i>
+            </div>
+          </div>
+
+          <div v-if="liveAgg.total" class="sign-live__bar">
+            <span class="sign-live__seg is-ok" :style="{ width: liveBar.ok + '%' }" />
+            <span class="sign-live__seg is-fail" :style="{ width: liveBar.fail + '%' }" />
+            <span v-if="liveBar.pending > 0" class="sign-live__seg is-pending" :style="{ width: liveBar.pending + '%' }" />
+          </div>
+
+          <div class="sign-live__foot">
+            <span class="sign-live__pulse" :class="{ 'is-paused': rtPaused }" />
+            <template v-if="rtUpdatedAt">
+              {{ rtPaused ? '轮询已暂停 · 点击「继续轮询」恢复' : `每 5 秒自动刷新 · 更新于 ${fmtTimeShort(rtUpdatedAt)}` }}
+            </template>
+            <template v-else>{{ rtError || '等待首次加载…' }}</template>
+            <span v-if="liveRows.length > 30" class="sign-live__cap">
+              显示最近 30 条 / 共 {{ liveRows.length }} 条 · 点击行查看完整详情
+            </span>
+            <span v-else-if="liveRows.length" class="sign-live__cap">点击行查看完整详情</span>
+          </div>
+
+          <div v-if="liveRows.length" class="sign-live__feed">
+            <button
+              v-for="(r, i) in liveRows.slice(0, 30)"
+              :key="(r.time || '') + '|' + (r.qq || '') + '|' + (r.profileId ?? '') + '|' + i"
+              type="button"
+              class="sign-live__row"
+              @click="openRecord(r)"
+            >
+              <i class="sign-live__dot" :class="liveRowState(r).cls" />
+              <span class="sign-live__time">{{ liveRowTime(r) }}</span>
+              <span class="sign-live__who">
+                <b>{{ scope === 'mys' ? userName(r.qq) : r.name || r.qq }}</b>
+                <small class="mono">{{ scope === 'mys' ? (r.profileId > 1 ? `账号${r.profileId}` : r.qq) : r.roleId || r.qq }}</small>
+              </span>
+              <span class="sign-live__state" :class="liveRowState(r).cls">{{ liveRowState(r).text }}</span>
+              <template v-if="scope === 'mys'">
+                <span class="sign-live__games">
+                  <span v-for="g in r.games" :key="g.key" class="g-chip" :class="`is-${g.status}`" :title="g.text">
+                    {{ gameShort(g.key) }}<em v-if="g.status === 'signed' && g.days">{{ g.days }}d</em>
+                  </span>
+                </span>
+                <span class="sign-live__msg">{{ liveMsg(r) }}</span>
+              </template>
+              <template v-else>
+                <span class="sign-live__games">
+                  <span v-if="r.sigInNum" class="g-chip is-signed">连签 {{ r.sigInNum }} 天</span>
+                  <span v-if="r.rewardText" class="g-chip is-signed" :title="r.rewardText">{{ r.rewardText }}</span>
+                </span>
+                <span class="sign-live__msg">{{ r.msg || (r.done ? '' : '等待计划触发') }}</span>
+              </template>
+            </button>
+          </div>
+          <div v-else-if="!rtFetching" class="sign-realtime__empty">
+            {{ rtError || (scope === 'mys' ? '当日还没有签到流水' : '当日计划还没有任何执行记录') }}
+          </div>
+        </div>
+      </section>
+
       <!-- ============================ 指标卡 ============================ -->
       <section class="db-kpi db-kpi--6">
         <template v-if="scope === 'mys' ? booting : wBooting">
@@ -868,7 +951,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, onMounted, reactive, ref, unref, watch } from 'vue';
+  import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, unref, watch } from 'vue';
   import {
     Button,
     Descriptions,
@@ -1814,6 +1897,16 @@
     loadNames();
     loadIssues();
     loadHealth();
+    loadRealtimeLink();
+    startLiveTimer();
+    pollLive();
+  });
+
+  onBeforeUnmount(() => {
+    if (rtTimer) {
+      clearInterval(rtTimer);
+      rtTimer = null;
+    }
   });
 
   /* ------------------------------ 签到健康度 ------------------------------ */
@@ -1835,6 +1928,170 @@
       health.value = null;
     }
   }
+
+  /* ------------------------------ 实时运行台 ------------------------------ */
+
+  const rtPaused = ref(false);
+  const rtFetching = ref(false);
+  const rtUpdatedAt = ref('');
+  const rtError = ref('');
+  const rtUrl = ref('');
+  const liveMysRows = ref<SignRecord[]>([]);
+  const liveWaveRows = ref<any[]>([]);
+  let rtTimer: ReturnType<typeof setInterval> | null = null;
+
+  /** 当日日期：直接沿用概览接口认定的「最新一天」，避免与服务端口径打架 */
+  const liveDate = computed(() => {
+    if (scope.value === 'mys') {
+      return overview.value.today?.date || overview.value.meta?.lastDate || '';
+    }
+    return wOverview.value.meta?.lastDate || '';
+  });
+
+  const liveRows = computed<any[]>(() => (scope.value === 'mys' ? liveMysRows.value : liveWaveRows.value));
+
+  const liveAgg = computed(() => {
+    const rows = liveRows.value;
+    let ok = 0;
+    let fail = 0;
+    let pending = 0;
+    const accounts = new Set<string>();
+    const users = new Set<string>();
+    for (const r of rows) {
+      users.add(r.qq);
+      if (scope.value === 'mys') {
+        accounts.add(`${r.qq}|${r.profileId}`);
+        if (r.ok) ok += 1;
+        else fail += 1;
+      } else if (r.done) {
+        if (r.ok) ok += 1;
+        else fail += 1;
+      } else {
+        pending += 1;
+      }
+    }
+    return { total: rows.length, ok, fail, pending, accounts: accounts.size, users: users.size };
+  });
+
+  const liveStatChips = computed(() => {
+    const a = liveAgg.value;
+    if (scope.value === 'mys') {
+      return [
+        { label: '今日人次', value: a.total },
+        { label: '成功', value: a.ok, cls: 'is-ok' },
+        { label: '失败', value: a.fail, cls: a.fail ? 'is-fail' : '' },
+        { label: '参与账号', value: a.accounts },
+        { label: '覆盖用户', value: a.users },
+      ];
+    }
+    const done = a.ok + a.fail;
+    return [
+      { label: '计划账号', value: a.total },
+      { label: '成功', value: a.ok, cls: 'is-ok' },
+      { label: '失败', value: a.fail, cls: a.fail ? 'is-fail' : '' },
+      { label: '待执行', value: a.pending, cls: a.pending ? 'is-warn' : '' },
+      { label: '成功率', value: done ? `${Math.round((a.ok / done) * 100)}%` : '—', cls: 'is-ok' },
+    ];
+  });
+
+  const liveBar = computed(() => {
+    const a = liveAgg.value;
+    if (scope.value === 'mys') {
+      const base = a.ok + a.fail;
+      return base
+        ? { ok: (a.ok / base) * 100, fail: (a.fail / base) * 100, pending: 0 }
+        : { ok: 0, fail: 0, pending: 0 };
+    }
+    return a.total
+      ? { ok: (a.ok / a.total) * 100, fail: (a.fail / a.total) * 100, pending: (a.pending / a.total) * 100 }
+      : { ok: 0, fail: 0, pending: 0 };
+  });
+
+  function liveRowState(r: any) {
+    if (scope.value === 'mys') {
+      return r.ok
+        ? { text: '成功', cls: 'is-ok' }
+        : { text: `失败${r.stage ? ` · ${r.stage}` : ''}`, cls: 'is-err' };
+    }
+    if (!r.done) return { text: '待执行', cls: 'is-warn' };
+    return r.ok ? { text: '成功', cls: 'is-ok' } : { text: '失败', cls: 'is-err' };
+  }
+
+  function liveRowTime(r: any) {
+    return scope.value === 'mys' ? fmtTimeShort(r.time) : String(r.time || '');
+  }
+
+  function liveMsg(r: any) {
+    return String(r.message || '').replace(/\s+/g, ' ').trim().slice(0, 110);
+  }
+
+  /** 轮询当日流水/计划（复用现成分页接口，后端零改动） */
+  async function pollLive(manual = false) {
+    if (rtFetching.value) return;
+    rtFetching.value = true;
+    try {
+      const date = liveDate.value;
+      if (!date) {
+        liveMysRows.value = [];
+        liveWaveRows.value = [];
+        rtError.value = '暂无数据';
+        return;
+      }
+      if (scope.value === 'mys') {
+        const res = await signApi.getRecords({ date, size: 200, page: 1 });
+        liveMysRows.value = res?.list ?? [];
+        rtError.value = '';
+      } else {
+        const res = await wavesApi.getRecords({ date, size: 200, page: 1 });
+        liveWaveRows.value = res?.list ?? [];
+        rtError.value = '';
+      }
+      rtUpdatedAt.value = new Date().toISOString();
+    } catch (e: any) {
+      rtError.value = e?.message || '实时数据请求失败';
+    } finally {
+      rtFetching.value = false;
+    }
+  }
+
+  function toggleLivePoll() {
+    rtPaused.value = !rtPaused.value;
+  }
+
+  function startLiveTimer() {
+    if (rtTimer) clearInterval(rtTimer);
+    rtTimer = setInterval(() => {
+      // 页面切到后台时暂停请求，回来后下一轮自动恢复
+      if (!rtPaused.value && !document.hidden) pollLive();
+    }, 5000);
+  }
+
+  /** Lotus 原生看板链接（仅作为外链按钮，不再内嵌 iframe） */
+  async function loadRealtimeLink() {
+    try {
+      const res = await signApi.getRealtime();
+      rtUrl.value = res?.available && res.url ? res.url : '';
+    } catch {
+      rtUrl.value = '';
+    }
+  }
+
+  function openRealtimeWindow() {
+    if (rtUrl.value) window.open(rtUrl.value, '_blank');
+  }
+
+  watch(scope, () => {
+    liveMysRows.value = [];
+    liveWaveRows.value = [];
+    rtUpdatedAt.value = '';
+    rtError.value = '';
+    nextTick(() => pollLive());
+  });
+
+  // 概览加载完成后拿到当日日期，此时再拉第一笔实时数据
+  watch(liveDate, (v, old) => {
+    if (v && v !== old) pollLive();
+  });
 
   async function runHealthCheck() {
     healthChecking.value = true;
@@ -2711,6 +2968,307 @@
   .sign-health__hint {
     font-size: 11.5px;
     color: var(--g-text-mute);
+  }
+
+  /* ============================ 实时签到看板 ============================ */
+
+  .sign-realtime {
+    padding: 12px 18px;
+  }
+
+  .sign-realtime__head {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .sign-realtime__title {
+    flex: 0 0 auto;
+    font-size: 13.5px;
+    font-weight: 650;
+    color: var(--g-text);
+  }
+
+  .sign-realtime__hint {
+    flex: 1 1 auto;
+    overflow: hidden;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sign-realtime__date {
+    flex: 0 0 auto;
+    font-size: 11.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--g-text-sub);
+  }
+
+  .sign-realtime__actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px;
+  }
+
+  .sign-realtime__empty {
+    padding: 28px 0;
+    font-size: 13px;
+    color: var(--g-text-sub);
+    text-align: center;
+  }
+
+  .sign-live {
+    margin-top: 10px;
+  }
+
+  .sign-live__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sign-live__chip {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 78px;
+    padding: 7px 12px 6px;
+    border: 1px solid var(--g-card-border);
+    border-radius: 10px;
+    background: var(--g-card-bg);
+
+    b {
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.15;
+      color: var(--g-text);
+    }
+
+    i {
+      overflow: hidden;
+      font-size: 11px;
+      font-style: normal;
+      color: var(--g-text-mute);
+      white-space: nowrap;
+    }
+
+    &.is-ok b {
+      color: var(--g-green);
+    }
+
+    &.is-fail b {
+      color: #e0664a;
+    }
+
+    &.is-warn b {
+      color: var(--g-amber);
+    }
+  }
+
+  .sign-live__bar {
+    display: flex;
+    height: 6px;
+    margin-top: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--g-chip-bg);
+
+    .sign-live__seg {
+      height: 100%;
+      min-width: 2px;
+      transition: width 0.4s ease;
+
+      &.is-ok {
+        background: var(--g-green);
+      }
+
+      &.is-fail {
+        background: #e0664a;
+      }
+
+      &.is-pending {
+        background: var(--g-amber);
+        opacity: 0.55;
+      }
+    }
+  }
+
+  .sign-live__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+  }
+
+  .sign-live__pulse {
+    flex: 0 0 auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--g-green);
+    animation: sign-live-pulse 1.6s ease infinite;
+
+    &.is-paused {
+      background: var(--g-text-mute);
+      animation: none;
+    }
+  }
+
+  @keyframes sign-live-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.3;
+    }
+  }
+
+  .sign-live__cap {
+    margin-left: auto;
+  }
+
+  .sign-live__feed {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 340px;
+    margin-top: 8px;
+    overflow: auto;
+  }
+
+  .sign-live__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    align-items: center;
+    width: 100%;
+    padding: 7px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+
+    &:hover {
+      background: var(--g-hover);
+    }
+  }
+
+  .sign-live__dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+
+    &.is-ok {
+      background: var(--g-green);
+    }
+
+    &.is-err {
+      background: #e0664a;
+    }
+
+    &.is-warn {
+      background: var(--g-amber);
+    }
+  }
+
+  .sign-live__time {
+    flex: 0 0 auto;
+    min-width: 54px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--g-text-sub);
+  }
+
+  .sign-live__who {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 0 0 auto;
+    min-width: 112px;
+
+    b {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--g-text);
+    }
+
+    small {
+      overflow: hidden;
+      max-width: 150px;
+      font-size: 10.5px;
+      color: var(--g-text-mute);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  .sign-live__state {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 600;
+
+    &.is-ok {
+      color: var(--g-green);
+    }
+
+    &.is-err {
+      color: #e0664a;
+    }
+
+    &.is-warn {
+      color: var(--g-amber);
+    }
+  }
+
+  .sign-live__games {
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    gap: 4px;
+
+    .g-chip {
+      font-size: 11px;
+    }
+  }
+
+  .sign-live__msg {
+    flex: 1 1 160px;
+    overflow: hidden;
+    min-width: 0;
+    font-size: 11.5px;
+    color: var(--g-text-mute);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 窄屏：运行台行改为上下两段 */
+  @media (max-width: 640px) {
+    .sign-live__cap {
+      margin-left: 0;
+    }
+
+    .sign-live__msg {
+      flex-basis: 100%;
+    }
+
+    .sign-live__who {
+      min-width: 90px;
+
+      small {
+        max-width: 110px;
+      }
+    }
   }
 
   /* 窄屏：分数环与文字改为上下排 */
